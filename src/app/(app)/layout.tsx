@@ -24,6 +24,7 @@ import {
   LogOut,
   Settings,
   LifeBuoy,
+  Lightbulb,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-provider';
 import { usePathname, useRouter } from 'next/navigation';
@@ -49,8 +50,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/pantry', label: 'Pantry', icon: Warehouse },
     { href: '/logs', label: 'Daily Logs', icon: BookOpenCheck },
-    { href: '/recipes', label: 'Recipes', icon: ChefHat },
-    { href: '/advisor', label: 'AI Advisor', icon: Sparkles },
+    { href: '/recipes', label: 'My Recipes', icon: ChefHat },
+    { href: '/ai-recipes', label: 'AI Recipes', icon: Sparkles },
+    { href: '/advisor', label: 'AI Advisor', icon: Lightbulb },
     { href: '/awards', label: 'Awards', icon: Trophy },
   ];
 

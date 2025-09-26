@@ -141,7 +141,7 @@ let MOCK_RECIPES: Record<string, Recipe[]> = {
       prepTime: '15 min',
       cookTime: '45 min',
       totalTime: '1 hour',
-      imageUrl: "https://picsum.photos/seed/recipe1/600/400"
+      emoji: '🍲'
     },
   ],
 };
@@ -263,11 +263,10 @@ export const getRecipes = async (userId: string): Promise<Recipe[]> => {
   return MOCK_RECIPES[userId] || [];
 };
 
-export const addRecipe = async (userId: string, recipe: Omit<Recipe, 'id' | 'imageUrl'>): Promise<Recipe> => {
+export const addRecipe = async (userId: string, recipe: Omit<Recipe, 'id'>): Promise<Recipe> => {
     const newRecipe: Recipe = {
         ...recipe,
-        id: `r${(MOCK_RECIPES[userId] || []).length + 1}`,
-        imageUrl: `https://picsum.photos/seed/newRecipe${Math.random()}/600/400`
+        id: `r${Date.now()}${Math.random()}`
     };
     if (!MOCK_RECIPES[userId]) {
         MOCK_RECIPES[userId] = [];
@@ -275,6 +274,15 @@ export const addRecipe = async (userId: string, recipe: Omit<Recipe, 'id' | 'ima
     MOCK_RECIPES[userId].push(newRecipe);
     return newRecipe;
 }
+
+export const deleteRecipe = async (userId: string, recipeId: string): Promise<void> => {
+  if (MOCK_RECIPES[userId]) {
+    const index = MOCK_RECIPES[userId].findIndex(r => r.id === recipeId);
+    if (index !== -1) {
+      MOCK_RECIPES[userId].splice(index, 1);
+    }
+  }
+};
 
 export const getGoals = async (userId: string): Promise<Goal[]> => {
   return MOCK_GOALS[userId] || [];
