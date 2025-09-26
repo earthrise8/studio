@@ -141,6 +141,15 @@ function BarcodeScanner({ onBarcodeScan }: { onBarcodeScan: (barcode: string) =>
     );
 }
 
+const defaultExpirationDays: Record<PantryFormValues['category'], number> = {
+    Produce: 7,
+    Dairy: 10,
+    Meat: 4,
+    Pantry: 365,
+    Frozen: 180,
+    Other: 14,
+};
+
 function AddPantryItemDialog({ onAdd }: { onAdd: (newItem: PantryItem) => void }) {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -155,9 +164,17 @@ function AddPantryItemDialog({ onAdd }: { onAdd: (newItem: PantryItem) => void }
         unit: 'units',
         category: 'Pantry',
         purchaseDate: new Date(),
-        expirationDate: addDays(new Date(), 7),
+        expirationDate: addDays(new Date(), defaultExpirationDays.Pantry),
       }
     });
+
+    const watchedCategory = form.watch('category');
+    const watchedPurchaseDate = form.watch('purchaseDate');
+
+    useEffect(() => {
+        const daysToadd = defaultExpirationDays[watchedCategory] || 7;
+        form.setValue('expirationDate', addDays(watchedPurchaseDate, daysToadd));
+    }, [watchedCategory, watchedPurchaseDate, form]);
 
     const handleBarcodeData = (barcode: string) => {
         // In a real app, you would look this barcode up.
@@ -180,7 +197,14 @@ function AddPantryItemDialog({ onAdd }: { onAdd: (newItem: PantryItem) => void }
         onAdd(newItem);
         toast({ title: "Item Added", description: `${newItem.name} was successfully added to your pantry.` });
         setOpen(false);
-        form.reset();
+        form.reset({
+            name: '',
+            quantity: 1,
+            unit: 'units',
+            category: 'Pantry',
+            purchaseDate: new Date(),
+            expirationDate: addDays(new Date(), defaultExpirationDays.Pantry),
+        });
       } catch(e) {
         toast({ variant: 'destructive', title: "Add Failed", description: "Could not add the item." });
       } finally {
@@ -325,7 +349,7 @@ function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: 
         expirationDate: values.expirationDate.toISOString(),
       };
       await updatePantryItem(updatedItemData.id, updatedItemData);
-      onUpdate(updatedItemData);
+      onUpdate(updatedItemData as PantryItem);
       toast({ title: "Item Updated", description: `${item.name} was successfully updated.` });
       setOpen(false);
     } catch(e) {
@@ -558,3 +582,5 @@ export default function PantryPage() {
     </main>
   );
 }
+
+    
