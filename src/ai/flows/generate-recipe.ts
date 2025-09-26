@@ -40,7 +40,7 @@ const prompt = ai.definePrompt({
 
 Request: {{{prompt}}}
 
-Generate a recipe with a name, a single emoji, a short description, a markdown list of ingredients, and step-by-step instructions. Also provide the prep time, cook time, and total time if applicable.
+Generate a recipe with a name, a single emoji, a short description, a markdown list of ingredients, and step-by-step instructions formatted as a numbered markdown list. Also provide the prep time, cook time, and total time if applicable.
 Ensure the output is well-formatted and easy to read.
 `,
 });
