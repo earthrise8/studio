@@ -142,16 +142,20 @@ export default function RecipesPage() {
                     <span>{recipe.name}</span>
                   </DialogTitle>
                 </DialogHeader>
-                <div className="max-h-[70vh] overflow-y-auto pr-4">
-                  <div className="flex gap-4 text-sm text-muted-foreground my-4">
+                <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-4">
+                  <div className="flex gap-4 text-sm text-muted-foreground">
                     {recipe.prepTime && <span>Prep: {recipe.prepTime}</span>}
                     {recipe.cookTime && <span>Cook: {recipe.cookTime}</span>}
                     {recipe.totalTime && <span>Total: {recipe.totalTime}</span>}
                   </div>
-                  <h3 className="font-headline font-bold mt-4 mb-2 text-lg">Ingredients</h3>
-                  <div className="prose prose-sm dark:prose-invert whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: recipe.ingredients }}></div>
-                  <h3 className="font-headline font-bold mt-4 mb-2 text-lg">Instructions</h3>
-                  <div className="prose prose-sm dark:prose-invert whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: recipe.instructions }}></div>
+                  <div>
+                    <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
+                    <div className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: recipe.ingredients }}></div>
+                  </div>
+                  <div>
+                    <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
+                    <div className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: recipe.instructions }}></div>
+                  </div>
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
