@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -95,6 +96,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           ) : user ? (
             <>
             <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton href="/settings" isActive={pathname === '/settings'} asChild>
+                         <Link href="/settings">
+                            <Settings />
+                            <span>Settings</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                          <a href="mailto:support@fitropolis.com">
