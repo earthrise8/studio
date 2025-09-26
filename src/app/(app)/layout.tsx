@@ -10,8 +10,6 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarFooter,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
   SidebarProvider,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
@@ -92,7 +90,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
           {loading ? (
-             <div className="flex items-center space-x-4">
+             <div className="flex items-center space-x-4 p-2">
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-[100px]" />
@@ -101,7 +99,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           ) : user ? (
             <>
-            <SidebarSeparator />
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild>
@@ -112,6 +109,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
+            <SidebarSeparator />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
