@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input';
 import { importRecipeFromUrl } from '@/ai/flows/import-recipe-from-url';
 import { useToast } from '@/hooks/use-toast';
 import { addRecipe } from '@/lib/data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const importSchema = z.object({
   url: z.string().url({ message: 'Please enter a valid URL.' }),
