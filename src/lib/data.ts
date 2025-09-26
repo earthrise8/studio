@@ -195,7 +195,7 @@ export const addPantryItem = async (userId: string, itemData: Omit<PantryItem, '
     }
     const newItem: PantryItem = {
         ...itemData,
-        id: `p${Date.now()}` // simple unique id
+        id: `p${Date.now()}${Math.random()}` // simple unique id
     };
     MOCK_PANTRY[userId].push(newItem);
     return newItem;
