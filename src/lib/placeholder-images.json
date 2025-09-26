@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "recipe1",
+      "description": "A vibrant and healthy salad in a white bowl.",
+      "imageUrl": "https://images.unsplash.com/photo-1712746784862-5dc20a1206e7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxoZWFsdGh5JTIwc2FsYWR8ZW58MHx8fHwxNzU4ODI2OTcyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "healthy salad"
+    },
+    {
+      "id": "recipe2",
+      "description": "Grilled chicken breast with steamed vegetables.",
+      "imageUrl": "https://images.unsplash.com/photo-1643594462181-7667928d072e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxncmlsbGVkJTIwY2hpY2tlbnxlbnwwfHx8fDE3NTg4MjEyNzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "grilled chicken"
+    },
+    {
+      "id": "recipe3",
+      "description": "A hearty bowl of oatmeal with fresh berries and nuts.",
+      "imageUrl": "https://images.unsplash.com/photo-1591535102082-a3fe217ef1bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxvYXRtZWFsJTIwYmVycmllc3xlbnwwfHx8fDE3NTg4NjgwNzh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "oatmeal berries"
+    },
+    {
+      "id": "recipe4",
+      "description": "A delicious looking pasta dish with tomato sauce.",
+      "imageUrl": "https://images.unsplash.com/photo-1619568767436-645129f006d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwYXN0YSUyMHRvbWF0b3xlbnwwfHx8fDE3NTg4NjUwOTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "pasta tomato"
+    },
+    {
+      "id": "recipe5",
+      "description": "A stack of fluffy pancakes with syrup.",
+      "imageUrl": "https://images.unsplash.com/photo-1623953167060-8aab26c39079?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxwYW5jYWtlcyUyMHN5cnVwfGVufDB8fHx8MTc1ODg2ODA3N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "pancakes syrup"
+    }
+  ]
 }
