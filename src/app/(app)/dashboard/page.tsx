@@ -11,6 +11,7 @@ import {
   getActivityLogs,
   getFoodLogs,
   getPantryItems,
+  getGoals,
   getUser,
 } from '@/lib/data';
 import {
@@ -19,11 +20,27 @@ import {
   PlusCircle,
   Dumbbell,
   Lightbulb,
+  CheckCircle2,
+  Trophy
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { getCurrentUser } from '@/lib/actions';
+import { Goal } from '@/lib/types';
+
+function GoalProgress({ goal }: { goal: Goal }) {
+    const progressPercentage = (goal.progress / goal.target) * 100;
+    return (
+        <div className="space-y-2">
+            <div className="flex justify-between items-center text-sm">
+                <p>{goal.description}</p>
+                <p className="font-medium">{goal.progress} / {goal.target}</p>
+            </div>
+            <Progress value={progressPercentage} />
+        </div>
+    )
+}
 
 export default async function DashboardPage() {
   // In a real app, you would get the logged-in user's ID
@@ -36,10 +53,12 @@ export default async function DashboardPage() {
     pantryItems,
     foodLogsToday,
     activityLogsToday,
+    goals,
   ] = await Promise.all([
     getPantryItems(user.id),
     getFoodLogs(user.id, todayStr),
     getActivityLogs(user.id, todayStr),
+    getGoals(user.id),
   ]);
 
   const caloriesIn = foodLogsToday.reduce(
@@ -59,7 +78,9 @@ export default async function DashboardPage() {
     }))
     .filter(item => item.daysUntilExpiry >= -1 && item.daysUntilExpiry <= 7)
     .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
-
+    
+  const activeGoals = goals.filter(g => !g.isCompleted);
+  const completedGoals = goals.filter(g => g.isCompleted);
 
   const quickActions = [
     {
@@ -137,30 +158,43 @@ export default async function DashboardPage() {
             <div className="text-2xl font-bold">{caloriesOut} kcal</div>
           </CardContent>
         </Card>
+         <Card className="flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Completed Goals
+            </CardTitle>
+            <Trophy className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex-1 flex items-end">
+             <div className="text-2xl font-bold">{completedGoals.length}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle className="font-headline">Quick Actions</CardTitle>
+            <CardTitle className="font-headline">Your Goals</CardTitle>
+            <CardDescription>
+              Your active goals and challenges.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {quickActions.map((action) => (
-              <Button
-                key={action.label}
-                variant="outline"
-                className="h-28 flex-col gap-2"
-                asChild
-              >
-                <Link href={action.href}>
-                  <action.icon className="h-8 w-8" />
-                  <span>{action.label}</span>
-                </Link>
-              </Button>
-            ))}
+          <CardContent className="space-y-4">
+             {activeGoals.length > 0 ? (
+                 activeGoals.map(goal => <GoalProgress key={goal.id} goal={goal} />)
+             ) : (
+                <div className="flex flex-col items-center justify-center text-center p-4 border border-dashed rounded-lg">
+                    <CheckCircle2 className="h-10 w-10 text-muted-foreground" />
+                    <h3 className="mt-2 font-semibold">No Active Goals</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Visit settings to add a new goal.</p>
+                    <Button asChild variant="secondary" size="sm" className="mt-4">
+                        <Link href="/settings">Set a Goal</Link>
+                    </Button>
+                </div>
+             )}
           </CardContent>
         </Card>
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle className="font-headline">Expiring Soon</CardTitle>
             <CardDescription>

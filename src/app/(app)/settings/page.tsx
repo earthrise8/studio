@@ -29,11 +29,13 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth-provider';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { updateUserProfile } from '@/lib/data';
+import { updateUserProfile, getGoals, addGoal, deleteGoal, updateGoal } from '@/lib/data';
+import type { Goal } from '@/lib/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -46,12 +48,20 @@ const profileFormSchema = z.object({
   healthGoal: z.string().optional(),
 });
 
+const goalFormSchema = z.object({
+    description: z.string().min(3, "Goal description is required."),
+    target: z.coerce.number().min(1, "Target must be at least 1."),
+})
+
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
+type GoalFormValues = z.infer<typeof goalFormSchema>;
 
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [isGoalDialogOpen, setGoalDialogOpen] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -66,6 +76,26 @@ export default function SettingsPage() {
       healthGoal: '',
     },
   });
+  
+  const goalForm = useForm<GoalFormValues>({
+    resolver: zodResolver(goalFormSchema),
+    defaultValues: {
+        description: '',
+        target: 1,
+    }
+  });
+
+  const fetchGoals = async () => {
+    if(user) {
+        const userGoals = await getGoals(user.id);
+        setGoals(userGoals);
+    }
+  }
+  
+  useEffect(() => {
+    fetchGoals();
+  }, [user]);
+
 
   useEffect(() => {
     if (user) {
@@ -82,13 +112,12 @@ export default function SettingsPage() {
     }
   }, [user, form]);
 
-  async function onSubmit(data: ProfileFormValues) {
+  async function onProfileSubmit(data: ProfileFormValues) {
     if (!user) return;
     setLoading(true);
     try {
         const { name, email, ...profileData} = data;
         
-        // Convert empty strings to undefined for optional number fields
         const profileToUpdate = {
           ...profileData,
           height: profileData.height === '' ? undefined : Number(profileData.height),
@@ -102,7 +131,7 @@ export default function SettingsPage() {
             email,
             profile: profileToUpdate
         });
-        await refreshUser(); // Refresh user data in the app
+        await refreshUser();
         toast({
             title: 'Profile Updated',
             description: 'Your settings have been saved.',
@@ -118,149 +147,274 @@ export default function SettingsPage() {
     }
   }
 
+  async function onGoalSubmit(data: GoalFormValues) {
+    if (!user) return;
+    try {
+        await addGoal(user.id, {
+            description: data.description,
+            target: data.target,
+            progress: 0,
+            isCompleted: false,
+        });
+        await fetchGoals();
+        toast({ title: "Goal Added", description: "Your new goal has been set." });
+        setGoalDialogOpen(false);
+        goalForm.reset();
+    } catch(error) {
+        toast({ variant: 'destructive', title: "Add Failed", description: "Could not add goal." });
+    }
+  }
+
+  const handleGoalDelete = async (goalId: string) => {
+    if(!user) return;
+    try {
+        await deleteGoal(user.id, goalId);
+        await fetchGoals();
+        toast({ title: 'Goal Deleted' });
+    } catch(error) {
+        toast({ variant: 'destructive', title: "Delete Failed", description: "Could not delete goal." });
+    }
+  }
+  
+  const handleProgressChange = async (goal: Goal, newProgress: number) => {
+    if(!user) return;
+    const updatedGoal = {...goal, progress: newProgress };
+    if(updatedGoal.progress >= updatedGoal.target) {
+        updatedGoal.progress = updatedGoal.target;
+        updatedGoal.isCompleted = true;
+    } else {
+        updatedGoal.isCompleted = false;
+    }
+    
+    try {
+        await updateGoal(user.id, updatedGoal);
+        await fetchGoals();
+        if(updatedGoal.isCompleted) {
+            toast({ title: 'Goal Complete!', description: `You achieved: ${goal.description}`});
+        }
+    } catch(e) {
+        //
+    }
+  }
+
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <h2 className="font-headline text-3xl font-bold tracking-tight">
         Settings
       </h2>
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>
-              This is how others will see you on the site.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your Name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="your@email.com"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="age"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Age</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="25" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="height"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Height (cm)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="175" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="weight"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Weight (kg)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="70" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="activityLevel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Physical Activity Level</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+        <div className="space-y-8 lg:col-span-2">
+            <Card>
+            <CardHeader>
+                <CardTitle>Profile</CardTitle>
+                <CardDescription>
+                This is how others will see you on the site.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                <form onSubmit={form.handleSubmit(onProfileSubmit)} className="space-y-8">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Name</FormLabel>
                             <FormControl>
-                                <SelectTrigger><SelectValue placeholder="Select your activity level" /></SelectTrigger>
+                            <Input placeholder="Your Name" {...field} />
                             </FormControl>
-                            <SelectContent>
-                                <SelectItem value="sedentary">Sedentary (little or no exercise)</SelectItem>
-                                <SelectItem value="light">Lightly active (light exercise/sports 1-3 days/week)</SelectItem>
-                                <SelectItem value="moderate">Moderately active (moderate exercise/sports 3-5 days/week)</SelectItem>
-                                <SelectItem value="active">Very active (hard exercise/sports 6-7 days a week)</SelectItem>
-                                <SelectItem value="very-active">Extra active (very hard exercise/sports & physical job)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                            <Input
+                                type="email"
+                                placeholder="your@email.com"
+                                {...field}
+                            />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="age"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Age</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="25" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="height"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Height (cm)</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="175" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="weight"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Weight (kg)</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="70" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="activityLevel"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Physical Activity Level</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger><SelectValue placeholder="Select your activity level" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="sedentary">Sedentary (little or no exercise)</SelectItem>
+                                    <SelectItem value="light">Lightly active (light exercise/sports 1-3 days/week)</SelectItem>
+                                    <SelectItem value="moderate">Moderately active (moderate exercise/sports 3-5 days/week)</SelectItem>
+                                    <SelectItem value="active">Very active (hard exercise/sports 6-7 days a week)</SelectItem>
+                                    <SelectItem value="very-active">Extra active (very hard exercise/sports & physical job)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="dailyCalorieGoal"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Daily Calorie Goal (kcal)</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="2200" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="healthGoal"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Primary Health Goal</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., Lose weight, build muscle" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    </div>
+                    <Button type="submit" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Update Profile
+                    </Button>
+                </form>
+                </Form>
+            </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Health Goals & Challenges</CardTitle>
+                        <CardDescription>
+                            Set and track your progress towards your goals.
+                        </CardDescription>
+                    </div>
+                     <Dialog open={isGoalDialogOpen} onOpenChange={setGoalDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                New Goal
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Add a New Goal</DialogTitle>
+                            </DialogHeader>
+                            <Form {...goalForm}>
+                                <form onSubmit={goalForm.handleSubmit(onGoalSubmit)} className="space-y-4">
+                                    <FormField control={goalForm.control} name="description" render={({field}) => (
+                                        <FormItem>
+                                            <FormLabel>Goal</FormLabel>
+                                            <FormControl><Input {...field} placeholder="e.g., Run 10 miles this month" /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={goalForm.control} name="target" render={({field}) => (
+                                        <FormItem>
+                                            <FormLabel>Target</FormLabel>
+                                            <FormControl><Input type="number" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <DialogFooter>
+                                        <Button type="submit">Add Goal</Button>
+                                    </DialogFooter>
+                                </form>
+                            </Form>
+                        </DialogContent>
+                    </Dialog>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {goals.length > 0 ? (
+                        goals.map(goal => (
+                            <div key={goal.id} className="flex items-center gap-4">
+                                <div className="flex-1">
+                                    <p className={`text-sm ${goal.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{goal.description}</p>
+                                    <p className="text-xs text-muted-foreground">Target: {goal.target}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                      type="number"
+                                      value={goal.progress}
+                                      onChange={(e) => handleProgressChange(goal, parseInt(e.target.value))}
+                                      className="w-20"
+                                      max={goal.target}
+                                      min={0}
+                                      disabled={goal.isCompleted}
+                                    />
+                                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleGoalDelete(goal.id)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-sm text-muted-foreground">You haven't set any goals yet.</p>
                     )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="dailyCalorieGoal"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Daily Calorie Goal (kcal)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="2200" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="healthGoal"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Primary Health Goal</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Lose weight, build muscle" {...field} value={field.value ?? ''} />
-                        </FormControl>
-                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <Button type="submit" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Update Profile
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </div>
         <Card>
             <CardHeader>
                 <CardTitle>Appearance</CardTitle>

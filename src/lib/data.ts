@@ -149,7 +149,7 @@ let MOCK_RECIPES: Record<string, Recipe[]> = {
 let MOCK_GOALS: Record<string, Goal[]> = {
   'user1': [
     { id: 'g1', description: 'Run 3 times this week', progress: 1, target: 3, isCompleted: false },
-    { id: 'g2', description: 'Drink 8 glasses of water daily', progress: 5, target: 8, isCompleted: false },
+    { id: 'g2', description: 'Drink 8 glasses of water daily', progress: 8, target: 8, isCompleted: true },
   ],
 };
 
@@ -157,8 +157,26 @@ let MOCK_AWARDS: Record<string, Award[]> = {
   'user1': [
     { id: 'a1', name: 'First Workout', description: 'Completed your first logged activity.', dateAchieved: subDays(today, 10).toISOString() },
     { id: 'a2', name: 'Perfect Week', description: 'Logged an activity every day for 7 days.', dateAchieved: subDays(today, 3).toISOString() },
+    { id: 'a3', name: 'Goal Achiever: Drink 8 glasses of water daily', description: 'You successfully completed a personal goal.', dateAchieved: today.toISOString()},
   ],
 };
+
+const checkAndGrantAwards = async (userId: string, completedGoal: Goal) => {
+    if(!MOCK_AWARDS[userId]) MOCK_AWARDS[userId] = [];
+
+    const awardName = `Goal Achiever: ${completedGoal.description}`;
+    const existingAward = MOCK_AWARDS[userId].find(a => a.name === awardName);
+
+    if(!existingAward) {
+        const newAward: Award = {
+            id: `a${Date.now()}`,
+            name: awardName,
+            description: 'You successfully completed a personal goal.',
+            dateAchieved: new Date().toISOString()
+        };
+        MOCK_AWARDS[userId].push(newAward);
+    }
+}
 
 // Mock data access functions
 export const getUser = async (userId: string): Promise<User | null> => {
@@ -285,8 +303,37 @@ export const deleteRecipe = async (userId: string, recipeId: string): Promise<vo
 };
 
 export const getGoals = async (userId: string): Promise<Goal[]> => {
-  return MOCK_GOALS[userId] || [];
+  return [...(MOCK_GOALS[userId] || [])].sort((a,b) => a.isCompleted === b.isCompleted ? 0 : a.isCompleted ? 1 : -1);
 };
+
+export const addGoal = async (userId: string, goalData: Omit<Goal, 'id'>): Promise<Goal> => {
+    if (!MOCK_GOALS[userId]) MOCK_GOALS[userId] = [];
+    const newGoal: Goal = { ...goalData, id: `g${Date.now()}`};
+    MOCK_GOALS[userId].push(newGoal);
+    return newGoal;
+}
+
+export const updateGoal = async (userId: string, updatedGoal: Goal): Promise<Goal> => {
+    if (!MOCK_GOALS[userId]) throw new Error("User has no goals");
+    const goalIndex = MOCK_GOALS[userId].findIndex(g => g.id === updatedGoal.id);
+    if (goalIndex === -1) throw new Error("Goal not found");
+    
+    const wasCompleted = MOCK_GOALS[userId][goalIndex].isCompleted;
+    MOCK_GOALS[userId][goalIndex] = updatedGoal;
+    
+    // Check if goal was just completed
+    if(updatedGoal.isCompleted && !wasCompleted) {
+        await checkAndGrantAwards(userId, updatedGoal);
+    }
+    return updatedGoal;
+}
+
+export const deleteGoal = async (userId: string, goalId: string): Promise<void> => {
+    if (MOCK_GOALS[userId]) {
+        MOCK_GOALS[userId] = MOCK_GOALS[userId].filter(g => g.id !== goalId);
+    }
+}
+
 
 export const getAwards = async (userId: string): Promise<Award[]> => {
   return MOCK_AWARDS[userId] || [];
