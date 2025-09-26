@@ -15,6 +15,8 @@ import { useState, useEffect } from 'react';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 type RecipeIdea = {
     name: string;
@@ -31,6 +33,7 @@ export default function AiRecipesPage() {
     const [recipeIdeas, setRecipeIdeas] = useState<RecipeIdea[]>([]);
     const [loading, setLoading] = useState(false);
     const [savingRecipe, setSavingRecipe] = useState<string | null>(null);
+    const [userPrompt, setUserPrompt] = useState('');
 
     useEffect(() => {
         if(user) {
@@ -52,7 +55,8 @@ export default function AiRecipesPage() {
         try {
             const result = await generatePantryRecipes({
                 pantryItems: expiringItems.map(({name, quantity, unit}) => ({name, quantity, unit})),
-                healthGoal
+                healthGoal,
+                userPrompt
             });
             setRecipeIdeas(result.recipes);
         } catch (error) {
@@ -70,7 +74,7 @@ export default function AiRecipesPage() {
         if(!user) return;
         setSavingRecipe(idea.name);
         try {
-            const fullRecipe = await generateRecipe({ prompt: `a detailed recipe for "${idea.name}"` });
+            const fullRecipe = await generateRecipe({ prompt: `a detailed recipe for "${idea.name}" that is easy to follow` });
             await addRecipe(user.id, fullRecipe);
             toast({
                 title: 'Recipe Saved!',
@@ -127,9 +131,18 @@ export default function AiRecipesPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="font-headline">Recipe Ideas</CardTitle>
-                            <CardDescription>Generate recipe ideas based on your expiring items and health goal.</CardDescription>
+                            <CardDescription>Generate recipe ideas based on your expiring items, health goal, and preferences.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                             <div className='space-y-2'>
+                                <Label htmlFor='user-prompt'>What are you in the mood for?</Label>
+                                <Textarea 
+                                    id='user-prompt'
+                                    placeholder='e.g., "a quick and easy lunch", "something spicy", "a vegetarian pasta dish"'
+                                    value={userPrompt}
+                                    onChange={e => setUserPrompt(e.target.value)}
+                                />
+                             </div>
                              <Button onClick={handleGenerateRecipes} disabled={loading || expiringItems.length === 0}>
                                 {loading ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -190,7 +203,7 @@ export default function AiRecipesPage() {
                                     <div className="flex flex-col items-center justify-center text-center p-8 border border-dashed rounded-lg">
                                         <CookingPot className="h-12 w-12 text-muted-foreground" />
                                         <h3 className="mt-4 font-semibold">Ready to cook?</h3>
-                                        <p className="text-sm text-muted-foreground mt-1">Click the button to generate some creative recipe ideas!</p>
+                                        <p className="text-sm text-muted-foreground mt-1">Add a description above and click the button to generate some creative recipe ideas!</p>
                                     </div>
                                 )}
                             </div>

@@ -22,6 +22,7 @@ const GeneratePantryRecipesInputSchema = z.object({
     )
     .describe('A list of items currently in the user\u2019s pantry.'),
   healthGoal: z.string().optional().describe('The user\'s current health goal, e.g., "lose weight".'),
+  userPrompt: z.string().optional().describe('A user-provided description of the kind of recipe they want.'),
 });
 export type GeneratePantryRecipesInput = z.infer<typeof GeneratePantryRecipesInputSchema>;
 
@@ -52,6 +53,10 @@ const prompt = ai.definePrompt({
   
   {{#if healthGoal}}
   Keep the user's health goal of "{{healthGoal}}" in mind when creating recipes.
+  {{/if}}
+
+  {{#if userPrompt}}
+  The user has also specified they are looking for: "{{userPrompt}}". Prioritize this request.
   {{/if}}
 
   For each recipe, provide a name, a single emoji, and a short, appetizing description.
