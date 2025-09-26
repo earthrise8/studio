@@ -13,7 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -27,22 +28,22 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { getPantryItems, updatePantryItem } from '@/lib/data';
+import { getPantryItems, updatePantryItem, addPantryItem } from '@/lib/data';
 import type { PantryItem } from '@/lib/types';
-import { PlusCircle, UtensilsCrossed, Edit, Trash2, CalendarIcon, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { PlusCircle, UtensilsCrossed, Edit, Trash2, CalendarIcon, Loader2, ScanLine } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import { Skeleton } from '@/components/ui/skeleton';
-import { differenceInDays, format } from 'date-fns';
+import { differenceInDays, format, addDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const pantryItemSchema = z.object({
-  id: z.string(),
   name: z.string().min(1, 'Item name is required.'),
   quantity: z.coerce.number().min(0, 'Quantity must be a positive number.'),
   unit: z.enum(['units', 'lbs', 'kg', 'g', 'oz', 'ml', 'l']),
@@ -51,15 +52,259 @@ const pantryItemSchema = z.object({
   expirationDate: z.date(),
 });
 
+const editPantryItemSchema = pantryItemSchema.extend({
+    id: z.string(),
+});
+
 type PantryFormValues = z.infer<typeof pantryItemSchema>;
+type EditPantryFormValues = z.infer<typeof editPantryItemSchema>;
+
+function BarcodeScanner({ onBarcodeScan }: { onBarcodeScan: (barcode: string) => void }) {
+    const { toast } = useToast();
+    const [open, setOpen] = useState(false);
+    const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+  
+    useEffect(() => {
+      if (open) {
+        const getCameraPermission = async () => {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            setHasCameraPermission(true);
+  
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
+          } catch (error) {
+            console.error('Error accessing camera:', error);
+            setHasCameraPermission(false);
+            toast({
+              variant: 'destructive',
+              title: 'Camera Access Denied',
+              description: 'Please enable camera permissions in your browser settings to use this feature.',
+            });
+          }
+        };
+        getCameraPermission();
+      } else {
+        // Stop camera stream when dialog is closed
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+      }
+    }, [open, toast]);
+  
+    const handleSimulateScan = () => {
+        const fakeBarcode = `0${Math.floor(100000000000 + Math.random() * 900000000000)}`;
+        toast({
+            title: "Barcode Scanned (Simulated)",
+            description: `Scanned barcode: ${fakeBarcode}`
+        })
+        onBarcodeScan(fakeBarcode);
+        setOpen(false);
+    }
+
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="md:hidden">
+            <ScanLine className="mr-2 h-4 w-4" />
+            Scan Barcode
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Scan Pantry Item</DialogTitle>
+            <DialogDescription>
+              Position the item's barcode in front of the camera.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted playsInline />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-3/4 h-1/2 border-2 border-primary rounded-lg" />
+            </div>
+          </div>
+          {hasCameraPermission === false && (
+            <Alert variant="destructive">
+              <AlertTitle>Camera Access Required</AlertTitle>
+              <AlertDescription>
+                Please allow camera access to use this feature.
+              </AlertDescription>
+            </Alert>
+          )}
+           <Button onClick={handleSimulateScan} disabled={!hasCameraPermission}>Simulate Scan</Button>
+        </DialogContent>
+      </Dialog>
+    );
+}
+
+function AddPantryItemDialog({ onAdd }: { onAdd: (newItem: PantryItem) => void }) {
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+  
+    const form = useForm<PantryFormValues>({
+      resolver: zodResolver(pantryItemSchema),
+      defaultValues: {
+        name: '',
+        quantity: 1,
+        unit: 'units',
+        category: 'Pantry',
+        purchaseDate: new Date(),
+        expirationDate: addDays(new Date(), 7),
+      }
+    });
+
+    const handleBarcodeData = (barcode: string) => {
+        // In a real app, you would look this barcode up.
+        // For now, we'll pre-fill with dummy data.
+        form.setValue("name", `Item ${barcode.substring(0,5)}`);
+        form.setValue("category", "Pantry");
+        setOpen(true); // Open the add dialog after scanning
+    }
+    
+    async function onSubmit(values: PantryFormValues) {
+      if (!user) return;
+      setLoading(true);
+      try {
+        const newItemData = {
+          ...values,
+          purchaseDate: values.purchaseDate.toISOString(),
+          expirationDate: values.expirationDate.toISOString(),
+        };
+        const newItem = await addPantryItem(user.id, newItemData);
+        onAdd(newItem);
+        toast({ title: "Item Added", description: `${newItem.name} was successfully added to your pantry.` });
+        setOpen(false);
+        form.reset();
+      } catch(e) {
+        toast({ variant: 'destructive', title: "Add Failed", description: "Could not add the item." });
+      } finally {
+        setLoading(false);
+      }
+    }
+  
+    return (
+      <>
+        <BarcodeScanner onBarcodeScan={handleBarcodeData} />
+        <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Item
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Pantry Item</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField control={form.control} name="name" render={({field}) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g., Almond Milk" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="quantity" render={({field}) => (
+                    <FormItem>
+                      <FormLabel>Quantity</FormLabel>
+                      <FormControl><Input type="number" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                   <FormField control={form.control} name="unit" render={({field}) => (
+                    <FormItem>
+                      <FormLabel>Unit</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>
+                              {['units', 'lbs', 'kg', 'g', 'oz', 'ml', 'l'].map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                          </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <FormField control={form.control} name="category" render={({field}) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>
+                              {['Produce', 'Dairy', 'Meat', 'Pantry', 'Frozen', 'Other'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="purchaseDate" render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel>Purchase Date</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/>
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                  <FormField control={form.control} name="expirationDate" render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Expiration Date</FormLabel>
+                      <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/>
+                          </PopoverContent>
+                        </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Add Item
+                  </Button>
+                </DialogFooter>
+              </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      </>
+    )
+}
 
 function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: (updatedItem: PantryItem) => void }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<PantryFormValues>({
-    resolver: zodResolver(pantryItemSchema),
+  const form = useForm<EditPantryFormValues>({
+    resolver: zodResolver(editPantryItemSchema),
     defaultValues: {
       id: item.id,
       name: item.name,
@@ -71,7 +316,7 @@ function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: 
     }
   });
   
-  async function onSubmit(values: PantryFormValues) {
+  async function onSubmit(values: EditPantryFormValues) {
     setLoading(true);
     try {
       const updatedItemData = {
@@ -144,6 +389,25 @@ function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: 
                   </FormItem>
                 )} />
               <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="purchaseDate" render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Purchase Date</FormLabel>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                              {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/>
+                        </PopoverContent>
+                      </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )} />
                 <FormField control={form.control} name="expirationDate" render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Expiration Date</FormLabel>
@@ -196,6 +460,10 @@ export default function PantryPage() {
     setItems(currentItems => currentItems.map(item => item.id === updatedItem.id ? updatedItem : item));
   }
 
+  const handleItemAdd = (newItem: PantryItem) => {
+    setItems(currentItems => [...currentItems, newItem]);
+  }
+
   const categories = ['All', 'Produce', 'Dairy', 'Meat', 'Pantry', 'Frozen', 'Other'];
   
   const filteredItems = items.filter(item => filter === 'All' || item.category === filter);
@@ -206,10 +474,9 @@ export default function PantryPage() {
         <h2 className="font-headline text-3xl font-bold tracking-tight">
           Virtual Pantry
         </h2>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Item
-        </Button>
+        <div className="flex gap-2">
+            <AddPantryItemDialog onAdd={handleItemAdd} />
+        </div>
       </div>
 
       <div className="flex space-x-2">
@@ -243,7 +510,7 @@ export default function PantryPage() {
           {filteredItems.map((item) => {
             const daysUntilExpiry = differenceInDays(new Date(item.expirationDate), new Date());
             let expiryBadgeVariant: 'default' | 'secondary' | 'destructive' | 'outline' = 'secondary';
-            if (daysUntilExpiry < 3) expiryBadgeVariant = 'destructive';
+            if (daysUntilExpiry < 1) expiryBadgeVariant = 'destructive';
             else if (daysUntilExpiry < 7) expiryBadgeVariant = 'default';
             
             return (
@@ -282,10 +549,9 @@ export default function PantryPage() {
             <p className="text-sm text-muted-foreground">
               Add your first item to start tracking.
             </p>
-            <Button className="mt-4">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
+            <div className="mt-4">
+                 <AddPantryItemDialog onAdd={handleItemAdd} />
+            </div>
           </div>
         </div>
       )}

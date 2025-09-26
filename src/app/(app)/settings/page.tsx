@@ -56,9 +56,9 @@ export default function SettingsPage() {
     defaultValues: {
       name: user?.name || '',
       email: user?.email || '',
-      height: user?.profile?.height || '',
-      weight: user?.profile?.weight || '',
-      age: user?.profile?.age || '',
+      height: user?.profile?.height || undefined,
+      weight: user?.profile?.weight || undefined,
+      age: user?.profile?.age || undefined,
       activityLevel: user?.profile?.activityLevel || undefined,
       dailyCalorieGoal: user?.profile?.dailyCalorieGoal || 2200,
       healthGoal: user?.profile?.healthGoal || '',
@@ -132,7 +132,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Age</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="25" {...field} />
+                          <Input type="number" placeholder="25" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -145,7 +145,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Height (cm)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="175" {...field} />
+                          <Input type="number" placeholder="175" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -158,7 +158,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Weight (kg)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="70" {...field} />
+                          <Input type="number" placeholder="70" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -193,7 +193,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Daily Calorie Goal (kcal)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="2200" {...field} />
+                          <Input type="number" placeholder="2200" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -206,7 +206,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Primary Health Goal</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Lose weight, build muscle" {...field} />
+                          <Input placeholder="e.g., Lose weight, build muscle" {...field} value={field.value ?? ''} />
                         </FormControl>
                          <FormMessage />
                       </FormItem>

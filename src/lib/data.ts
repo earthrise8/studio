@@ -189,6 +189,18 @@ export const getPantryItems = async (userId: string): Promise<PantryItem[]> => {
   return MOCK_PANTRY[userId] || [];
 };
 
+export const addPantryItem = async (userId: string, itemData: Omit<PantryItem, 'id'>): Promise<PantryItem> => {
+    if (!MOCK_PANTRY[userId]) {
+        MOCK_PANTRY[userId] = [];
+    }
+    const newItem: PantryItem = {
+        ...itemData,
+        id: `p${Date.now()}` // simple unique id
+    };
+    MOCK_PANTRY[userId].push(newItem);
+    return newItem;
+};
+
 export const updatePantryItem = async (itemId: string, updatedData: PantryItem): Promise<PantryItem> => {
   const userEntries = Object.entries(MOCK_PANTRY);
   for(const [userId, items] of userEntries) {
@@ -237,6 +249,9 @@ export const addRecipe = async (userId: string, recipe: Omit<Recipe, 'id' | 'ima
         id: `r${(MOCK_RECIPES[userId] || []).length + 1}`,
         imageUrl: `https://picsum.photos/seed/newRecipe${Math.random()}/600/400`
     };
+    if (!MOCK_RECIPES[userId]) {
+        MOCK_RECIPES[userId] = [];
+    }
     MOCK_RECIPES[userId].push(newRecipe);
     return newRecipe;
 }
