@@ -24,7 +24,7 @@ export default function SignupPage() {
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Already have an account?{' '}
           <Link href="/login" className="font-semibold text-primary/90 hover:text-primary">
-            Login
+            Log in
           </Link>
         </p>
       </CardContent>

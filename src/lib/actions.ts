@@ -59,14 +59,15 @@ export async function signup(values: z.infer<typeof signupSchema>) {
       return { success: false, error: 'Invalid fields!' };
     }
 
-    const { email } = validatedFields.data;
+    const { email, password } = validatedFields.data;
+    const name = email.split('@')[0];
 
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
       return { success: false, error: 'Email already in use!' };
     }
 
-    const newUser = await createUser(email, email.split('@')[0]);
+    const newUser = await createUser(email, name);
 
     // Set a cookie to simulate session
     cookies().set('session_userId', newUser.id, {
@@ -118,9 +119,7 @@ export async function logout() {
 export async function getCurrentUser(): Promise<User | null> {
   const userId = cookies().get('session_userId')?.value;
   if (!userId) {
-    // For demo purposes, return a default user if not logged in.
-    // In a real app, you'd return null.
-    return getUser('user1');
+    return null;
   }
   const user = await getUser(userId);
   return user;

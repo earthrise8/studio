@@ -8,12 +8,8 @@ export function middleware(request: NextRequest) {
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/signup');
   const isAppPage =
     !isAuthPage &&
-    !['/', '/api'].some(p => pathname.startsWith(p));
+    !['/', '/api'].some(p => pathname.startsWith(p) || p === pathname);
   
-  // For demo purpose, allow access to /dashboard even if not logged in
-  if (pathname === '/dashboard') {
-    return NextResponse.next();
-  }
 
   if (isAuthPage && sessionCookie) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
