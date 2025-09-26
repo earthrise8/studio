@@ -87,16 +87,15 @@ export function AuthForm({ type }: AuthFormProps) {
             ? 'You have been successfully logged in.'
             : 'Your account has been created.',
       });
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/dashboard';
     } else {
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
         description: result.error,
       });
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   async function handleGoogleSignIn() {
@@ -107,16 +106,15 @@ export function AuthForm({ type }: AuthFormProps) {
         title: 'Welcome!',
         description: 'You have been successfully signed in with Google.',
       });
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/dashboard';
     } else {
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
         description: result.error,
       });
+      setIsGoogleLoading(false);
     }
-    setIsGoogleLoading(false);
   }
 
   return (
