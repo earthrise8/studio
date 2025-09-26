@@ -32,10 +32,14 @@ export default function LogsPage() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') || 'food';
 
-  const [date, setDate] = useState<Date>(new Date());
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setDate(new Date());
+  }, []);
 
   useEffect(() => {
     if (user && date) {
@@ -57,9 +61,9 @@ export default function LogsPage() {
       <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="font-headline">{type === 'food' ? 'Food Log' : 'Activity Log'}</CardTitle>
-            <CardDescription>
+            {date && <CardDescription>
               Entries for {format(date, 'PPP')}
-            </CardDescription>
+            </CardDescription>}
           </div>
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
