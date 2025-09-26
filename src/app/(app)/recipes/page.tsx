@@ -15,12 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { getRecipes } from '@/lib/data';
 import type { Recipe } from '@/lib/types';
-import { ChefHat, PlusCircle, Trash2, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { ChefHat, PlusCircle, Trash2, Link as LinkIcon, Loader2, Sparkles, Search } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import Link from 'next/link';
 
@@ -29,7 +31,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { importRecipeFromUrl } from '@/ai/flows/import-recipe-from-url';
+import { generateRecipe } from '@/ai/flows/generate-recipe';
 import { useToast } from '@/hooks/use-toast';
 import { addRecipe } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -38,13 +42,18 @@ const importSchema = z.object({
   url: z.string().url({ message: 'Please enter a valid URL.' }),
 });
 
-function ImportRecipeDialog() {
+const generateSchema = z.object({
+    prompt: z.string().min(10, { message: 'Please describe the recipe you want to create (min. 10 characters).' }),
+});
+
+function ImportRecipeDialog({ onRecipeAdd }: { onRecipeAdd: () => void }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const form = useForm<z.infer<typeof importSchema>>({
     resolver: zodResolver(importSchema),
+    defaultValues: { url: '' },
   });
 
   async function onSubmit(values: z.infer<typeof importSchema>) {
@@ -66,6 +75,7 @@ function ImportRecipeDialog() {
         title: 'Recipe Imported!',
         description: `Successfully imported "${recipeDetails.name}".`,
       });
+      onRecipeAdd();
       form.reset();
       setOpen(false);
     } catch (error) {
@@ -113,37 +123,137 @@ function ImportRecipeDialog() {
   )
 }
 
+function GenerateRecipeDialog({ onRecipeAdd }: { onRecipeAdd: () => void }) {
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(false);
+    const [open, setOpen] = useState(false);
+    const form = useForm<z.infer<typeof generateSchema>>({
+      resolver: zodResolver(generateSchema),
+      defaultValues: { prompt: '' },
+    });
+  
+    async function onSubmit(values: z.infer<typeof generateSchema>) {
+      if(!user) return;
+  
+      setLoading(true);
+      try {
+        const recipeDetails = await generateRecipe({ prompt: values.prompt });
+        await addRecipe(user.id, {
+          name: recipeDetails.name,
+          description: recipeDetails.description || 'Generated recipe',
+          ingredients: recipeDetails.ingredients,
+          instructions: recipeDetails.instructions,
+          prepTime: recipeDetails.prepTime,
+          cookTime: recipeDetails.cookTime,
+          totalTime: recipeDetails.totalTime
+        });
+        toast({
+          title: 'Recipe Generated!',
+          description: `Successfully created "${recipeDetails.name}".`,
+        });
+        onRecipeAdd();
+        form.reset();
+        setOpen(false);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Generation Failed',
+          description: 'Could not generate a recipe. Please try a different prompt.',
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+  
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+              <Button>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate with AI
+              </Button>
+          </DialogTrigger>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Generate Recipe with AI</DialogTitle>
+                  <DialogDescription>Describe the kind of recipe you'd like to create.</DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <FormField control={form.control} name="prompt" render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Recipe Idea</FormLabel>
+                              <FormControl>
+                                  <Textarea placeholder="e.g., A quick and healthy vegan pasta salad for lunch" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )} />
+                      <DialogFooter>
+                        <Button type="submit" disabled={loading}>
+                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Generate
+                        </Button>
+                      </DialogFooter>
+                  </form>
+              </Form>
+          </DialogContent>
+      </Dialog>
+    )
+  }
+
 
 export default function RecipesPage() {
   const { user } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchRecipes = () => {
+    if (user) {
+        setLoading(true);
+        getRecipes(user.id).then((data) => {
+          setRecipes(data);
+          setLoading(false);
+        });
+      }
+  }
 
   useEffect(() => {
-    if (user) {
-      getRecipes(user.id).then((data) => {
-        setRecipes(data);
-        setLoading(false);
-      });
-    }
+    fetchRecipes();
   }, [user]);
+
+  const filteredRecipes = useMemo(() => {
+    if (!searchTerm) return recipes;
+    return recipes.filter(recipe => 
+        recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        recipe.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [recipes, searchTerm]);
 
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <h2 className="font-headline text-3xl font-bold tracking-tight">
           My Recipes
         </h2>
         <div className="flex gap-2">
-            <ImportRecipeDialog />
-            <Button asChild>
-                <Link href="/advisor">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Generate with AI
-                </Link>
-            </Button>
+            <ImportRecipeDialog onRecipeAdd={fetchRecipes} />
+            <GenerateRecipeDialog onRecipeAdd={fetchRecipes} />
         </div>
       </div>
+
+    <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <Input 
+            placeholder="Search recipes..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+        />
+    </div>
+
 
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -155,9 +265,9 @@ export default function RecipesPage() {
             </Card>
           ))}
         </div>
-      ) : recipes.length > 0 ? (
+      ) : filteredRecipes.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {recipes.map((recipe) => (
+          {filteredRecipes.map((recipe) => (
             <Dialog key={recipe.id}>
               <DialogTrigger asChild>
                 <Card className="cursor-pointer hover:shadow-lg transition-shadow">
@@ -217,17 +327,11 @@ export default function RecipesPage() {
           <div className="flex flex-col items-center gap-1 text-center py-20">
             <ChefHat className="h-16 w-16 text-muted-foreground" />
             <h3 className="mt-4 text-2xl font-semibold font-headline">
-              No Recipes Saved
+              No Recipes Found
             </h3>
             <p className="text-sm text-muted-foreground">
-              Generate recipes with AI or import them to get started.
+              {searchTerm ? `No recipes match "${searchTerm}".` : "Generate or import recipes to get started."}
             </p>
-            <Button className="mt-4" asChild>
-                <Link href="/advisor">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Generate with AI
-                </Link>
-            </Button>
           </div>
         </div>
       )}
