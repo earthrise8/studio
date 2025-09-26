@@ -10,13 +10,13 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -229,19 +229,19 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
                 <div className="flex items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                        <FormLabel>Dark Mode</FormLabel>
-                        <FormDescription>
+                        <Label className="text-base">Dark Mode</Label>
+                        <p className="text-sm text-muted-foreground">
                             Enable dark theme for the application.
-                        </FormDescription>
+                        </p>
                     </div>
                     <Switch />
                 </div>
                  <div className="flex items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                        <FormLabel>Compact View</FormLabel>
-                        <FormDescription>
+                        <Label className="text-base">Compact View</Label>
+                        <p className="text-sm text-muted-foreground">
                             Reduce padding and margins for a denser layout.
-                        </FormDescription>
+                        </p>
                     </div>
                     <Switch />
                 </div>
