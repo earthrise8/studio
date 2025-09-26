@@ -16,7 +16,8 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-  DialogFooter
+  DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { getRecipes } from '@/lib/data';
 import type { Recipe } from '@/lib/types';
