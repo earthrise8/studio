@@ -13,6 +13,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarProvider,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import Logo from '@/components/logo';
 import {
@@ -24,6 +25,7 @@ import {
   Trophy,
   LogOut,
   Settings,
+  LifeBuoy,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-provider';
 import { usePathname, useRouter } from 'next/navigation';
@@ -98,6 +100,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
             </div>
           ) : user ? (
+            <>
+            <SidebarSeparator />
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                         <a href="mailto:support@fitropolis.com">
+                            <LifeBuoy />
+                            <span>Contact Support</span>
+                        </a>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -143,6 +157,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           ) : null}
         </SidebarFooter>
       </Sidebar>
