@@ -184,6 +184,26 @@ export const createUser = async(email: string, name:string): Promise<User> => {
     return newUser;
 }
 
+export const updateUserProfile = async (userId: string, data: Partial<User>): Promise<User> => {
+  if (!MOCK_USERS[userId]) {
+    throw new Error('User not found');
+  }
+
+  // Update name and email if provided
+  if (data.name) MOCK_USERS[userId].name = data.name;
+  if (data.email) MOCK_USERS[userId].email = data.email;
+
+  // Update profile if provided
+  if (data.profile) {
+    MOCK_USERS[userId].profile = {
+      ...MOCK_USERS[userId].profile,
+      ...data.profile,
+    };
+  }
+
+  return MOCK_USERS[userId];
+};
+
 
 export const getPantryItems = async (userId: string): Promise<PantryItem[]> => {
   return MOCK_PANTRY[userId] || [];

@@ -29,9 +29,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth-provider';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { updateUserProfile } from '@/lib/data';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -47,35 +48,63 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      name: user?.name || '',
-      email: user?.email || '',
-      height: user?.profile?.height || undefined,
-      weight: user?.profile?.weight || undefined,
-      age: user?.profile?.age || undefined,
-      activityLevel: user?.profile?.activityLevel || undefined,
-      dailyCalorieGoal: user?.profile?.dailyCalorieGoal || 2200,
-      healthGoal: user?.profile?.healthGoal || '',
+      name: '',
+      email: '',
+      height: undefined,
+      weight: undefined,
+      age: undefined,
+      activityLevel: undefined,
+      dailyCalorieGoal: undefined,
+      healthGoal: '',
     },
   });
 
-  function onSubmit(data: ProfileFormValues) {
-    setLoading(true);
-    console.log('Updating profile...', data);
-    // Here you would typically call an API to update the user's profile
-    setTimeout(() => {
-      toast({
-        title: 'Profile Updated',
-        description: 'Your settings have been saved.',
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.name || '',
+        email: user.email || '',
+        height: user.profile?.height || undefined,
+        weight: user.profile?.weight || undefined,
+        age: user.profile?.age || undefined,
+        activityLevel: user.profile?.activityLevel || undefined,
+        dailyCalorieGoal: user.profile?.dailyCalorieGoal || undefined,
+        healthGoal: user.profile?.healthGoal || '',
       });
-      setLoading(false);
-    }, 1500);
+    }
+  }, [user, form]);
+
+  async function onSubmit(data: ProfileFormValues) {
+    if (!user) return;
+    setLoading(true);
+    try {
+        const { name, email, ...profileData} = data;
+        await updateUserProfile(user.id, {
+            name,
+            email,
+            profile: profileData
+        });
+        await refreshUser(); // Refresh user data in the app
+        toast({
+            title: 'Profile Updated',
+            description: 'Your settings have been saved.',
+        });
+    } catch(error) {
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: 'Something went wrong while updating your profile.',
+        });
+    } finally {
+        setLoading(false);
+    }
   }
 
   return (
@@ -132,7 +161,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Age</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="25" {...field} value={field.value ?? ''} />
+                          <Input type="number" placeholder="25" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.valueAsNumber)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -145,7 +174,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Height (cm)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="175" {...field} value={field.value ?? ''} />
+                          <Input type="number" placeholder="175" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.valueAsNumber)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -158,7 +187,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Weight (kg)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="70" {...field} value={field.value ?? ''} />
+                          <Input type="number" placeholder="70" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.valueAsNumber)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -170,7 +199,7 @@ export default function SettingsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Physical Activity Level</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                                 <SelectTrigger><SelectValue placeholder="Select your activity level" /></SelectTrigger>
                             </FormControl>
@@ -193,7 +222,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Daily Calorie Goal (kcal)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="2200" {...field} value={field.value ?? ''} />
+                          <Input type="number" placeholder="2200" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.valueAsNumber)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

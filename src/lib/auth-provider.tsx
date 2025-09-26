@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User } from '@/lib/types';
 import { getCurrentUser } from '@/lib/actions';
 
@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   login: (user: User) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,21 +22,22 @@ export default function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const currentUser = await getCurrentUser();
-        if (currentUser) {
-          setUser(currentUser);
-        }
-      } catch (error) {
-        console.error('Failed to fetch current user', error);
-      } finally {
-        setLoading(false);
+  const checkUser = useCallback(async () => {
+    try {
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
       }
-    };
-    checkUser();
+    } catch (error) {
+      console.error('Failed to fetch current user', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    checkUser();
+  }, [checkUser]);
 
   const login = (user: User) => {
     setUser(user);
@@ -44,9 +46,14 @@ export default function AuthProvider({
   const logout = () => {
     setUser(null);
   };
+  
+  const refreshUser = async () => {
+    setLoading(true);
+    await checkUser();
+  };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
