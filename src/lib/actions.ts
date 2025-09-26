@@ -84,17 +84,16 @@ export async function signup(values: z.infer<typeof signupSchema>) {
 }
 
 export async function signInWithGoogle(): Promise<{ success: boolean; error?: string }> {
-    // This is a mock implementation. In a real app, the client would get an ID token
-    // from Firebase SDK and send it to the server. The server would verify it and
-    // create a session cookie. Here, we'll just simulate this.
+    // This is a mock implementation.
     try {
-        const googleUserEmail = 'new.google.user@example.com';
-        const googleUserName = 'Googler';
+        // Create a unique user each time for the simulation
+        const uniqueEmail = `google.user.${Date.now()}@example.com`;
+        const userName = `Googler${Date.now().toString().slice(-4)}`;
         
-        let user = await getUserByEmail(googleUserEmail);
+        let user = await getUserByEmail(uniqueEmail);
 
         if (!user) {
-            user = await createUser(googleUserEmail, googleUserName);
+            user = await createUser(uniqueEmail, userName);
         }
 
         cookies().set('session_userId', user.id, {
