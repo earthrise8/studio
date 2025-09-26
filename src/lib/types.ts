@@ -8,6 +8,10 @@ export type User = {
 export type UserProfile = {
   dailyCalorieGoal: number;
   healthGoal: string;
+  height?: number;
+  weight?: number;
+  age?: number;
+  activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
 };
 
 export type PantryItem = {

@@ -21,6 +21,10 @@ let MOCK_USERS: Record<string, User> = {
     profile: {
       dailyCalorieGoal: 2200,
       healthGoal: 'Lose weight and build muscle',
+      age: 30,
+      height: 178,
+      weight: 75,
+      activityLevel: 'moderate'
     },
   },
 };
@@ -184,6 +188,18 @@ export const createUser = async(email: string, name:string): Promise<User> => {
 export const getPantryItems = async (userId: string): Promise<PantryItem[]> => {
   return MOCK_PANTRY[userId] || [];
 };
+
+export const updatePantryItem = async (itemId: string, updatedData: PantryItem): Promise<PantryItem> => {
+  const userEntries = Object.entries(MOCK_PANTRY);
+  for(const [userId, items] of userEntries) {
+      const itemIndex = items.findIndex(i => i.id === itemId);
+      if (itemIndex !== -1) {
+          MOCK_PANTRY[userId][itemIndex] = { ...MOCK_PANTRY[userId][itemIndex], ...updatedData };
+          return MOCK_PANTRY[userId][itemIndex];
+      }
+  }
+  throw new Error("Item not found");
+}
 
 export const getFoodLogs = async (userId: string, date: string): Promise<FoodLog[]> => {
   return (MOCK_FOOD_LOGS[userId] || []).filter(log => log.date === date);

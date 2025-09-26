@@ -1,6 +1,5 @@
 'use client';
 
-import { generatePantryRecipes } from '@/ai/flows/generate-pantry-recipes';
 import { getPersonalizedHealthAdvice } from '@/ai/flows/get-personalized-health-advice';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,50 +14,19 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth-provider';
-import { getPantryItems, getRecentActivityLogs, getRecentFoodLogs } from '@/lib/data';
+import { getRecentActivityLogs, getRecentFoodLogs } from '@/lib/data';
 import { Check, Lightbulb, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
-type RecipeIdea = { name: string; description: string };
 type HealthAdvice = { advice: string, goals: string[] };
 
 export default function AdvisorPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [recipeIdeas, setRecipeIdeas] = useState<RecipeIdea[]>([]);
-  const [recipeLoading, setRecipeLoading] = useState(false);
-
   const [healthGoal, setHealthGoal] = useState(user?.profile?.healthGoal || '');
   const [adviceResult, setAdviceResult] = useState<HealthAdvice | null>(null);
   const [adviceLoading, setAdviceLoading] = useState(false);
-
-  const handleGenerateRecipes = async () => {
-    if (!user) return;
-    setRecipeLoading(true);
-    setRecipeIdeas([]);
-    try {
-      const pantryItems = await getPantryItems(user.id);
-      if (pantryItems.length === 0) {
-        toast({
-          variant: 'destructive',
-          title: 'Your pantry is empty!',
-          description: 'Add items to your pantry to get recipe ideas.',
-        });
-        return;
-      }
-      const result = await generatePantryRecipes({ pantryItems });
-      setRecipeIdeas(result.recipes);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error Generating Recipes',
-        description: 'Something went wrong. Please try again.',
-      });
-    } finally {
-      setRecipeLoading(false);
-    }
-  };
 
   const handleGetAdvice = async () => {
     if (!user || !healthGoal) {
@@ -99,50 +67,7 @@ export default function AdvisorPage() {
       <h2 className="font-headline text-3xl font-bold tracking-tight">
         AI Advisor
       </h2>
-      <div className="grid gap-8 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Recipe Generator</CardTitle>
-            <CardDescription>
-              Get recipe ideas based on what&apos;s in your pantry.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={handleGenerateRecipes} disabled={recipeLoading}>
-              {recipeLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Lightbulb className="mr-2 h-4 w-4" />
-              )}
-              Generate Recipes
-            </Button>
-            <div className="mt-6 space-y-4">
-              {recipeLoading &&
-                [...Array(3)].map((_, i) => (
-                  <Card key={i}>
-                    <CardHeader>
-                      <Skeleton className="h-5 w-3/4" />
-                    </CardHeader>
-                    <CardContent>
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-5/6 mt-2" />
-                    </CardContent>
-                  </Card>
-                ))}
-              {recipeIdeas.map((idea) => (
-                <Card key={idea.name}>
-                  <CardHeader>
-                    <CardTitle>{idea.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p>{idea.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        
+      <div className="grid gap-8">
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Health Advisor & Goals</CardTitle>
