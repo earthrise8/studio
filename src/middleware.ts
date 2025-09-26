@@ -5,11 +5,10 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session_userId');
 
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/signup');
-  const isAppPage =
-    !isAuthPage &&
-    !['/', '/api'].some(p => pathname.startsWith(p) || p === pathname);
-  
+  const isAuthPage = pathname === '/login' || pathname === '/signup';
+
+  // All pages inside /app/* are considered app pages, except auth pages
+  const isAppPage = /^\/(\w+)/.test(pathname) && !isAuthPage && pathname !== '/';
 
   if (isAuthPage && sessionCookie) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
@@ -23,5 +22,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // This matcher is crucial to ensure the middleware only runs on actual page routes
+  // and not on Next.js internal paths or static files.
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
