@@ -37,7 +37,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { logout } from '@/lib/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 
@@ -45,12 +44,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-
-  const handleLogout = async () => {
-    await logout();
-    router.push('/');
-    router.refresh();
-  };
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -110,51 +103,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
             </SidebarMenu>
             <SidebarSeparator />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="flex h-auto w-full items-center justify-start gap-3 p-2 text-left"
-                >
-                  <Avatar>
-                    <AvatarImage
-                      src={`https://i.pravatar.cc/150?u=${user.id}`}
-                      alt={user.name}
-                    />
-                    <AvatarFallback>
-                      {user.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="w-full truncate">
-                    <p className="font-semibold">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {user.name}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/settings">
-                    <Settings className="mr-2" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-3 p-2 text-left">
+                <Avatar>
+                <AvatarImage
+                    src={`https://i.pravatar.cc/150?u=${user.id}`}
+                    alt={user.name}
+                />
+                <AvatarFallback>
+                    {user.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+                </Avatar>
+                <div className="w-full truncate">
+                <p className="font-semibold">{user.name}</p>
+                <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
+            </div>
             </>
           ) : null}
         </SidebarFooter>

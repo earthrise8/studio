@@ -7,8 +7,6 @@ import { getCurrentUser } from '@/lib/actions';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (user: User) => void;
-  logout: () => void;
   refreshUser: () => Promise<void>;
 }
 
@@ -24,6 +22,7 @@ export default function AuthProvider({
 
   const checkUser = useCallback(async () => {
     try {
+      // We always get the default user now
       const currentUser = await getCurrentUser();
       if (currentUser) {
         setUser(currentUser);
@@ -38,14 +37,6 @@ export default function AuthProvider({
   useEffect(() => {
     checkUser();
   }, [checkUser]);
-
-  const login = (user: User) => {
-    setUser(user);
-  };
-
-  const logout = () => {
-    setUser(null);
-  };
   
   const refreshUser = async () => {
     setLoading(true);
@@ -53,7 +44,7 @@ export default function AuthProvider({
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
