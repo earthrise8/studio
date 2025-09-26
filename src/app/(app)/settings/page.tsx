@@ -56,9 +56,9 @@ export default function SettingsPage() {
     defaultValues: {
       name: user?.name || '',
       email: user?.email || '',
-      height: user?.profile?.height || undefined,
-      weight: user?.profile?.weight || undefined,
-      age: user?.profile?.age || undefined,
+      height: user?.profile?.height || '',
+      weight: user?.profile?.weight || '',
+      age: user?.profile?.age || '',
       activityLevel: user?.profile?.activityLevel || undefined,
       dailyCalorieGoal: user?.profile?.dailyCalorieGoal || 2200,
       healthGoal: user?.profile?.healthGoal || '',
