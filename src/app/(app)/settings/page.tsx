@@ -37,11 +37,11 @@ import { updateUserProfile } from '@/lib/data';
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email(),
-  height: z.coerce.number().positive().optional(),
-  weight: z.coerce.number().positive().optional(),
-  age: z.coerce.number().positive().int().optional(),
+  height: z.coerce.number().positive().optional().or(z.literal('')),
+  weight: z.coerce.number().positive().optional().or(z.literal('')),
+  age: z.coerce.number().positive().int().optional().or(z.literal('')),
   activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'very-active']).optional(),
-  dailyCalorieGoal: z.coerce.number().positive().int().optional(),
+  dailyCalorieGoal: z.coerce.number().positive().int().optional().or(z.literal('')),
   healthGoal: z.string().optional(),
 });
 
@@ -57,11 +57,11 @@ export default function SettingsPage() {
     defaultValues: {
       name: '',
       email: '',
-      height: undefined,
-      weight: undefined,
-      age: undefined,
+      height: '',
+      weight: '',
+      age: '',
       activityLevel: undefined,
-      dailyCalorieGoal: undefined,
+      dailyCalorieGoal: '',
       healthGoal: '',
     },
   });
@@ -71,11 +71,11 @@ export default function SettingsPage() {
       form.reset({
         name: user.name || '',
         email: user.email || '',
-        height: user.profile?.height || undefined,
-        weight: user.profile?.weight || undefined,
-        age: user.profile?.age || undefined,
+        height: user.profile?.height || '',
+        weight: user.profile?.weight || '',
+        age: user.profile?.age || '',
         activityLevel: user.profile?.activityLevel || undefined,
-        dailyCalorieGoal: user.profile?.dailyCalorieGoal || undefined,
+        dailyCalorieGoal: user.profile?.dailyCalorieGoal || '',
         healthGoal: user.profile?.healthGoal || '',
       });
     }
@@ -86,10 +86,20 @@ export default function SettingsPage() {
     setLoading(true);
     try {
         const { name, email, ...profileData} = data;
+        
+        // Convert empty strings to undefined for optional number fields
+        const profileToUpdate = {
+          ...profileData,
+          height: profileData.height === '' ? undefined : Number(profileData.height),
+          weight: profileData.weight === '' ? undefined : Number(profileData.weight),
+          age: profileData.age === '' ? undefined : Number(profileData.age),
+          dailyCalorieGoal: profileData.dailyCalorieGoal === '' ? undefined : Number(profileData.dailyCalorieGoal),
+        };
+
         await updateUserProfile(user.id, {
             name,
             email,
-            profile: profileData
+            profile: profileToUpdate
         });
         await refreshUser(); // Refresh user data in the app
         toast({
@@ -161,7 +171,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Age</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="25" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                          <Input type="number" placeholder="25" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -174,7 +184,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Height (cm)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="175" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                          <Input type="number" placeholder="175" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -187,7 +197,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Weight (kg)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="70" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                          <Input type="number" placeholder="70" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -222,7 +232,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Daily Calorie Goal (kcal)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="2200" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                          <Input type="number" placeholder="2200" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -8,6 +8,9 @@ import {
   getUser,
 } from './data';
 import type { User } from './types';
+import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { app } from './firebase';
+
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -78,6 +81,35 @@ export async function signup(values: z.infer<typeof signupSchema>) {
     return { success: false, error: 'Something went wrong.' };
   }
 }
+
+export async function signInWithGoogle(): Promise<{ success: boolean; error?: string }> {
+    // This is a mock implementation. In a real app, the client would get an ID token
+    // from Firebase SDK and send it to the server. The server would verify it and
+    // create a session cookie. Here, we'll just simulate this.
+    try {
+        const googleUserEmail = 'new.google.user@example.com';
+        const googleUserName = 'Googler';
+        
+        let user = await getUserByEmail(googleUserEmail);
+
+        if (!user) {
+            user = await createUser(googleUserEmail, googleUserName);
+        }
+
+        cookies().set('session_userId', user.id, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 60 * 24 * 7, // 1 week
+            path: '/',
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Google Sign-In Error:", error);
+        return { success: false, error: 'Something went wrong during Google Sign-In.' };
+    }
+}
+
 
 export async function logout() {
   cookies().delete('session_userId');
