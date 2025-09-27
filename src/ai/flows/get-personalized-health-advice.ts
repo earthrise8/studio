@@ -22,7 +22,10 @@ export type GetPersonalizedHealthAdviceInput = z.infer<
 const GetPersonalizedHealthAdviceOutputSchema = z.object({
   advice: z.string().describe('Personalized health advice based on user data.'),
   goals: z.array(
-    z.string().describe('Actionable goals to achieve the health goal.')
+    z.object({
+        description: z.string().describe('A specific, actionable goal to achieve the health goal.'),
+        target: z.coerce.number().describe('A measurable target for the goal (e.g., 30 for 30 minutes, 5 for 5 times).'),
+    }).describe('A specific, actionable goal with a measurable target.')
   ),
 });
 export type GetPersonalizedHealthAdviceOutput = z.infer<
@@ -39,7 +42,7 @@ const prompt = ai.definePrompt({
   name: 'getPersonalizedHealthAdvicePrompt',
   input: {schema: GetPersonalizedHealthAdviceInputSchema},
   output: {schema: GetPersonalizedHealthAdviceOutputSchema},
-  prompt: `You are a personal health advisor. Provide personalized advice and generate actionable goals based on the user's food and activity logs and stated health goal.\n\nFood Logs: {{{foodLogs}}}\nActivity Logs: {{{activityLogs}}}\nHealth Goal: {{{healthGoal}}}\n\nProvide advice and 2-3 specific, actionable goals.
+  prompt: `You are a personal health advisor. Provide personalized advice and generate 2-3 specific, actionable goals based on the user's food and activity logs and stated health goal.\n\nFood Logs: {{{foodLogs}}}\nActivity Logs: {{{activityLogs}}}\nHealth Goal: {{{healthGoal}}}\n\nFor each goal, provide a clear description and a numeric target. For example, for a goal "Exercise for 30 minutes, 3 times a week", a good description would be "Exercise for 30 minutes" and the target would be 3.
 `,
 });
 

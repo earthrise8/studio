@@ -14,11 +14,13 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth-provider';
-import { getRecentActivityLogs, getRecentFoodLogs } from '@/lib/data';
-import { Check, Lightbulb, Loader2 } from 'lucide-react';
+import { addGoal, getRecentActivityLogs, getRecentFoodLogs } from '@/lib/data';
+import { Check, Lightbulb, Loader2, Plus } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 
-type HealthAdvice = { advice: string, goals: string[] };
+type GoalSuggestion = { description: string, target: number };
+type HealthAdvice = { advice: string, goals: GoalSuggestion[] };
 
 export default function AdvisorPage() {
   const { user } = useAuth();
@@ -27,6 +29,8 @@ export default function AdvisorPage() {
   const [healthGoal, setHealthGoal] = useState(user?.profile?.healthGoal || '');
   const [adviceResult, setAdviceResult] = useState<HealthAdvice | null>(null);
   const [adviceLoading, setAdviceLoading] = useState(false);
+  const [savingGoal, setSavingGoal] = useState<string | null>(null);
+
 
   const handleGetAdvice = async () => {
     if (!user || !healthGoal) {
@@ -59,6 +63,31 @@ export default function AdvisorPage() {
         });
     } finally {
         setAdviceLoading(false);
+    }
+  }
+
+  const handleSaveGoal = async (goal: GoalSuggestion) => {
+    if(!user) return;
+    setSavingGoal(goal.description);
+    try {
+        await addGoal(user.id, {
+            ...goal,
+            progress: 0,
+            isCompleted: false,
+        });
+        toast({
+            title: 'Goal Saved!',
+            description: 'Your new goal has been added to your dashboard.',
+            action: <Button asChild variant="secondary"><Link href="/dashboard">View Dashboard</Link></Button>
+        });
+    } catch(error) {
+         toast({
+            variant: 'destructive',
+            title: 'Error Saving Goal',
+            description: 'Could not save the goal. Please try again.',
+        });
+    } finally {
+        setSavingGoal(null);
     }
   }
 
@@ -106,9 +135,23 @@ export default function AdvisorPage() {
                         <CardContent>
                             <ul className="space-y-2">
                                 {adviceResult.goals.map((goal, i) => (
-                                    <li key={i} className="flex items-start gap-2">
-                                        <Check className="mt-1 h-4 w-4 text-primary" />
-                                        <span>{goal}</span>
+                                    <li key={i} className="flex items-center justify-between gap-2 p-2 rounded-md border">
+                                        <div className="flex items-start gap-2">
+                                            <Check className="mt-1 h-4 w-4 text-primary" />
+                                            <span>{goal.description} (Target: {goal.target})</span>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleSaveGoal(goal)}
+                                            disabled={savingGoal === goal.description}
+                                        >
+                                            {savingGoal === goal.description ? (
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Plus className="mr-2 h-4 w-4" />
+                                            )}
+                                            Save Goal
+                                        </Button>
                                     </li>
                                 ))}
                             </ul>
