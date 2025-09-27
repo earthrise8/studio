@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -26,7 +27,7 @@ export default function AuthProvider({
 
   const checkUser = useCallback(async () => {
     // Public pages that don't require loading the user
-    const publicPaths = ['/login', '/signup', '/'];
+    const publicPaths = ['/login', '/signup', '/', '/signup-success', '/forgot-password'];
     if (publicPaths.includes(pathname)) {
         setLoading(false);
         setUser(null); // Ensure user is null on public pages
@@ -39,17 +40,15 @@ export default function AuthProvider({
       if (currentUser) {
         setUser(currentUser);
       } else {
-        // If no user is found and we are on a protected page, redirect to login
-        router.push('/login');
+        setUser(null);
       }
     } catch (error) {
       console.error('Failed to fetch current user', error);
       setUser(null);
-      router.push('/login');
     } finally {
       setLoading(false);
     }
-  }, [pathname, router]);
+  }, [pathname]);
 
   useEffect(() => {
     checkUser();
