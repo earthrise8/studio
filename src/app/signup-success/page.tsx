@@ -1,8 +1,8 @@
 
 'use client';
 
-import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
 import Link from 'next/link';
@@ -13,9 +13,18 @@ import { useToast } from '@/hooks/use-toast';
 
 function SignupSuccessContent() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const code = searchParams.get('code');
     const [copied, setCopied] = useState(false);
     const { toast } = useToast();
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            router.push('/dashboard');
+        }, 10000); // 10 seconds
+
+        return () => clearTimeout(timer); // Cleanup timer on component unmount
+    }, [router]);
 
     const handleCopy = () => {
         if (code) {
@@ -51,7 +60,7 @@ function SignupSuccessContent() {
         <h1 className="text-2xl font-bold mb-2 font-headline">Your Account is Ready!</h1>
         <p className="text-muted-foreground mb-6">
           Welcome to Fitropolis! Here is your unique Access Code. 
-          <strong className="text-foreground"> Please save it in a safe place.</strong> You will need it to log in.
+          <strong className="text-foreground"> Please save it in a safe place.</strong> You will need it to log in. You will be redirected to the dashboard in 10 seconds.
         </p>
 
         <Card className="text-left mb-6">
