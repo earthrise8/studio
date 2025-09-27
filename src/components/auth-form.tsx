@@ -8,8 +8,6 @@ import { Card, CardContent } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 function SubmitButton({ type }: { type: 'login' | 'signup' }) {
@@ -26,14 +24,6 @@ function SubmitButton({ type }: { type: 'login' | 'signup' }) {
 export default function AuthForm({ type }: { type: 'login' | 'signup' }) {
   const action = type === 'login' ? login : signup;
   const [state, formAction] = useActionState(action, null);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (state?.error === null) {
-      // Use window.location for a full page refresh to ensure middleware runs
-      window.location.href = '/dashboard';
-    }
-  }, [state, router]);
 
   return (
     <Card>

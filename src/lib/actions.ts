@@ -8,6 +8,7 @@ import {
   getUser,
 } from './data';
 import type { User } from './types';
+import { redirect } from 'next/navigation';
 
 const lucia = {
     // In a real app, this would be a proper Lucia instance.
@@ -49,8 +50,11 @@ export async function login(
     const sessionCookie = lucia.createSessionCookie(session.id);
     cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
     
-    return { error: null };
+    return redirect('/dashboard');
   } catch (e: any) {
+    if (e.message === 'NEXT_REDIRECT') {
+        throw e;
+    }
     return {
       error: e.message || 'An unknown error occurred',
     };
@@ -89,8 +93,11 @@ export async function signup(
         const sessionCookie = lucia.createSessionCookie(session.id);
         cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
 
-        return { error: null };
+        return redirect('/dashboard');
     } catch(e: any) {
+         if (e.message === 'NEXT_REDIRECT') {
+            throw e;
+        }
         return { error: e.message || 'An unknown error occurred' };
     }
 }
