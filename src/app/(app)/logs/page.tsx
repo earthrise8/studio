@@ -26,6 +26,7 @@ import {
   updateFoodLog,
   updateActivityLog,
   addFoodLog,
+  addActivityLog,
   getRecipes,
 } from '@/lib/data';
 import type { ActivityLog, FoodLog, Recipe } from '@/lib/types';
@@ -289,6 +290,117 @@ function AddFoodLogDialog({
   );
 }
 
+function AddActivityLogDialog({
+    date,
+    userId,
+    onLog,
+  }: {
+    date: Date;
+    userId: string;
+    onLog: (newLog: ActivityLog) => void;
+  }) {
+    const { toast } = useToast();
+    const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+  
+    const form = useForm({
+      resolver: zodResolver(activityLogSchema),
+      defaultValues: {
+        name: '',
+        duration: 30,
+        caloriesBurned: 0,
+      },
+    });
+  
+    async function onSubmit(values: z.infer<typeof activityLogSchema>) {
+      setLoading(true);
+      try {
+        const newLogData = {
+          ...values,
+          date: formatISO(date, { representation: 'date' }),
+        };
+        const newLog = await addActivityLog(userId, newLogData);
+        onLog(newLog);
+        toast({ title: 'Activity Logged', description: `${newLog.name} has been logged.` });
+        setOpen(false);
+        form.reset();
+      } catch (e) {
+        toast({
+          variant: 'destructive',
+          title: 'Log Failed',
+          description: 'Could not log the activity.',
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+  
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Log Activity
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Log Activity for {format(date, 'PPP')}</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Activity Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g., Morning Run" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Duration (minutes)</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="caloriesBurned"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Calories Burned (kcal)</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit" disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Log Activity
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
 function EditLogDialog({
   item,
   type,
@@ -299,6 +411,7 @@ function EditLogDialog({
   onUpdate: (updatedItem: FoodLog | ActivityLog) => void;
 }) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -323,13 +436,14 @@ function EditLogDialog({
   });
 
   async function onSubmit(values: any) {
+    if (!user) return;
     setLoading(true);
     try {
       let updatedItem;
       if (type === 'food') {
-        updatedItem = await updateFoodLog(item.id, values);
+        updatedItem = await updateFoodLog(user.id, item.id, values);
       } else {
-        updatedItem = await updateActivityLog(item.id, values);
+        updatedItem = await updateActivityLog(user.id, item.id, values);
       }
       onUpdate(updatedItem);
       toast({ title: 'Log Updated' });
@@ -510,6 +624,10 @@ export default function LogsPage() {
     setFoodLogs(current => [...current, newLog]);
   }
 
+  const handleActivityLog = (newLog: ActivityLog) => {
+    setActivityLogs(current => [...current, newLog]);
+  }
+
   const handleItemUpdate = (updatedItem: FoodLog | ActivityLog, type: 'food' | 'activity') => {
     if (type === 'food') {
       setFoodLogs((current) =>
@@ -526,10 +644,10 @@ export default function LogsPage() {
     if (!user || !date) return;
     try {
       if (type === 'food') {
-        await deleteFoodLog(itemId);
+        await deleteFoodLog(user.id, itemId);
         toast({ title: 'Food log entry deleted.' });
       } else {
-        await deleteActivityLog(itemId);
+        await deleteActivityLog(user.id, itemId);
         toast({ title: 'Activity log entry deleted.' });
       }
       fetchLogs(user.id, date);
@@ -562,11 +680,8 @@ export default function LogsPage() {
         {type === 'food' && user && date && (
           <AddFoodLogDialog date={date} userId={user.id} onLog={handleFoodLog} />
         )}
-        {type === 'activity' && (
-            <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Log Activity
-            </Button>
+        {type === 'activity' && user && date && (
+            <AddActivityLogDialog date={date} userId={user.id} onLog={handleActivityLog} />
         )}
       </CardHeader>
       <CardContent>

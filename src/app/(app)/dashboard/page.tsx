@@ -1,3 +1,4 @@
+'use client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -12,7 +13,6 @@ import {
   getFoodLogs,
   getPantryItems,
   getGoals,
-  getUser,
 } from '@/lib/data';
 import {
   Apple,
@@ -26,8 +26,10 @@ import {
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { getCurrentUser } from '@/lib/actions';
-import { Goal } from '@/lib/types';
+import { useAuth } from '@/lib/auth-provider';
+import type { Goal, FoodLog, ActivityLog, PantryItem } from '@/lib/types';
+import { useEffect, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function GoalProgress({ goal }: { goal: Goal }) {
     const progressPercentage = (goal.progress / goal.target) * 100;
@@ -42,24 +44,61 @@ function GoalProgress({ goal }: { goal: Goal }) {
     )
 }
 
-export default async function DashboardPage() {
-  // In a real app, you would get the logged-in user's ID
-  const user = await getCurrentUser();
-  if (!user) return <p>Please log in.</p>; // Or redirect
+export default function DashboardPage() {
+  const { user } = useAuth();
+  
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<{
+    pantryItems: PantryItem[],
+    foodLogsToday: FoodLog[],
+    activityLogsToday: ActivityLog[],
+    goals: Goal[],
+  } | null>(null);
 
-  const todayStr = formatISO(new Date(), { representation: 'date' });
+  useEffect(() => {
+    async function loadDashboardData() {
+      if (!user) return;
+      
+      setLoading(true);
+      const todayStr = formatISO(new Date(), { representation: 'date' });
 
-  const [
-    pantryItems,
-    foodLogsToday,
-    activityLogsToday,
-    goals,
-  ] = await Promise.all([
-    getPantryItems(user.id),
-    getFoodLogs(user.id, todayStr),
-    getActivityLogs(user.id, todayStr),
-    getGoals(user.id),
-  ]);
+      const [
+        pantryItems,
+        foodLogsToday,
+        activityLogsToday,
+        goals,
+      ] = await Promise.all([
+        getPantryItems(user.id),
+        getFoodLogs(user.id, todayStr),
+        getActivityLogs(user.id, todayStr),
+        getGoals(user.id),
+      ]);
+
+      setData({ pantryItems, foodLogsToday, activityLogsToday, goals });
+      setLoading(false);
+    }
+    loadDashboardData();
+  }, [user]);
+
+  if (loading || !data || !user) {
+    return (
+       <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+            <Skeleton className="h-8 w-48" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                <Card className="lg:col-span-3"><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>
+                <Card className="lg:col-span-4"><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>
+            </div>
+       </main>
+    )
+  }
+
+  const { pantryItems, foodLogsToday, activityLogsToday, goals } = data;
 
   const caloriesIn = foodLogsToday.reduce(
     (acc, log) => acc + log.calories,
@@ -81,33 +120,6 @@ export default async function DashboardPage() {
     
   const activeGoals = goals.filter(g => !g.isCompleted);
   const completedGoals = goals.filter(g => g.isCompleted);
-
-  const quickActions = [
-    {
-      label: 'Log Food',
-      icon: Apple,
-      href: '/logs?tab=food',
-      color: 'bg-green-500',
-    },
-    {
-      label: 'Log Activity',
-      icon: Dumbbell,
-      href: '/logs?tab=activity',
-      color: 'bg-blue-500',
-    },
-    {
-      label: 'Add to Pantry',
-      icon: PlusCircle,
-      href: '/pantry',
-      color: 'bg-yellow-500',
-    },
-    {
-      label: 'Get Advice',
-      icon: Lightbulb,
-      href: '/advisor',
-      color: 'bg-purple-500',
-    },
-  ];
 
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">

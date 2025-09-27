@@ -184,6 +184,8 @@ const checkAndGrantAwards = async (userId: string, completedGoal: Goal) => {
 
 // Mock data access functions
 export const getUser = async (userId: string): Promise<User | null> => {
+  console.log(`Getting user for ID: ${userId}`);
+  console.log('Current users:', MOCK_USERS);
   return MOCK_USERS[userId] || null;
 }
 
@@ -191,7 +193,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   return Object.values(MOCK_USERS).find(user => user.email === email) || null;
 }
 
-export const createUser = async(email: string, name:string): Promise<User> => {
+export const createUser = async(email: string, name:string, password?: string): Promise<User> => {
     const id = `user${Object.keys(MOCK_USERS).length + 1}`;
     const newUser: User = {
         id, email, name, profile: { dailyCalorieGoal: 2000, healthGoal: 'Get started' }
@@ -203,10 +205,11 @@ export const createUser = async(email: string, name:string): Promise<User> => {
     MOCK_RECIPES[id] = [];
     MOCK_GOALS[id] = [];
     MOCK_AWARDS[id] = [];
+    console.log(`Created new user: ${name} with ID: ${id}`);
     return newUser;
 }
 
-export const updateUserProfile = async (userId: string, data: Partial<User>): Promise<User> => {
+export const updateUserProfile = async (userId: string, data: Partial<{ name: string; email: string; profile: UserProfile }>): Promise<User> => {
   if (!MOCK_USERS[userId]) {
     throw new Error('User not found');
   }
@@ -243,14 +246,14 @@ export const addPantryItem = async (userId: string, itemData: Omit<PantryItem, '
     return newItem;
 };
 
-export const updatePantryItem = async (itemId: string, updatedData: PantryItem): Promise<PantryItem> => {
-  const userEntries = Object.entries(MOCK_PANTRY);
-  for(const [userId, items] of userEntries) {
-      const itemIndex = items.findIndex(i => i.id === itemId);
-      if (itemIndex !== -1) {
-          MOCK_PANTRY[userId][itemIndex] = { ...MOCK_PANTRY[userId][itemIndex], ...updatedData };
-          return MOCK_PANTRY[userId][itemIndex];
-      }
+export const updatePantryItem = async (userId: string, itemId: string, updatedData: PantryItem): Promise<PantryItem> => {
+  const userItems = MOCK_PANTRY[userId];
+  if (!userItems) throw new Error("User pantry not found");
+  
+  const itemIndex = userItems.findIndex(i => i.id === itemId);
+  if (itemIndex !== -1) {
+      userItems[itemIndex] = { ...userItems[itemIndex], ...updatedData };
+      return userItems[itemIndex];
   }
   throw new Error("Item not found");
 }
@@ -271,19 +274,20 @@ export const addFoodLog = async (userId: string, logData: Omit<FoodLog, 'id'>): 
     return newLog;
 }
 
-export const updateFoodLog = async (logId: string, updatedData: Partial<FoodLog>): Promise<FoodLog> => {
-    for (const userId in MOCK_FOOD_LOGS) {
-        const logIndex = MOCK_FOOD_LOGS[userId].findIndex(log => log.id === logId);
-        if (logIndex !== -1) {
-            MOCK_FOOD_LOGS[userId][logIndex] = { ...MOCK_FOOD_LOGS[userId][logIndex], ...updatedData };
-            return MOCK_FOOD_LOGS[userId][logIndex];
-        }
+export const updateFoodLog = async (userId: string, logId: string, updatedData: Partial<FoodLog>): Promise<FoodLog> => {
+    const userLogs = MOCK_FOOD_LOGS[userId];
+    if (!userLogs) throw new Error("User food logs not found");
+
+    const logIndex = userLogs.findIndex(log => log.id === logId);
+    if (logIndex !== -1) {
+        userLogs[logIndex] = { ...userLogs[logIndex], ...updatedData };
+        return userLogs[logIndex];
     }
     throw new Error("Food log not found");
 };
 
-export const deleteFoodLog = async (logId: string): Promise<void> => {
-    for (const userId in MOCK_FOOD_LOGS) {
+export const deleteFoodLog = async (userId: string, logId: string): Promise<void> => {
+    if (MOCK_FOOD_LOGS[userId]) {
         MOCK_FOOD_LOGS[userId] = MOCK_FOOD_LOGS[userId].filter(log => log.id !== logId);
     }
 };
@@ -292,19 +296,33 @@ export const getActivityLogs = async (userId: string, date: string): Promise<Act
   return (MOCK_ACTIVITY_LOGS[userId] || []).filter(log => log.date === date);
 };
 
-export const updateActivityLog = async (logId: string, updatedData: Partial<ActivityLog>): Promise<ActivityLog> => {
-    for (const userId in MOCK_ACTIVITY_LOGS) {
-        const logIndex = MOCK_ACTIVITY_LOGS[userId].findIndex(log => log.id === logId);
-        if (logIndex !== -1) {
-            MOCK_ACTIVITY_LOGS[userId][logIndex] = { ...MOCK_ACTIVITY_LOGS[userId][logIndex], ...updatedData };
-            return MOCK_ACTIVITY_LOGS[userId][logIndex];
-        }
+
+export const addActivityLog = async (userId: string, logData: Omit<ActivityLog, 'id'>): Promise<ActivityLog> => {
+    if (!MOCK_ACTIVITY_LOGS[userId]) {
+        MOCK_ACTIVITY_LOGS[userId] = [];
+    }
+    const newLog: ActivityLog = {
+        ...logData,
+        id: `al${Date.now()}`
+    };
+    MOCK_ACTIVITY_LOGS[userId].push(newLog);
+    return newLog;
+}
+
+export const updateActivityLog = async (userId: string, logId: string, updatedData: Partial<ActivityLog>): Promise<ActivityLog> => {
+    const userLogs = MOCK_ACTIVITY_LOGS[userId];
+    if (!userLogs) throw new Error("User activity logs not found");
+
+    const logIndex = userLogs.findIndex(log => log.id === logId);
+    if (logIndex !== -1) {
+        userLogs[logIndex] = { ...userLogs[logIndex], ...updatedData };
+        return userLogs[logIndex];
     }
     throw new Error("Activity log not found");
 };
 
-export const deleteActivityLog = async (logId: string): Promise<void> => {
-    for (const userId in MOCK_ACTIVITY_LOGS) {
+export const deleteActivityLog = async (userId: string, logId: string): Promise<void> => {
+    if (MOCK_ACTIVITY_LOGS[userId]) {
         MOCK_ACTIVITY_LOGS[userId] = MOCK_ACTIVITY_LOGS[userId].filter(log => log.id !== logId);
     }
 };

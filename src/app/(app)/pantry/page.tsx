@@ -324,6 +324,7 @@ function AddPantryItemDialog({ onAdd }: { onAdd: (newItem: PantryItem) => void }
 
 function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: (updatedItem: PantryItem) => void }) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -341,6 +342,7 @@ function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: 
   });
   
   async function onSubmit(values: EditPantryFormValues) {
+    if (!user) return;
     setLoading(true);
     try {
       const updatedItemData = {
@@ -348,7 +350,7 @@ function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: 
         purchaseDate: values.purchaseDate.toISOString(),
         expirationDate: values.expirationDate.toISOString(),
       };
-      await updatePantryItem(updatedItemData.id, updatedItemData);
+      await updatePantryItem(user.id, updatedItemData.id, updatedItemData);
       onUpdate(updatedItemData as PantryItem);
       toast({ title: "Item Updated", description: `${item.name} was successfully updated.` });
       setOpen(false);
@@ -473,6 +475,7 @@ export default function PantryPage() {
 
   useEffect(() => {
     if (user) {
+      setLoading(true);
       getPantryItems(user.id).then((data) => {
         setItems(data);
         setLoading(false);
