@@ -14,8 +14,8 @@ import { addDays, formatISO, subDays } from 'date-fns';
 const today = new Date();
 
 let MOCK_USERS: Record<string, User> = {
-  'user1': {
-    id: 'user1',
+  'fit-user1': {
+    id: 'fit-user1',
     email: 'user@example.com',
     name: 'Alex Doe',
     profile: {
@@ -30,7 +30,7 @@ let MOCK_USERS: Record<string, User> = {
 };
 
 let MOCK_PANTRY: Record<string, PantryItem[]> = {
-  'user1': [
+  'fit-user1': [
     {
       id: 'p1',
       name: 'Chicken Breast',
@@ -80,7 +80,7 @@ let MOCK_PANTRY: Record<string, PantryItem[]> = {
 };
 
 let MOCK_FOOD_LOGS: Record<string, FoodLog[]> = {
-  'user1': [
+  'fit-user1': [
     {
       id: 'fl1',
       date: formatISO(today, { representation: 'date' }),
@@ -112,7 +112,7 @@ let MOCK_FOOD_LOGS: Record<string, FoodLog[]> = {
 };
 
 let MOCK_ACTIVITY_LOGS: Record<string, ActivityLog[]> = {
-  'user1': [
+  'fit-user1': [
     {
       id: 'al1',
       date: formatISO(today, { representation: 'date' }),
@@ -131,7 +131,7 @@ let MOCK_ACTIVITY_LOGS: Record<string, ActivityLog[]> = {
 };
 
 let MOCK_RECIPES: Record<string, Recipe[]> = {
-  'user1': [
+  'fit-user1': [
     {
       id: 'r1',
       name: 'Classic Chicken Soup',
@@ -151,14 +151,14 @@ let MOCK_RECIPES: Record<string, Recipe[]> = {
 };
 
 let MOCK_GOALS: Record<string, Goal[]> = {
-  'user1': [
+  'fit-user1': [
     { id: 'g1', description: 'Run 3 times this week', progress: 1, target: 3, isCompleted: false },
     { id: 'g2', description: 'Drink 8 glasses of water daily', progress: 8, target: 8, isCompleted: true },
   ],
 };
 
 let MOCK_AWARDS: Record<string, Award[]> = {
-  'user1': [
+  'fit-user1': [
     { id: 'a1', name: 'First Workout', description: 'Completed your first logged activity.', dateAchieved: subDays(today, 10).toISOString() },
     { id: 'a2', name: 'Perfect Week', description: 'Logged an activity every day for 7 days.', dateAchieved: subDays(today, 3).toISOString() },
     { id: 'a3', name: 'Goal Achiever: Drink 8 glasses of water daily', description: 'You successfully completed a personal goal.', dateAchieved: today.toISOString()},

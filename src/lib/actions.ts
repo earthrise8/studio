@@ -9,9 +9,10 @@ import {
 import type { User } from './types';
 import { redirect } from 'next/navigation';
 
+// In a real app, you'd use a library like Lucia. For this mock, we'll simulate it.
 const lucia = {
     createSession: (userId: string, attributes: object) => ({ id: `session_${userId}_${Date.now()}` }),
-    createSessionCookie: (sessionId: string) => ({ name: 'auth_session', value: sessionId, attributes: { path: '/', httpOnly: true, maxAge: 60 * 60 * 24 * 30 } })
+    createSessionCookie: (sessionId: string) => ({ name: 'auth_session', value: sessionId, attributes: { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 30 } })
 }
 
 const loginSchema = z.object({
