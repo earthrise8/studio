@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { login, signup } from '@/lib/actions';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -24,7 +25,7 @@ function SubmitButton({ type }: { type: 'login' | 'signup' }) {
 
 export default function AuthForm({ type }: { type: 'login' | 'signup' }) {
   const action = type === 'login' ? login : signup;
-  const [state, formAction] = useFormState(action, null);
+  const [state, formAction] = useActionState(action, null);
   const router = useRouter();
 
   useEffect(() => {
