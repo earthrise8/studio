@@ -25,6 +25,10 @@ const GenerateRecipeOutputSchema = z.object({
   totalTime: z.string().optional().describe('The total time for the recipe (e.g., "45 min").'),
   description: z.string().optional().describe('A short, appetizing description of the recipe.'),
   emoji: z.string().describe('A single emoji that represents the recipe.'),
+  calories: z.coerce.number().optional().describe('Estimated calories per serving.'),
+  protein: z.coerce.number().optional().describe('Estimated protein (grams) per serving.'),
+  carbs: z.coerce.number().optional().describe('Estimated carbohydrates (grams) per serving.'),
+  fat: z.coerce.number().optional().describe('Estimated fat (grams) per serving.'),
 });
 export type GenerateRecipeOutput = z.infer<typeof GenerateRecipeOutputSchema>;
 
@@ -40,7 +44,9 @@ const prompt = ai.definePrompt({
 
 Request: {{{prompt}}}
 
-Generate a recipe with a name, a single emoji, a short description, a markdown list of ingredients, and step-by-step instructions formatted as a numbered markdown list. Also provide the prep time, cook time, and total time if applicable.
+Generate a recipe with a name, a single emoji, a short description, a markdown list of ingredients, and step-by-step instructions formatted as a numbered markdown list.
+Also provide the prep time, cook time, and total time if applicable.
+Finally, provide an estimation for the nutritional information per serving: calories, protein, carbs, and fat.
 Ensure the output is well-formatted and easy to read.
 `,
 });

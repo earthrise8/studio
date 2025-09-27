@@ -141,7 +141,11 @@ let MOCK_RECIPES: Record<string, Recipe[]> = {
       prepTime: '15 min',
       cookTime: '45 min',
       totalTime: '1 hour',
-      emoji: '🍲'
+      emoji: '🍲',
+      calories: 350,
+      protein: 30,
+      carbs: 25,
+      fat: 10,
     },
   ],
 };
@@ -254,6 +258,18 @@ export const updatePantryItem = async (itemId: string, updatedData: PantryItem):
 export const getFoodLogs = async (userId: string, date: string): Promise<FoodLog[]> => {
   return (MOCK_FOOD_LOGS[userId] || []).filter(log => log.date === date);
 };
+
+export const addFoodLog = async (userId: string, logData: Omit<FoodLog, 'id'>): Promise<FoodLog> => {
+    if (!MOCK_FOOD_LOGS[userId]) {
+        MOCK_FOOD_LOGS[userId] = [];
+    }
+    const newLog: FoodLog = {
+        ...logData,
+        id: `fl${Date.now()}`
+    };
+    MOCK_FOOD_LOGS[userId].push(newLog);
+    return newLog;
+}
 
 export const updateFoodLog = async (logId: string, updatedData: Partial<FoodLog>): Promise<FoodLog> => {
     for (const userId in MOCK_FOOD_LOGS) {

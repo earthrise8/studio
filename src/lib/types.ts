@@ -52,6 +52,10 @@ export type Recipe = {
   cookTime?: string;
   totalTime?: string;
   emoji: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
 };
 
 export type Goal = {

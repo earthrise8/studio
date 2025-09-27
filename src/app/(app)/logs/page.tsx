@@ -25,8 +25,10 @@ import {
   deleteActivityLog,
   updateFoodLog,
   updateActivityLog,
+  addFoodLog,
+  getRecipes,
 } from '@/lib/data';
-import type { ActivityLog, FoodLog } from '@/lib/types';
+import type { ActivityLog, FoodLog, Recipe } from '@/lib/types';
 import { format, formatISO } from 'date-fns';
 import {
   Calendar as CalendarIcon,
@@ -34,8 +36,9 @@ import {
   Trash2,
   Edit,
   Loader2,
+  BookHeart,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Popover,
   PopoverContent,
@@ -77,6 +80,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const foodLogSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
@@ -91,6 +95,199 @@ const activityLogSchema = z.object({
   duration: z.coerce.number().min(1, 'Duration must be at least 1 minute.'),
   caloriesBurned: z.coerce.number().min(0),
 });
+
+function AddFoodLogDialog({
+  date,
+  userId,
+  onLog,
+}: {
+  date: Date;
+  userId: string;
+  onLog: (newLog: FoodLog) => void;
+}) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [activeTab, setActiveTab] = useState('custom');
+
+  const form = useForm({
+    resolver: zodResolver(foodLogSchema),
+    defaultValues: {
+      name: '',
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+    },
+  });
+  
+  useEffect(() => {
+    if(open && userId) {
+        getRecipes(userId).then(setRecipes);
+    }
+  }, [open, userId]);
+
+  async function onSubmit(values: z.infer<typeof foodLogSchema>) {
+    setLoading(true);
+    try {
+      const newLogData = {
+        ...values,
+        date: formatISO(date, { representation: 'date' }),
+      };
+      const newLog = await addFoodLog(userId, newLogData);
+      onLog(newLog);
+      toast({ title: 'Food Logged', description: `${newLog.name} has been logged.` });
+      setOpen(false);
+      form.reset();
+    } catch (e) {
+      toast({
+        variant: 'destructive',
+        title: 'Log Failed',
+        description: 'Could not log the food item.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRecipeLog(recipe: Recipe) {
+    const recipeLog: z.infer<typeof foodLogSchema> = {
+        name: recipe.name,
+        calories: recipe.calories || 0,
+        protein: recipe.protein || 0,
+        carbs: recipe.carbs || 0,
+        fat: recipe.fat || 0
+    };
+    await onSubmit(recipeLog);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Log Food
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Log Food for {format(date, 'PPP')}</DialogTitle>
+        </DialogHeader>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
+          <TabsList className='grid w-full grid-cols-2'>
+            <TabsTrigger value="custom">Custom</TabsTrigger>
+            <TabsTrigger value="recipe">From Recipe</TabsTrigger>
+          </TabsList>
+          <TabsContent value="custom">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g., Apple" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="calories"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Calories (kcal)</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="protein"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Protein (g)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="carbs"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Carbs (g)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="fat"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fat (g)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Log Food Item
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </TabsContent>
+          <TabsContent value="recipe">
+            <ScrollArea className="h-72">
+                <div className="space-y-2 p-1">
+                    {recipes.length > 0 ? (
+                        recipes.map(recipe => (
+                            <div key={recipe.id} className="flex justify-between items-center border p-3 rounded-md">
+                                <div className='flex items-center gap-3'>
+                                    <span className="text-2xl">{recipe.emoji}</span>
+                                    <div>
+                                        <p className="font-medium">{recipe.name}</p>
+                                        <p className="text-xs text-muted-foreground">{recipe.calories || 0} kcal</p>
+                                    </div>
+                                </div>
+                                <Button size="sm" variant="outline" onClick={() => handleRecipeLog(recipe)} disabled={loading}>
+                                    <BookHeart className="mr-2 h-4 w-4" />
+                                    Log
+                                </Button>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-10">You have no saved recipes.</p>
+                    )}
+                </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function EditLogDialog({
   item,
@@ -308,6 +505,10 @@ export default function LogsPage() {
       fetchLogs(user.id, date);
     }
   }, [user, date]);
+  
+  const handleFoodLog = (newLog: FoodLog) => {
+    setFoodLogs(current => [...current, newLog]);
+  }
 
   const handleItemUpdate = (updatedItem: FoodLog | ActivityLog, type: 'food' | 'activity') => {
     if (type === 'food') {
@@ -358,10 +559,15 @@ export default function LogsPage() {
             <CardDescription>Entries for {format(date, 'PPP')}</CardDescription>
           )}
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Log {type === 'food' ? 'Food' : 'Activity'}
-        </Button>
+        {type === 'food' && user && date && (
+          <AddFoodLogDialog date={date} userId={user.id} onLog={handleFoodLog} />
+        )}
+        {type === 'activity' && (
+            <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Log Activity
+            </Button>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -381,7 +587,7 @@ export default function LogsPage() {
             {loading ? (
               <TableRow>
                 <TableCell
-                  colSpan={type === 'food' ? 7 : 5}
+                  colSpan={type === 'food' ? 6 : 4}
                   className="h-24 text-center"
                 >
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
@@ -447,7 +653,7 @@ export default function LogsPage() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={type === 'food' ? 7 : 5}
+                  colSpan={type === 'food' ? 6 : 4}
                   className="h-24 text-center"
                 >
                   No entries for this day.
