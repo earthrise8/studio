@@ -31,7 +31,7 @@ export default function AuthForm({ type }: { type: 'login' | 'signup' }) {
         <form action={formAction} className="space-y-4">
           {type === 'signup' && (
             <div className="space-y-1">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Your Name</Label>
               <Input
                 id="name"
                 name="name"
@@ -40,20 +40,18 @@ export default function AuthForm({ type }: { type: 'login' | 'signup' }) {
               />
             </div>
           )}
-          <div className="space-y-1">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="user@example.com"
-              required
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required placeholder={type === 'login' ? '••••••••' : '6+ characters'} />
-          </div>
+          {type === 'login' && (
+            <div className="space-y-1">
+                <Label htmlFor="accessCode">Access Code</Label>
+                <Input
+                id="accessCode"
+                name="accessCode"
+                placeholder="fit-xxxxxx"
+                required
+                />
+            </div>
+          )}
+          
           {state?.error && (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />

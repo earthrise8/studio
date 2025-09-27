@@ -184,8 +184,6 @@ const checkAndGrantAwards = async (userId: string, completedGoal: Goal) => {
 
 // Mock data access functions
 export const getUser = async (userId: string): Promise<User | null> => {
-  console.log(`Getting user for ID: ${userId}`);
-  console.log('Current users:', MOCK_USERS);
   return MOCK_USERS[userId] || null;
 }
 
@@ -193,10 +191,14 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   return Object.values(MOCK_USERS).find(user => user.email === email) || null;
 }
 
-export const createUser = async(email: string, name:string, password?: string): Promise<User> => {
-    const id = `user${Object.keys(MOCK_USERS).length + 1}`;
+const generateAccessCode = () => {
+    return `fit-${Math.random().toString(36).substring(2, 8)}`;
+}
+
+export const createUser = async(name:string): Promise<User> => {
+    const id = generateAccessCode();
     const newUser: User = {
-        id, email, name, profile: { dailyCalorieGoal: 2000, healthGoal: 'Get started' }
+        id, email: `${id}@fitropolis.com`, name, profile: { dailyCalorieGoal: 2000, healthGoal: 'Get started' }
     };
     MOCK_USERS[id] = newUser;
     MOCK_PANTRY[id] = [];

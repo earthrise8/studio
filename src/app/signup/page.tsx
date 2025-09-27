@@ -10,7 +10,7 @@ export default function SignupPage() {
             <Logo />
         </div>
         <h1 className="text-2xl font-bold text-center mb-2 font-headline">Create an Account</h1>
-        <p className="text-center text-muted-foreground mb-6">Enter your information to create a new account.</p>
+        <p className="text-center text-muted-foreground mb-6">Enter your name to create an account and get your unique Access Code.</p>
         <AuthForm type="signup" />
         <p className="px-8 text-center text-sm text-muted-foreground mt-4">
             Already have an account?{' '}

@@ -10,16 +10,8 @@ export default function LoginPage() {
             <Logo />
         </div>
         <h1 className="text-2xl font-bold text-center mb-2 font-headline">Welcome Back</h1>
-        <p className="text-center text-muted-foreground mb-6">Enter your credentials to access your account.</p>
+        <p className="text-center text-muted-foreground mb-6">Enter your Access Code to sign in.</p>
         <AuthForm type="login" />
-         <div className="mt-4 text-center text-sm">
-            <Link
-                href="/forgot-password"
-                className="underline underline-offset-4 hover:text-primary"
-            >
-                Forgot your password?
-            </Link>
-         </div>
          <p className="px-8 text-center text-sm text-muted-foreground mt-4">
             Don&apos;t have an account?{' '}
             <Link

@@ -1,5 +1,5 @@
 export type User = {
-  id: string;
+  id: string; // This is the access code
   email: string;
   name: string;
   profile?: UserProfile;
