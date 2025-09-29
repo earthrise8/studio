@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import {
@@ -151,7 +152,7 @@ const defaultExpirationDays: Record<PantryFormValues['category'], number> = {
     Other: 14,
 };
 
-function AddPantryItemDialog({ onAdd }: { onAdd: (newItem: PantryItem) => void }) {
+function AddPantryItemDialog({ onAdd }: { onAdd: () => void }) {
     const { user } = useAuth();
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
@@ -194,9 +195,9 @@ function AddPantryItemDialog({ onAdd }: { onAdd: (newItem: PantryItem) => void }
           purchaseDate: values.purchaseDate.toISOString(),
           expirationDate: values.expirationDate.toISOString(),
         };
-        const newItem = await addPantryItem(user.id, newItemData);
-        onAdd(newItem);
-        toast({ title: "Item Added", description: `${newItem.name} was successfully added to your pantry.` });
+        await addPantryItem(user.id, newItemData);
+        onAdd();
+        toast({ title: "Item Added", description: `${values.name} was successfully added to your pantry.` });
         setOpen(false);
         form.reset({
             name: '',
@@ -323,7 +324,7 @@ function AddPantryItemDialog({ onAdd }: { onAdd: (newItem: PantryItem) => void }
     )
 }
 
-function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: (updatedItem: PantryItem) => void }) {
+function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: () => void }) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -352,7 +353,7 @@ function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: 
         expirationDate: values.expirationDate.toISOString(),
       };
       await updatePantryItem(user.id, updatedItemData.id, updatedItemData);
-      onUpdate(updatedItemData as PantryItem);
+      onUpdate();
       toast({ title: "Item Updated", description: `${item.name} was successfully updated.` });
       setOpen(false);
     } catch(e) {
@@ -489,12 +490,12 @@ export default function PantryPage() {
     fetchItems();
   }, [user]);
 
-  const handleItemUpdate = (updatedItem: PantryItem) => {
-    setItems(currentItems => currentItems.map(item => item.id === updatedItem.id ? updatedItem : item));
+  const handleItemUpdate = () => {
+    fetchItems();
   }
 
-  const handleItemAdd = (newItem: PantryItem) => {
-    setItems(currentItems => [...currentItems, newItem]);
+  const handleItemAdd = () => {
+    fetchItems();
   }
   
   const handleItemDelete = async (itemId: string) => {
