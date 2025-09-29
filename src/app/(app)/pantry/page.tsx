@@ -32,7 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { getPantryItems, updatePantryItem, addPantryItem, deletePantryItem } from '@/lib/data';
 import type { PantryItem } from '@/lib/types';
 import { PlusCircle, UtensilsCrossed, Edit, Trash2, CalendarIcon, Loader2, ScanLine } from 'lucide-react';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { differenceInDays, format, addDays } from 'date-fns';
@@ -476,7 +476,7 @@ export default function PantryPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('All');
 
-  const fetchItems = () => {
+  const fetchItems = useCallback(() => {
     if (user) {
         setLoading(true);
         getPantryItems(user.id).then((data) => {
@@ -484,11 +484,11 @@ export default function PantryPage() {
           setLoading(false);
         });
       }
-  }
+  }, [user]);
 
   useEffect(() => {
     fetchItems();
-  }, [user]);
+  }, [fetchItems]);
 
   const handleItemUpdate = () => {
     fetchItems();
