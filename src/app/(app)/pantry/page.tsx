@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { getPantryItems, updatePantryItem, addPantryItem } from '@/lib/data';
+import { getPantryItems, updatePantryItem, addPantryItem, deletePantryItem } from '@/lib/data';
 import type { PantryItem } from '@/lib/types';
 import { PlusCircle, UtensilsCrossed, Edit, Trash2, CalendarIcon, Loader2, ScanLine } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
@@ -42,6 +42,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const pantryItemSchema = z.object({
   name: z.string().min(1, 'Item name is required.'),
@@ -469,18 +470,23 @@ function EditPantryItemDialog({ item, onUpdate }: { item: PantryItem, onUpdate: 
 
 export default function PantryPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [items, setItems] = useState<PantryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('All');
 
-  useEffect(() => {
+  const fetchItems = () => {
     if (user) {
-      setLoading(true);
-      getPantryItems(user.id).then((data) => {
-        setItems(data);
-        setLoading(false);
-      });
-    }
+        setLoading(true);
+        getPantryItems(user.id).then((data) => {
+          setItems(data);
+          setLoading(false);
+        });
+      }
+  }
+
+  useEffect(() => {
+    fetchItems();
   }, [user]);
 
   const handleItemUpdate = (updatedItem: PantryItem) => {
@@ -489,6 +495,17 @@ export default function PantryPage() {
 
   const handleItemAdd = (newItem: PantryItem) => {
     setItems(currentItems => [...currentItems, newItem]);
+  }
+  
+  const handleItemDelete = async (itemId: string) => {
+    if (!user) return;
+    try {
+      await deletePantryItem(user.id, itemId);
+      toast({ title: 'Item Deleted' });
+      fetchItems(); // Refetch to get the updated list
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Delete Failed', description: 'Could not delete item.' });
+    }
   }
 
   const categories = ['All', 'Produce', 'Dairy', 'Meat', 'Pantry', 'Frozen', 'Other'];
@@ -558,9 +575,27 @@ export default function PantryPage() {
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2">
                     <EditPantryItemDialog item={item} onUpdate={handleItemUpdate} />
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete "{item.name}" from your pantry.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleItemDelete(item.id)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                 </CardFooter>
               </Card>
             )
@@ -585,5 +620,3 @@ export default function PantryPage() {
     </main>
   );
 }
-
-    

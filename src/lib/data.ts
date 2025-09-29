@@ -260,6 +260,13 @@ export const updatePantryItem = async (userId: string, itemId: string, updatedDa
   throw new Error("Item not found");
 }
 
+export const deletePantryItem = async (userId: string, itemId: string): Promise<void> => {
+  if (MOCK_PANTRY[userId]) {
+    MOCK_PANTRY[userId] = MOCK_PANTRY[userId].filter(item => item.id !== itemId);
+  }
+};
+
+
 export const getFoodLogs = async (userId: string, date: string): Promise<FoodLog[]> => {
   return (MOCK_FOOD_LOGS[userId] || []).filter(log => log.date === date);
 };
