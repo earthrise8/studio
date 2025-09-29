@@ -93,7 +93,9 @@ export default function SettingsPage() {
   }
   
   useEffect(() => {
-    fetchGoals();
+    if (user) {
+        fetchGoals();
+    }
   }, [user]);
 
 
@@ -239,6 +241,7 @@ export default function SettingsPage() {
                                 type="email"
                                 placeholder="your@email.com"
                                 {...field}
+                                readOnly
                             />
                             </FormControl>
                             <FormMessage />

@@ -14,8 +14,8 @@ import { addDays, formatISO, subDays } from 'date-fns';
 const today = new Date();
 
 let MOCK_USERS: Record<string, User> = {
-  'fit-user1': {
-    id: 'fit-user1',
+  'user123': {
+    id: 'user123',
     email: 'user@example.com',
     name: 'Alex Doe',
     profile: {
@@ -24,13 +24,14 @@ let MOCK_USERS: Record<string, User> = {
       age: 30,
       height: 178,
       weight: 75,
-      activityLevel: 'moderate'
+      activityLevel: 'moderate',
+      avatarUrl: 'https://i.pravatar.cc/150?u=user123'
     },
   },
 };
 
 let MOCK_PANTRY: Record<string, PantryItem[]> = {
-  'fit-user1': [
+  'user123': [
     {
       id: 'p1',
       name: 'Chicken Breast',
@@ -49,38 +50,11 @@ let MOCK_PANTRY: Record<string, PantryItem[]> = {
       purchaseDate: subDays(today, 1).toISOString(),
       expirationDate: addDays(today, 6).toISOString(),
     },
-    {
-      id: 'p3',
-      name: 'Broccoli',
-      quantity: 1,
-      unit: 'units',
-      category: 'Produce',
-      purchaseDate: subDays(today, 3).toISOString(),
-      expirationDate: addDays(today, 4).toISOString(),
-    },
-    {
-      id: 'p4',
-      name: 'Eggs',
-      quantity: 12,
-      unit: 'units',
-      category: 'Dairy',
-      purchaseDate: subDays(today, 5).toISOString(),
-      expirationDate: addDays(today, 16).toISOString(),
-    },
-     {
-      id: 'p5',
-      name: 'Old Bread',
-      quantity: 1,
-      unit: 'units',
-      category: 'Pantry',
-      purchaseDate: subDays(today, 10).toISOString(),
-      expirationDate: subDays(today, 2).toISOString(),
-    },
   ],
 };
 
 let MOCK_FOOD_LOGS: Record<string, FoodLog[]> = {
-  'fit-user1': [
+  'user123': [
     {
       id: 'fl1',
       date: formatISO(today, { representation: 'date' }),
@@ -90,29 +64,11 @@ let MOCK_FOOD_LOGS: Record<string, FoodLog[]> = {
       carbs: 60,
       fat: 8,
     },
-    {
-      id: 'fl2',
-      date: formatISO(today, { representation: 'date' }),
-      name: 'Grilled Chicken Salad',
-      calories: 450,
-      protein: 40,
-      carbs: 15,
-      fat: 25,
-    },
-    {
-      id: 'fl3',
-      date: formatISO(subDays(today,1), { representation: 'date' }),
-      name: 'Salmon with Quinoa',
-      calories: 600,
-      protein: 45,
-      carbs: 40,
-      fat: 30,
-    },
   ],
 };
 
 let MOCK_ACTIVITY_LOGS: Record<string, ActivityLog[]> = {
-  'fit-user1': [
+  'user123': [
     {
       id: 'al1',
       date: formatISO(today, { representation: 'date' }),
@@ -120,18 +76,11 @@ let MOCK_ACTIVITY_LOGS: Record<string, ActivityLog[]> = {
       duration: 30,
       caloriesBurned: 300,
     },
-    {
-      id: 'al2',
-      date: formatISO(today, { representation: 'date' }),
-      name: 'Weight Lifting',
-      duration: 60,
-      caloriesBurned: 400,
-    },
   ],
 };
 
 let MOCK_RECIPES: Record<string, Recipe[]> = {
-  'fit-user1': [
+  'user123': [
     {
       id: 'r1',
       name: 'Classic Chicken Soup',
@@ -151,14 +100,14 @@ let MOCK_RECIPES: Record<string, Recipe[]> = {
 };
 
 let MOCK_GOALS: Record<string, Goal[]> = {
-  'fit-user1': [
+  'user123': [
     { id: 'g1', description: 'Run 3 times this week', progress: 1, target: 3, isCompleted: false },
     { id: 'g2', description: 'Drink 8 glasses of water daily', progress: 8, target: 8, isCompleted: true },
   ],
 };
 
 let MOCK_AWARDS: Record<string, Award[]> = {
-  'fit-user1': [
+  'user123': [
     { id: 'a1', name: 'First Workout', description: 'Completed your first logged activity.', dateAchieved: subDays(today, 10).toISOString() },
     { id: 'a2', name: 'Perfect Week', description: 'Logged an activity every day for 7 days.', dateAchieved: subDays(today, 3).toISOString() },
     { id: 'a3', name: 'Goal Achiever: Drink 8 glasses of water daily', description: 'You successfully completed a personal goal.', dateAchieved: today.toISOString()},
@@ -187,27 +136,21 @@ export const getUser = async (userId: string): Promise<User | null> => {
   return MOCK_USERS[userId] || null;
 }
 
-export const getUserByEmail = async (email: string): Promise<User | null> => {
-  return Object.values(MOCK_USERS).find(user => user.email === email) || null;
-}
-
-const generateAccessCode = () => {
-    return `fit-${Math.random().toString(36).substring(2, 8)}`;
-}
-
-export const createUser = async(name:string): Promise<User> => {
-    const id = generateAccessCode();
+export const createUser = async(userData: Omit<User, 'profile'> & { profile: UserProfile }): Promise<User> => {
+    if (MOCK_USERS[userData.id]) {
+      throw new Error('User already exists');
+    }
     const newUser: User = {
-        id, email: `${id}@fitropolis.com`, name, profile: { dailyCalorieGoal: 2000, healthGoal: 'Get started' }
+        ...userData
     };
-    MOCK_USERS[id] = newUser;
-    MOCK_PANTRY[id] = [];
-    MOCK_FOOD_LOGS[id] = [];
-    MOCK_ACTIVITY_LOGS[id] = [];
-    MOCK_RECIPES[id] = [];
-    MOCK_GOALS[id] = [];
-    MOCK_AWARDS[id] = [];
-    console.log(`Created new user: ${name} with ID: ${id}`);
+    MOCK_USERS[newUser.id] = newUser;
+    MOCK_PANTRY[newUser.id] = [];
+    MOCK_FOOD_LOGS[newUser.id] = [];
+    MOCK_ACTIVITY_LOGS[newUser.id] = [];
+    MOCK_RECIPES[newUser.id] = [];
+    MOCK_GOALS[newUser.id] = [];
+    MOCK_AWARDS[newUser.id] = [];
+    console.log(`Created new user: ${newUser.name} with ID: ${newUser.id}`);
     return newUser;
 }
 

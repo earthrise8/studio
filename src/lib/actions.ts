@@ -5,93 +5,94 @@ import { cookies } from 'next/headers';
 import {
   createUser,
   getUser,
+  updateUserProfile,
 } from './data';
 import type { User } from './types';
 import { redirect } from 'next/navigation';
+import { getAuth } from 'firebase-admin/auth';
+import { initializeFirebaseAdmin } from './firebase-admin';
 
-// In a real app, you'd use a library like Lucia. For this mock, we'll simulate it.
+// In a real app, you'd use a library like Lucia or Firebase Admin for session management.
 const lucia = {
     createSession: (userId: string, attributes: object) => ({ id: `session_${userId}_${Date.now()}` }),
     createSessionCookie: (sessionId: string) => ({ name: 'auth_session', value: sessionId, attributes: { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 30 } })
 }
 
-const loginSchema = z.object({
-  accessCode: z.string().min(1, { message: 'Access Code is required' }),
+const googleSignInSchema = z.object({
+  idToken: z.string(),
 });
 
-export async function login(
+export async function signInWithGoogle(
   prevState: { error: string } | null,
   formData: FormData
 ) {
-  const parsed = loginSchema.safeParse(Object.fromEntries(formData));
-
-  if (!parsed.success) {
-    return { error: parsed.error.errors.map((e) => e.message).join(', ') };
-  }
-
-  const { accessCode } = parsed.data;
-
-  try {
-    const existingUser = await getUser(accessCode);
-    if (!existingUser) {
-      return { error: 'Invalid Access Code' };
-    }
-
-    const session = await lucia.createSession(existingUser.id, {});
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
-    
-    return redirect('/dashboard');
-  } catch (e: any) {
-    if (e.message === 'NEXT_REDIRECT') {
-        throw e;
-    }
-    return {
-      error: e.message || 'An unknown error occurred',
-    };
-  }
-}
-
-const signupSchema = z.object({
-    name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-});
-
-
-export async function signup(
-    prevState: { error: string, userId?: string } | null,
-    formData: FormData
-) {
-    const parsed = signupSchema.safeParse(Object.fromEntries(formData));
+    await initializeFirebaseAdmin();
+    const parsed = googleSignInSchema.safeParse(Object.fromEntries(formData));
 
     if (!parsed.success) {
-        return { error: parsed.error.errors.map((e) => e.message).join(', ') };
+        return { error: 'Invalid request. Please try again.' };
     }
 
-    const { name } = parsed.data;
+    const { idToken } = parsed.data;
 
     try {
-        const newUser = await createUser(name);
+        const decodedToken = await getAuth().verifyIdToken(idToken);
+        const { uid, email, name, picture } = decodedToken;
 
-        const session = await lucia.createSession(newUser.id, {});
+        if (!email || !name) {
+            return { error: 'Google account is missing email or name.' };
+        }
+
+        let existingUser = await getUser(uid);
+
+        if (!existingUser) {
+            const newUser = await createUser({
+                id: uid,
+                email: email,
+                name: name,
+                profile: {
+                    dailyCalorieGoal: 2000,
+                    healthGoal: 'Get started',
+                    avatarUrl: picture,
+                }
+            });
+            existingUser = newUser;
+        } else {
+            // Update user's name and avatar from Google on login
+             await updateUserProfile(uid, {
+                name: name,
+                email: email,
+                profile: {
+                    ...existingUser.profile,
+                    avatarUrl: picture
+                }
+            });
+        }
+        
+        // This session management is a placeholder.
+        // In a real app, you'd use Firebase session cookies or another robust solution.
+        const session = await lucia.createSession(existingUser.id, {});
         const sessionCookie = lucia.createSessionCookie(session.id);
         cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
-
-        return redirect(`/signup-success?code=${newUser.id}`);
-    } catch(e: any) {
-         if (e.message === 'NEXT_REDIRECT') {
-            throw e;
+        
+    } catch (e: any) {
+        if (e.code === 'auth/id-token-expired') {
+            return { error: 'Login session expired. Please try again.' };
         }
-        return { error: e.message || 'An unknown error occurred' };
+        console.error('Google Sign-In Error:', e);
+        return { error: e.message || 'An unknown error occurred during Google Sign-In' };
     }
+    
+    redirect('/dashboard');
 }
+
 
 export async function getCurrentUser(): Promise<User | null> {
     const sessionId = cookies().get('auth_session')?.value ?? null;
     if (!sessionId) {
         return null;
     }
-    // In a real app, you would validate the session with Lucia
-    // For this mock, we'll extract the userId from the fake session id
+    // In this mock, we extract the userId from the fake session id
     const userId = sessionId.split('_')[1];
     if (!userId) return null;
     const user = await getUser(userId);
@@ -99,8 +100,6 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function logout() {
-    // In a real app, you'd invalidate the session.
-    // For this mock, just delete the cookie.
     cookies().delete('auth_session');
     redirect('/login');
 }

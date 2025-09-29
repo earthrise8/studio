@@ -6,18 +6,15 @@ export function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const publicPaths = ['/login', '/signup', '/signup-success', '/forgot-password'];
+  const publicPaths = ['/login', '/signup'];
 
-  // If user is authenticated and tries to access a public page, redirect to dashboard
+  // If user is authenticated and tries to access a public page (login/signup), redirect to dashboard
   if (sessionCookie && publicPaths.includes(pathname)) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // If user is not authenticated and tries to access a protected route, do nothing.
-  // The page components will handle showing appropriate content.
-  if (!sessionCookie && !publicPaths.includes(pathname) && !pathname.startsWith('/_next') && pathname !== '/') {
-    // No longer redirecting automatically.
-  }
+  // If user is not authenticated and tries to access a protected route, AuthProvider will handle redirect client-side.
+  // This middleware is mainly for redirecting authenticated users away from public-only pages.
   
   return NextResponse.next();
 }

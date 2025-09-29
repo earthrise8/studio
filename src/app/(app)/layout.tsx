@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -58,7 +59,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <>
     {loading || !user ? (
         <div className="flex h-screen w-full items-center justify-center">
-            <Skeleton className="h-12 w-12 rounded-full" />
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     ) : (
       <>
@@ -116,7 +117,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-3 p-2 text-left">
                   <Avatar>
                   <AvatarImage
-                      src={`https://i.pravatar.cc/150?u=${user.id}`}
+                      src={user.profile.avatarUrl}
                       alt={user.name}
                   />
                   <AvatarFallback>

@@ -1,17 +1,18 @@
 export type User = {
-  id: string; // This is the access code
+  id: string; // This is the Firebase UID
   email: string;
   name: string;
-  profile?: UserProfile;
+  profile: UserProfile;
 };
 
 export type UserProfile = {
-  dailyCalorieGoal: number;
-  healthGoal: string;
+  dailyCalorieGoal?: number;
+  healthGoal?: string;
   height?: number;
   weight?: number;
   age?: number;
   activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
+  avatarUrl?: string;
 };
 
 export type PantryItem = {

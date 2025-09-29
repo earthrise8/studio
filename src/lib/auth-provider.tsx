@@ -27,7 +27,7 @@ export default function AuthProvider({
 
   const checkUser = useCallback(async () => {
     // Public pages that don't require loading the user
-    const publicPaths = ['/login', '/signup', '/', '/signup-success', '/forgot-password'];
+    const publicPaths = ['/login', '/signup', '/'];
     if (publicPaths.includes(pathname)) {
         setLoading(false);
         setUser(null); // Ensure user is null on public pages
@@ -41,14 +41,17 @@ export default function AuthProvider({
         setUser(currentUser);
       } else {
         setUser(null);
+        // If not on a public path and no user, redirect to login
+        router.push('/login');
       }
     } catch (error) {
       console.error('Failed to fetch current user', error);
       setUser(null);
+      router.push('/login');
     } finally {
       setLoading(false);
     }
-  }, [pathname]);
+  }, [pathname, router]);
 
   useEffect(() => {
     checkUser();
