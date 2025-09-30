@@ -3,9 +3,8 @@
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import {
-  createUser,
+  createUser as createDbUser,
   getUser,
-  updateUserProfile,
 } from './data';
 import type { User } from './types';
 import { redirect } from 'next/navigation';
@@ -18,69 +17,88 @@ const lucia = {
     createSessionCookie: (sessionId: string) => ({ name: 'auth_session', value: sessionId, attributes: { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 30 } })
 }
 
-const googleSignInSchema = z.object({
-  idToken: z.string(),
+async function createSession(uid: string) {
+    const session = await lucia.createSession(uid, {});
+    const sessionCookie = lucia.createSessionCookie(session.id);
+    cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+}
+
+
+const signupSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters.'}),
+  email: z.string().email({ message: 'Please enter a valid email.' }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters.'}),
+  idToken: z.string(), // From Firebase client
 });
 
-export async function signInWithGoogle(
-  prevState: { error: string } | null,
-  formData: FormData
-) {
+export async function signup(prevState: { error: string } | null, formData: FormData) {
     await initializeFirebaseAdmin();
-    const parsed = googleSignInSchema.safeParse(Object.fromEntries(formData));
+    const parsed = signupSchema.safeParse(Object.fromEntries(formData));
 
     if (!parsed.success) {
-        return { error: 'Invalid request. Please try again.' };
+        const error = parsed.error.errors[0].message;
+        return { error };
     }
 
+    const { name, email, idToken } = parsed.data;
+
+    try {
+        const decodedToken = await getAuth().verifyIdToken(idToken);
+        const uid = decodedToken.uid;
+
+        let existingUser = await getUser(uid);
+        if (existingUser) {
+            return { error: 'User already exists.' };
+        }
+        
+        await createDbUser({
+            id: uid,
+            email: email,
+            name: name,
+            profile: {
+                dailyCalorieGoal: 2000,
+                healthGoal: 'Get started',
+                avatarUrl: `https://i.pravatar.cc/150?u=${uid}` // Placeholder avatar
+            }
+        });
+
+        await createSession(uid);
+
+    } catch (e: any) {
+        console.error('Signup Error:', e);
+        return { error: e.message || 'An unknown error occurred during signup.' };
+    }
+    
+    redirect('/dashboard');
+}
+
+const loginSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email.' }),
+  password: z.string().min(1, { message: 'Password is required.' }),
+  idToken: z.string(), // From Firebase client
+});
+
+export async function login(prevState: { error: string } | null, formData: FormData) {
+    await initializeFirebaseAdmin();
+    const parsed = loginSchema.safeParse(Object.fromEntries(formData));
+
+     if (!parsed.success) {
+        const error = parsed.error.errors[0].message;
+        return { error };
+    }
+    
     const { idToken } = parsed.data;
 
     try {
         const decodedToken = await getAuth().verifyIdToken(idToken);
-        const { uid, email, name, picture } = decodedToken;
-
-        if (!email || !name) {
-            return { error: 'Google account is missing email or name.' };
+        const uid = decodedToken.uid;
+        await createSession(uid);
+    } catch(e: any) {
+        console.error('Login error', e);
+        if (e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+            return { error: 'Invalid email or password.' };
         }
-
-        let existingUser = await getUser(uid);
-
-        if (!existingUser) {
-            const newUser = await createUser({
-                id: uid,
-                email: email,
-                name: name,
-                profile: {
-                    dailyCalorieGoal: 2000,
-                    healthGoal: 'Get started',
-                    avatarUrl: picture,
-                }
-            });
-            existingUser = newUser;
-        } else {
-            // Update user's name and avatar from Google on login
-             await updateUserProfile(uid, {
-                name: name,
-                email: email,
-                profile: {
-                    ...existingUser.profile,
-                    avatarUrl: picture
-                }
-            });
-        }
-        
-        // This session management is a placeholder.
-        // In a real app, you'd use Firebase session cookies or another robust solution.
-        const session = await lucia.createSession(existingUser.id, {});
-        const sessionCookie = lucia.createSessionCookie(session.id);
-        cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
-        
-    } catch (e: any) {
-        if (e.code === 'auth/id-token-expired') {
-            return { error: 'Login session expired. Please try again.' };
-        }
-        console.error('Google Sign-In Error:', e);
-        return { error: e.message || 'An unknown error occurred during Google Sign-In' };
+        return { error: e.message || 'An unknown error occurred during login.' };
     }
     
     redirect('/dashboard');
