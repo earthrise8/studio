@@ -29,10 +29,10 @@ const signupSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.'}),
   idToken: z.string(), // From Firebase client
+  clientError: z.string().optional(),
 });
 
 export async function signup(prevState: { error: string } | null, formData: FormData) {
-    await initializeFirebaseAdmin();
     const parsed = signupSchema.safeParse(Object.fromEntries(formData));
 
     if (!parsed.success) {
@@ -40,6 +40,13 @@ export async function signup(prevState: { error: string } | null, formData: Form
         return { error };
     }
 
+    // If a client-side error occurred, show it to the user
+    if (parsed.data.clientError) {
+        return { error: parsed.data.clientError };
+    }
+
+    await initializeFirebaseAdmin();
+    
     const { name, email, idToken } = parsed.data;
 
     try {
@@ -66,6 +73,9 @@ export async function signup(prevState: { error: string } | null, formData: Form
 
     } catch (e: any) {
         console.error('Signup Error:', e);
+        if(e.code === 'auth/id-token-expired') {
+            return { error: 'Signup session expired. Please try again.' };
+        }
         return { error: e.message || 'An unknown error occurred during signup.' };
     }
     
@@ -76,10 +86,10 @@ const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
   password: z.string().min(1, { message: 'Password is required.' }),
   idToken: z.string(), // From Firebase client
+  clientError: z.string().optional(),
 });
 
 export async function login(prevState: { error: string } | null, formData: FormData) {
-    await initializeFirebaseAdmin();
     const parsed = loginSchema.safeParse(Object.fromEntries(formData));
 
      if (!parsed.success) {
@@ -87,6 +97,11 @@ export async function login(prevState: { error: string } | null, formData: FormD
         return { error };
     }
     
+    if (parsed.data.clientError) {
+        return { error: parsed.data.clientError };
+    }
+    
+    await initializeFirebaseAdmin();
     const { idToken } = parsed.data;
 
     try {
@@ -95,10 +110,10 @@ export async function login(prevState: { error: string } | null, formData: FormD
         await createSession(uid);
     } catch(e: any) {
         console.error('Login error', e);
-        if (e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
-            return { error: 'Invalid email or password.' };
+        if (e.code === 'auth/id-token-expired') {
+             return { error: 'Login session expired. Please try again.' };
         }
-        return { error: e.message || 'An unknown error occurred during login.' };
+        return { error: 'Invalid email or password.' };
     }
     
     redirect('/dashboard');

@@ -25,6 +25,7 @@ function SubmitButton() {
 export default function LoginPage() {
   const [state, formAction] = useActionState(login, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const idTokenRef = useRef<HTMLInputElement>(null);
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -36,23 +37,24 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await userCredential.user.getIdToken();
       
-      const hiddenInput = document.createElement('input');
-      hiddenInput.type = 'hidden';
-      hiddenInput.name = 'idToken';
-      hiddenInput.value = idToken;
-      formRef.current?.appendChild(hiddenInput);
+      if (idTokenRef.current) {
+        idTokenRef.current.value = idToken;
+      }
 
       // Programmatically submit the form to trigger the server action
       formRef.current?.requestSubmit();
 
     } catch (error: any) {
+        // Create a new FormData object to pass to the formAction
+        const errorFormData = new FormData(formRef.current!);
         let errorMessage = 'An unknown error occurred.';
         if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
             errorMessage = 'Invalid email or password.';
         }
-        // To display the error, we can manually trigger the form action with an error state
-        const errorFormData = new FormData();
-        errorFormData.append('error', errorMessage);
+        // This simulates the error path for the server action on the client side
+        // to display the error, but we'll submit an empty token so server fails gracefully.
+        errorFormData.set('idToken', 'error');
+        errorFormData.set('clientError', errorMessage);
         formAction(errorFormData);
     }
   };
@@ -92,6 +94,7 @@ export default function LoginPage() {
                         <Label htmlFor="password">Password</Label>
                         <Input id="password" name="password" type="password" required />
                     </div>
+                    <input type="hidden" name="idToken" ref={idTokenRef} />
                     <SubmitButton />
                 </form>
             </CardContent>

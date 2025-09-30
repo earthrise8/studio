@@ -25,6 +25,7 @@ function SubmitButton() {
 export default function SignupPage() {
   const [state, formAction] = useActionState(signup, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const idTokenRef = useRef<HTMLInputElement>(null);
   
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -38,24 +39,21 @@ export default function SignupPage() {
       // Get ID token
       const idToken = await userCredential.user.getIdToken();
       
-      // Append ID token to form data
-      const hiddenInput = document.createElement('input');
-      hiddenInput.type = 'hidden';
-      hiddenInput.name = 'idToken';
-      hiddenInput.value = idToken;
-      formRef.current?.appendChild(hiddenInput);
+      if(idTokenRef.current) {
+        idTokenRef.current.value = idToken;
+      }
 
       // Programmatically submit the form to trigger the server action
       formRef.current?.requestSubmit();
 
     } catch (error: any) {
+        const errorFormData = new FormData(formRef.current!);
         let errorMessage = 'An unknown error occurred.';
         if (error.code === 'auth/email-already-in-use') {
             errorMessage = 'This email is already registered. Please log in.';
         }
-         // To display the error, we can manually trigger the form action with an error state
-        const errorFormData = new FormData();
-        errorFormData.append('error', errorMessage);
+        errorFormData.set('idToken', 'error'); // send bad token
+        errorFormData.set('clientError', errorMessage);
         formAction(errorFormData);
     }
   };
@@ -98,6 +96,7 @@ export default function SignupPage() {
                         <Label htmlFor="password">Password</Label>
                         <Input id="password" name="password" type="password" required />
                     </div>
+                    <input type="hidden" name="idToken" ref={idTokenRef} />
                     <SubmitButton />
                 </form>
             </CardContent>
