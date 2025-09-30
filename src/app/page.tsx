@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Logo from '@/components/logo';
@@ -9,11 +10,8 @@ export default function LandingPage() {
         <div className="flex h-20 items-center justify-between py-6">
           <Logo />
           <nav className="flex items-center gap-4">
-             <Button variant="ghost" asChild>
-                <Link href="/login">Login</Link>
-             </Button>
             <Button asChild>
-              <Link href="/signup">Sign Up</Link>
+              <Link href="/dashboard">View Dashboard</Link>
             </Button>
           </nav>
         </div>
@@ -31,7 +29,7 @@ export default function LandingPage() {
           </div>
           <div className="flex w-full items-center justify-center space-x-4 py-8 md:py-12">
             <Button size="lg" asChild>
-              <Link href="/signup">Get Started For Free</Link>
+              <Link href="/dashboard">Get Started</Link>
             </Button>
           </div>
         </div>

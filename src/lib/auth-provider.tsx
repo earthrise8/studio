@@ -3,8 +3,22 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User } from '@/lib/types';
-import { getCurrentUser } from '@/lib/actions';
-import { usePathname, useRouter } from 'next/navigation';
+
+// Mock user for public access
+const mockUser: User = {
+    id: 'user123',
+    email: 'user@example.com',
+    name: 'Alex Doe',
+    profile: {
+      dailyCalorieGoal: 2200,
+      healthGoal: 'Stay healthy and active',
+      age: 30,
+      height: 178,
+      weight: 75,
+      activityLevel: 'moderate',
+      avatarUrl: 'https://i.pravatar.cc/150?u=user123'
+    },
+};
 
 interface AuthContextType {
   user: User | null;
@@ -19,46 +33,12 @@ export default function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const pathname = usePathname();
-  const router = useRouter();
+  const [user, setUser] = useState<User | null>(mockUser);
+  const [loading, setLoading] = useState(false);
 
-
-  const checkUser = useCallback(async () => {
-    // Public pages that don't require loading the user
-    const publicPaths = ['/login', '/signup', '/'];
-    if (publicPaths.includes(pathname)) {
-        setLoading(false);
-        setUser(null); // Ensure user is null on public pages
-        return;
-    }
-
-    setLoading(true);
-    try {
-      const currentUser = await getCurrentUser();
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        setUser(null);
-        // If not on a public path and no user, redirect to login
-        router.push('/login');
-      }
-    } catch (error) {
-      console.error('Failed to fetch current user', error);
-      setUser(null);
-      router.push('/login');
-    } finally {
-      setLoading(false);
-    }
-  }, [pathname, router]);
-
-  useEffect(() => {
-    checkUser();
-  }, [checkUser]);
-  
   const refreshUser = async () => {
-    await checkUser();
+    // No-op since we are using a mock user
+    return Promise.resolve();
   };
 
   return (

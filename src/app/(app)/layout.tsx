@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -27,23 +26,16 @@ import {
   Settings,
   LifeBuoy,
   Lightbulb,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-provider';
 import { usePathname, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { logout } from '@/lib/actions';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await logout();
-  }
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -104,12 +96,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                               <LifeBuoy />
                               <span>Contact Support</span>
                           </a>
-                      </SidebarMenuButton>
-                  </SidebarMenuItem>
-                   <SidebarMenuItem>
-                      <SidebarMenuButton onClick={handleLogout}>
-                            <LogOut />
-                            <span>Log Out</span>
                       </SidebarMenuButton>
                   </SidebarMenuItem>
               </SidebarMenu>
