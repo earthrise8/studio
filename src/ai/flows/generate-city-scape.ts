@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -11,12 +12,12 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const GenerateCityScapeInputSchema = z.object({
+const GenerateCityScapeInputSchema = z.object({
   points: z.number().describe('The total points the user has accumulated.'),
 });
 export type GenerateCityScapeInput = z.infer<typeof GenerateCityScapeInputSchema>;
 
-export const GenerateCityScapeOutputSchema = z.object({
+const GenerateCityScapeOutputSchema = z.object({
   imageUrl: z.string().describe('The data URI of the generated city image.'),
 });
 export type GenerateCityScapeOutput = z.infer<typeof GenerateCityScapeOutputSchema>;
