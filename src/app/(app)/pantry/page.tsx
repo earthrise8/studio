@@ -529,7 +529,7 @@ export default function PantryPage() {
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <h2 className="font-headline text-3xl font-bold tracking-tight">
+        <h2 className="font-headline text-3xl font-bold">
           Virtual Pantry
         </h2>
         <div className="flex gap-2">

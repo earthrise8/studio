@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -80,7 +81,7 @@ export default function RecipesPage() {
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <h2 className="font-headline text-3xl font-bold tracking-tight">
+        <h2 className="font-headline text-3xl font-bold">
           My Recipes
         </h2>
         <Button asChild>

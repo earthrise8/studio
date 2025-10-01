@@ -33,7 +33,7 @@ export default function AwardsPage() {
 
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <h2 className="font-headline text-3xl font-bold tracking-tight">
+      <h2 className="font-headline text-3xl font-bold">
         Your Awards
       </h2>
       

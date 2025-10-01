@@ -200,7 +200,7 @@ export default function DashboardPage() {
 
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <h2 className="text-3xl font-bold tracking-tight font-headline">
+      <h2 className="text-3xl font-bold font-headline">
         Welcome, {user.name.split(' ')[0]}!
       </h2>
 
@@ -405,3 +405,4 @@ export default function DashboardPage() {
   );
 
     
+

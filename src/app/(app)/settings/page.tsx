@@ -209,7 +209,7 @@ export default function SettingsPage() {
 
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <h2 className="font-headline text-3xl font-bold tracking-tight">
+      <h2 className="font-headline text-3xl font-bold">
         Settings
       </h2>
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">

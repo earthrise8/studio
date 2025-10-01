@@ -1,3 +1,4 @@
+
 'use client';
 
 import { generatePantryRecipes } from '@/ai/flows/generate-pantry-recipes';
@@ -95,7 +96,7 @@ export default function AiRecipesPage() {
 
     return (
         <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-            <h2 className="font-headline text-3xl font-bold tracking-tight">AI Recipes</h2>
+            <h2 className="font-headline text-3xl font-bold">AI Recipes</h2>
             <div className="grid gap-8 lg:grid-cols-3">
                 <div className="lg:col-span-1 space-y-4">
                     <Card>

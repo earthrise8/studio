@@ -19,7 +19,7 @@ export default function LandingPage() {
       <main className="flex-1">
         <div className="container relative flex-col items-center justify-center pt-16 md:pt-24 lg:pt-32">
           <div className="mx-auto flex w-full flex-col justify-center space-y-6 text-center sm:w-[600px]">
-            <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+            <h1 className="font-headline text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl">
               Your AI Health & Nutrition Partner
             </h1>
             <p className="mx-auto max-w-[700px] text-lg text-muted-foreground">
