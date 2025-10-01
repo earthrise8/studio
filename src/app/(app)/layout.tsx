@@ -57,9 +57,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <>
         <Sidebar collapsible="icon">
           <SidebarHeader>
-            <div className="flex items-center justify-between">
-              <Logo />
-              <SidebarTrigger className="hidden md:flex" />
+            <div className="flex w-full items-center justify-between p-2">
+                <Logo hideTextOnCollapse />
+                <SidebarTrigger className="hidden md:flex" />
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -101,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuItem>
               </SidebarMenu>
               <SidebarSeparator />
-              <div className="flex items-center gap-3 p-2 text-left">
+              <div className="flex items-center gap-3 p-2 text-left group-data-[collapsible=icon]:hidden">
                   <Avatar>
                   <AvatarImage
                       src={user.profile.avatarUrl}
