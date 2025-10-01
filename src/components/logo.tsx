@@ -16,10 +16,10 @@ export default function Logo({ className, hideTextOnCollapse = false }: { classN
           xmlns="http://www.w3.org/2000/svg"
         >
           <rect
-            x="5"
-            y="5"
-            width="90"
-            height="90"
+            x="1"
+            y="1"
+            width="98"
+            height="98"
             rx="20"
             ry="20"
             fill="none"
