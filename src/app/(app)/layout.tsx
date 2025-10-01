@@ -66,23 +66,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarTrigger>
           </SidebarHeader>
           <SidebarContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    href={item.href}
-                    isActive={pathname.startsWith(item.href)}
-                    asChild
-                    tooltip={item.label}
-                  >
-                    <a href={item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <div className='p-2'>
+              <SidebarMenu>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      href={item.href}
+                      isActive={pathname.startsWith(item.href)}
+                      asChild
+                      tooltip={item.label}
+                    >
+                      <a href={item.href}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </div>
           </SidebarContent>
           <SidebarFooter>
               <SidebarMenu>
