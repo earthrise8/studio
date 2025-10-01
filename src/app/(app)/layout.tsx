@@ -59,8 +59,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <>
         <Sidebar collapsible="icon">
           <SidebarHeader>
-             <SidebarTrigger asChild className="w-full justify-start p-2 hover:bg-sidebar-accent">
-                <Button variant="ghost">
+             <SidebarTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center p-2 hover:bg-sidebar-accent">
                     <Logo hideTextOnCollapse />
                 </Button>
             </SidebarTrigger>
