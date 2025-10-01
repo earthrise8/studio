@@ -47,7 +47,7 @@ const initialUsers: Record<string, User> = {
     name: 'Dylan Kwok',
     profile: {
       dailyCalorieGoal: 2200,
-      healthGoal: 'Lose weight and build muscle',
+      healthGoal: 'Stay healthy and active',
       age: 30,
       height: 178,
       weight: 75,
@@ -432,3 +432,5 @@ export const getAwards = async (userId: string): Promise<Award[]> => {
 };
 
   
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +14,7 @@ import {
   getFoodLogs,
   getPantryItems,
   getGoals,
+  updateGoal,
 } from '@/lib/data';
 import {
   Apple,
@@ -21,23 +23,46 @@ import {
   Dumbbell,
   Lightbulb,
   CheckCircle2,
-  Trophy
+  Trophy,
+  Plus,
+  Minus
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth-provider';
 import type { Goal, FoodLog, ActivityLog, PantryItem } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
-function GoalProgress({ goal }: { goal: Goal }) {
+function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
     const progressPercentage = (goal.progress / goal.target) * 100;
     return (
         <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-                <p>{goal.description}</p>
-                <p className="font-medium">{goal.progress} / {goal.target}</p>
+                <p className={goal.isCompleted ? 'line-through text-muted-foreground' : ''}>{goal.description}</p>
+                <div className="flex items-center gap-2 font-medium">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => onUpdate(-1)}
+                        disabled={goal.progress <= 0 || goal.isCompleted}
+                    >
+                        <Minus className="h-4 w-4" />
+                    </Button>
+                    <span>{goal.progress} / {goal.target}</span>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => onUpdate(1)}
+                        disabled={goal.isCompleted}
+                    >
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
             <Progress value={progressPercentage} />
         </div>
@@ -46,6 +71,7 @@ function GoalProgress({ goal }: { goal: Goal }) {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<{
@@ -55,30 +81,70 @@ export default function DashboardPage() {
     goals: Goal[],
   } | null>(null);
 
-  useEffect(() => {
-    async function loadDashboardData() {
-      if (!user) return;
-      
-      setLoading(true);
-      const todayStr = formatISO(new Date(), { representation: 'date' });
+  const loadDashboardData = useCallback(async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    const todayStr = formatISO(new Date(), { representation: 'date' });
 
-      const [
-        pantryItems,
-        foodLogsToday,
-        activityLogsToday,
-        goals,
-      ] = await Promise.all([
-        getPantryItems(user.id),
-        getFoodLogs(user.id, todayStr),
-        getActivityLogs(user.id, todayStr),
-        getGoals(user.id),
-      ]);
+    const [
+      pantryItems,
+      foodLogsToday,
+      activityLogsToday,
+      goals,
+    ] = await Promise.all([
+      getPantryItems(user.id),
+      getFoodLogs(user.id, todayStr),
+      getActivityLogs(user.id, todayStr),
+      getGoals(user.id),
+    ]);
 
-      setData({ pantryItems, foodLogsToday, activityLogsToday, goals });
-      setLoading(false);
-    }
-    loadDashboardData();
+    setData({ pantryItems, foodLogsToday, activityLogsToday, goals });
+    setLoading(false);
   }, [user]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  const handleGoalUpdate = async (goal: Goal, amount: number) => {
+    if (!user || !data) return;
+
+    const newProgress = Math.max(0, goal.progress + amount);
+    const updatedGoal: Goal = {
+      ...goal,
+      progress: newProgress,
+      isCompleted: newProgress >= goal.target,
+    };
+    
+    // Optimistically update UI
+    const originalGoals = data.goals;
+    setData({
+        ...data,
+        goals: data.goals.map(g => g.id === goal.id ? updatedGoal : g)
+    });
+
+    try {
+      await updateGoal(user.id, updatedGoal);
+      if (updatedGoal.isCompleted && !goal.isCompleted) {
+        toast({
+          title: "Goal Complete!",
+          description: `You've achieved: ${goal.description}`,
+          action: <Button asChild variant="secondary"><Link href="/awards">View Awards</Link></Button>
+        });
+      }
+      // Data will be re-synced if needed, but optimistic update is usually enough
+      await loadDashboardData(); 
+    } catch (e) {
+      // Revert if error
+      setData({ ...data, goals: originalGoals });
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Could not update your goal progress.',
+      });
+    }
+  }
 
   if (loading || !data || !user) {
     return (
@@ -193,7 +259,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-4">
              {activeGoals.length > 0 ? (
-                 activeGoals.map(goal => <GoalProgress key={goal.id} goal={goal} />)
+                 activeGoals.map(goal => <GoalProgress key={goal.id} goal={goal} onUpdate={(amount) => handleGoalUpdate(goal, amount)} />)
              ) : (
                 <div className="flex flex-col items-center justify-center text-center p-4 border border-dashed rounded-lg">
                     <CheckCircle2 className="h-10 w-10 text-muted-foreground" />
@@ -241,3 +307,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    

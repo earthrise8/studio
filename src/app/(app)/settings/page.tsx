@@ -30,12 +30,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth-provider';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { updateUserProfile, getGoals, addGoal, deleteGoal, updateGoal } from '@/lib/data';
 import type { Goal } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/alert-dialog';
+
 
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -85,18 +87,18 @@ export default function SettingsPage() {
     }
   });
 
-  const fetchGoals = async () => {
+  const fetchGoals = useCallback(async () => {
     if(user) {
         const userGoals = await getGoals(user.id);
         setGoals(userGoals);
     }
-  }
+  }, [user]);
   
   useEffect(() => {
     if (user) {
         fetchGoals();
     }
-  }, [user]);
+  }, [user, fetchGoals]);
 
 
   useEffect(() => {
@@ -191,7 +193,7 @@ export default function SettingsPage() {
     try {
         await updateGoal(user.id, updatedGoal);
         await fetchGoals();
-        if(updatedGoal.isCompleted) {
+        if(updatedGoal.isCompleted && !goal.isCompleted) {
             toast({ title: 'Goal Complete!', description: `You achieved: ${goal.description}`});
         }
     } catch(e) {
@@ -241,7 +243,6 @@ export default function SettingsPage() {
                                 type="email"
                                 placeholder="your@email.com"
                                 {...field}
-                                readOnly
                             />
                             </FormControl>
                             <FormMessage />
@@ -406,9 +407,26 @@ export default function SettingsPage() {
                                       min={0}
                                       disabled={goal.isCompleted}
                                     />
-                                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleGoalDelete(goal.id)}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button size="icon" variant="ghost" className="text-destructive">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This will permanently delete this goal.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleGoalDelete(goal.id)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+
                                 </div>
                             </div>
                         ))
@@ -448,3 +466,5 @@ export default function SettingsPage() {
     </main>
   );
 }
+
+    
