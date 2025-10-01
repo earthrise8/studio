@@ -55,7 +55,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
     ) : (
       <>
-        <Sidebar>
+        <Sidebar collapsible="icon">
           <SidebarHeader>
             <div className="flex items-center justify-between">
               <Logo />
@@ -70,6 +70,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     href={item.href}
                     isActive={pathname.startsWith(item.href)}
                     asChild
+                    tooltip={item.label}
                   >
                     <a href={item.href}>
                       <item.icon />
@@ -83,7 +84,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarFooter>
               <SidebarMenu>
                   <SidebarMenuItem>
-                      <SidebarMenuButton href="/settings" isActive={pathname === '/settings'} asChild>
+                      <SidebarMenuButton href="/settings" isActive={pathname === '/settings'} asChild tooltip="Settings">
                            <Link href="/settings">
                               <Settings />
                               <span>Settings</span>
@@ -91,7 +92,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton asChild tooltip="Contact Support">
                            <a href="mailto:support@fitropolis.com">
                               <LifeBuoy />
                               <span>Contact Support</span>
