@@ -126,10 +126,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className='space-y-1'>
                     <div className='flex justify-between items-center text-xs text-muted-foreground'>
-                        <span>Level {Math.floor((user.profile?.totalPoints || 0) / 10)}</span>
-                        <span>{((user.profile?.totalPoints || 0) % 10) * 10}/100</span>
+                        <span>Level {Math.floor((user.profile?.totalPoints || 0) / 100)}</span>
+                        <span>{((user.profile?.totalPoints || 0) % 100)}/100</span>
                     </div>
-                    <Progress value={((user.profile?.totalPoints || 0) % 10) * 10} className="h-2" />
+                    <Progress value={((user.profile?.totalPoints || 0) % 100)} className="h-2" />
                 </div>
               </div>
           </SidebarFooter>
