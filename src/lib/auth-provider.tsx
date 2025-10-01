@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User } from '@/lib/types';
+import { getUser } from '@/lib/data';
 
 // Mock user for public access
 const mockUser: User = {
@@ -33,12 +34,22 @@ export default function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, setUser] = useState<User | null>(mockUser);
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadUser = useCallback(async () => {
+    setLoading(true);
+    const storedUser = await getUser(mockUser.id);
+    setUser(storedUser || mockUser);
+    setLoading(false);
+  }, []);
+  
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
 
   const refreshUser = async () => {
-    // No-op since we are using a mock user
-    return Promise.resolve();
+    await loadUser();
   };
 
   return (
