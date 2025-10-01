@@ -1,4 +1,5 @@
 
+
 export type User = {
   id: string; // This is the Firebase UID
   email: string;
@@ -15,6 +16,13 @@ export type UserProfile = {
   activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
   avatarUrl?: string;
   totalPoints?: number;
+};
+
+export type Friend = {
+  id: string;
+  name: string;
+  avatarUrl: string;
+  weeklyPoints: number;
 };
 
 export type PantryItem = {

@@ -15,6 +15,7 @@ import {
   getPantryItems,
   getGoals,
   updateGoal,
+  getFriends,
 } from '@/lib/data';
 import {
   Apple,
@@ -26,23 +27,29 @@ import {
   Trophy,
   Plus,
   Minus,
-  Target
+  Target,
+  Users
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth-provider';
-import type { Goal, FoodLog, ActivityLog, PantryItem } from '@/lib/types';
+import type { Goal, FoodLog, ActivityLog, PantryItem, Friend } from '@/lib/types';
 import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
     const progressPercentage = (goal.progress / goal.target) * 100;
     return (
         <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-                <p className={goal.isCompleted ? 'line-through text-muted-foreground' : ''}>{goal.description}</p>
+                <div className='flex-1'>
+                    <p className={goal.isCompleted ? 'line-through text-muted-foreground' : ''}>{goal.description}</p>
+                    <p className='text-xs text-muted-foreground'>{goal.points} points</p>
+                </div>
                 <div className="flex items-center gap-2 font-medium">
                     <Button
                         variant="ghost"
@@ -80,6 +87,7 @@ export default function DashboardPage() {
     foodLogsToday: FoodLog[],
     activityLogsToday: ActivityLog[],
     goals: Goal[],
+    friends: Friend[],
   } | null>(null);
 
   const loadDashboardData = useCallback(async () => {
@@ -93,14 +101,16 @@ export default function DashboardPage() {
       foodLogsToday,
       activityLogsToday,
       goals,
+      friends,
     ] = await Promise.all([
       getPantryItems(user.id),
       getFoodLogs(user.id, todayStr),
       getActivityLogs(user.id, todayStr),
       getGoals(user.id),
+      getFriends(user.id),
     ]);
 
-    setData({ pantryItems, foodLogsToday, activityLogsToday, goals });
+    setData({ pantryItems, foodLogsToday, activityLogsToday, goals, friends });
     setLoading(false);
   }, [user]);
 
@@ -167,7 +177,7 @@ export default function DashboardPage() {
     )
   }
 
-  const { pantryItems, foodLogsToday, activityLogsToday, goals } = data;
+  const { pantryItems, foodLogsToday, activityLogsToday, goals, friends } = data;
 
   const caloriesIn = foodLogsToday.reduce(
     (acc, log) => acc + log.calories,
@@ -288,36 +298,78 @@ export default function DashboardPage() {
         </Card>
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle className="font-headline">Expiring Soon</CardTitle>
+            <CardTitle className="font-headline">Friends Weekly Leaderboard</CardTitle>
             <CardDescription>
-              Items from your pantry that are about to expire.
+              See how your friends are doing this week.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {expiringSoonItems.length > 0 ? (
-              <ul className="space-y-2">
-                {expiringSoonItems.map((item) => (
+            {friends.length > 0 ? (
+              <ul className="space-y-4">
+                {friends.map((friend, index) => (
                   <li
-                    key={item.id}
+                    key={friend.id}
                     className="flex items-center justify-between"
                   >
-                    <span>
-                      {item.name} ({item.quantity} {item.unit})
-                    </span>
-                    <Badge variant={item.daysUntilExpiry < 1 ? 'destructive' : 'secondary'}>
-                      {item.daysUntilExpiry < 0 ? 'Expired' : item.daysUntilExpiry === 0 ? 'Today' : `in ${item.daysUntilExpiry}d`}
-                    </Badge>
+                    <div className="flex items-center gap-4">
+                      <span className="text-lg font-bold text-muted-foreground w-4">{index + 1}</span>
+                      <Avatar>
+                        <AvatarImage src={friend.avatarUrl} alt={friend.name} />
+                        <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span className='font-medium'>{friend.name}</span>
+                    </div>
+                    <span className="font-bold text-lg">{friend.weeklyPoints.toLocaleString()} pts</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Nothing is expiring soon. Your pantry is fresh!
-              </p>
+              <div className="flex flex-col items-center justify-center text-center p-4 border border-dashed rounded-lg">
+                <Users className="h-10 w-10 text-muted-foreground" />
+                <h3 className="mt-2 font-semibold">No Friends Yet</h3>
+                <p className="text-sm text-muted-foreground mt-1">Add friends to see their progress.</p>
+                <Button variant="secondary" size="sm" className="mt-4" disabled>
+                    Add Friends
+                </Button>
+             </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+       <div className="grid gap-4">
+         <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Expiring Soon</CardTitle>
+                <CardDescription>
+                Items from your pantry that are about to expire.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {expiringSoonItems.length > 0 ? (
+                <ul className="space-y-2">
+                    {expiringSoonItems.map((item) => (
+                    <li
+                        key={item.id}
+                        className="flex items-center justify-between"
+                    >
+                        <span>
+                        {item.name} ({item.quantity} {item.unit})
+                        </span>
+                        <Badge variant={item.daysUntilExpiry < 1 ? 'destructive' : 'secondary'}>
+                        {item.daysUntilExpiry < 0 ? 'Expired' : item.daysUntilExpiry === 0 ? 'Today' : `in ${item.daysUntilExpiry}d`}
+                        </Badge>
+                    </li>
+                    ))}
+                </ul>
+                ) : (
+                <p className="text-sm text-muted-foreground">
+                    Nothing is expiring soon. Your pantry is fresh!
+                </p>
+                )}
+            </CardContent>
+            </Card>
+       </div>
     </main>
   );
 }

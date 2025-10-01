@@ -10,6 +10,7 @@ import type {
   Award,
   User,
   UserProfile,
+  Friend,
 } from '@/lib/types';
 import { addDays, formatISO, subDays } from 'date-fns';
 
@@ -150,6 +151,14 @@ const initialAwards: Record<string, Award[]> = {
     { id: 'a3', name: 'Goal Achiever: Drink 8 glasses of water daily', description: 'You successfully completed a personal goal.', dateAchieved: today.toISOString(), points: 100 },
   ],
 };
+
+const initialFriends: Record<string, Friend[]> = {
+    'user123': [
+        { id: 'f1', name: 'Alice', avatarUrl: 'https://i.pravatar.cc/150?u=alice', weeklyPoints: 1250 },
+        { id: 'f2', name: 'Bob', avatarUrl: 'https://i.pravatar.cc/150?u=bob', weeklyPoints: 980 },
+        { id: 'f3', name: 'Charlie', avatarUrl: 'https://i.pravatar.cc/150?u=charlie', weeklyPoints: 750 },
+    ]
+}
 
 
 // --- Data Access Functions using localStorage ---
@@ -446,7 +455,12 @@ export const getAwards = async (userId: string): Promise<Award[]> => {
   return MOCK_AWARDS[userId] || [];
 };
 
+export const getFriends = async (userId: string): Promise<Friend[]> => {
+    const MOCK_FRIENDS = getFromStorage('MOCK_FRIENDS', initialFriends);
+    return (MOCK_FRIENDS[userId] || []).sort((a,b) => b.weeklyPoints - a.weeklyPoints);
+}
   
 
     
+
 
