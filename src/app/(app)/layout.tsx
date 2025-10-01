@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -107,20 +108,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuItem>
               </SidebarMenu>
               <SidebarSeparator />
-              <div className="flex items-center gap-3 p-2 text-left group-data-[collapsible=icon]:hidden">
-                  <Avatar>
-                  <AvatarImage
-                      src={user.profile.avatarUrl}
-                      alt={user.name}
-                  />
-                  <AvatarFallback>
-                      {user.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                  </Avatar>
-                  <div className="w-full truncate">
-                  <p className="font-semibold">{user.name}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
-                  </div>
+              <div className="space-y-2 p-2 text-left group-data-[collapsible=icon]:hidden">
+                <div className="flex items-center gap-3">
+                    <Avatar>
+                    <AvatarImage
+                        src={user.profile.avatarUrl}
+                        alt={user.name}
+                    />
+                    <AvatarFallback>
+                        {user.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                    </Avatar>
+                    <div className="w-full truncate">
+                    <p className="font-semibold">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                </div>
+                <div className='space-y-1'>
+                    <div className='flex justify-between items-center text-xs text-muted-foreground'>
+                        <span>Level {Math.floor((user.profile?.totalPoints || 0) / 10)}</span>
+                        <span>{((user.profile?.totalPoints || 0) % 10) * 10}/100</span>
+                    </div>
+                    <Progress value={((user.profile?.totalPoints || 0) % 10) * 10} className="h-2" />
+                </div>
               </div>
           </SidebarFooter>
         </Sidebar>
@@ -137,5 +147,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    
