@@ -93,7 +93,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [cityGrid, setCityGrid] = useState<string[][] | null>(null);
   const [cityLoading, setCityLoading] = useState(true);
-  const [cityLevel, setCityLevel] = useState(0);
 
   const [data, setData] = useState<{
     pantryItems: PantryItem[],
@@ -104,31 +103,30 @@ export default function DashboardPage() {
   } | null>(null);
 
   const getCachedGrid = useCallback((level: number) => {
-    if (!user) return null;
+    if (typeof window === 'undefined' || !user) return null;
     const cached = localStorage.getItem(`city-grid-${user.id}-${level}`);
     return cached ? JSON.parse(cached) : null;
   }, [user]);
 
-  const handleGenerateCity = useCallback(async (forceRefresh = false) => {
+  const handleGenerateCity = useCallback(async () => {
     if (!user) return;
 
     const currentLevel = getCityLevel(user.profile.totalPoints || 0);
-    setCityLevel(currentLevel);
 
-    if (!forceRefresh) {
-      const cachedGrid = getCachedGrid(currentLevel);
-      if (cachedGrid) {
-        setCityGrid(cachedGrid);
-        setCityLoading(false);
-        return;
-      }
+    const cachedGrid = getCachedGrid(currentLevel);
+    if (cachedGrid) {
+      setCityGrid(cachedGrid);
+      setCityLoading(false);
+      return;
     }
 
     setCityLoading(true);
     try {
       const result = await generateCityScape({ points: currentLevel });
       setCityGrid(result.grid);
-      localStorage.setItem(`city-grid-${user.id}-${currentLevel}`, JSON.stringify(result.grid));
+       if (typeof window !== 'undefined') {
+        localStorage.setItem(`city-grid-${user.id}-${currentLevel}`, JSON.stringify(result.grid));
+      }
     } catch (error) {
       console.error(error);
       toast({
@@ -145,7 +143,6 @@ export default function DashboardPage() {
     if (!user) return;
     
     setLoading(true);
-    await handleGenerateCity();
     const todayStr = formatISO(new Date(), { representation: 'date' });
 
     const [
@@ -164,11 +161,14 @@ export default function DashboardPage() {
 
     setData({ pantryItems, foodLogsToday, activityLogsToday, goals, friends });
     setLoading(false);
-  }, [user, handleGenerateCity]);
+  }, [user]);
 
   useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
+    if (user) {
+      loadDashboardData();
+      handleGenerateCity();
+    }
+  }, [user, loadDashboardData, handleGenerateCity]);
 
   const handleGoalUpdate = async (goal: Goal, amount: number) => {
     if (!user || !data) return;
@@ -198,8 +198,9 @@ export default function DashboardPage() {
           action: <Button asChild variant="secondary"><Link href="/awards">View Awards</Link></Button>
         });
         await refreshUser(); // Refresh user to get updated points total
+      } else {
+        await loadDashboardData();
       }
-      await loadDashboardData(); 
     } catch (e) {
       // Revert if error
       setData({ ...data, goals: originalGoals });
@@ -293,14 +294,6 @@ export default function DashboardPage() {
                     </div>
                 )}
             </div>
-             <Button onClick={() => handleGenerateCity(true)} disabled={cityLoading}>
-                {cityLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                )}
-                Regenerate City
-            </Button>
         </CardContent>
     </Card>
 
@@ -509,3 +502,4 @@ export default function DashboardPage() {
 
 
     
+
