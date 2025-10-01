@@ -34,7 +34,7 @@ import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { updateUserProfile, getGoals, addGoal, deleteGoal, updateGoal } from '@/lib/data';
+import { updateUserProfile, getGoals, addGoal, deleteGoal, updateGoal, resetUserData } from '@/lib/data';
 import type { Goal } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -204,6 +204,25 @@ export default function SettingsPage() {
         await refreshUser();
     } catch(e) {
         //
+    }
+  }
+
+  const handleResetData = () => {
+    if(!user) return;
+    try {
+        resetUserData(user.id);
+        toast({
+            title: "Data Reset",
+            description: "All your data has been reset to the default state."
+        });
+        // Force a reload to get the new state
+        window.location.reload();
+    } catch (e) {
+        toast({
+            variant: 'destructive',
+            title: "Reset Failed",
+            description: "Could not reset your data. Please try again."
+        });
     }
   }
 
@@ -452,32 +471,60 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
         </div>
-        <Card>
-            <CardHeader>
-                <CardTitle>Appearance</CardTitle>
-                <CardDescription>Customize the look and feel of the app.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                        <Label className="text-base">Dark Mode</Label>
-                        <p className="text-sm text-muted-foreground">
-                            Enable dark theme for the application.
-                        </p>
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Appearance</CardTitle>
+                    <CardDescription>Customize the look and feel of the app.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                            <Label className="text-base">Dark Mode</Label>
+                            <p className="text-sm text-muted-foreground">
+                                Enable dark theme for the application.
+                            </p>
+                        </div>
+                        <Switch />
                     </div>
-                    <Switch />
-                </div>
-                 <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                        <Label className="text-base">Compact View</Label>
-                        <p className="text-sm text-muted-foreground">
-                            Reduce padding and margins for a denser layout.
-                        </p>
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                            <Label className="text-base">Compact View</Label>
+                            <p className="text-sm text-muted-foreground">
+                                Reduce padding and margins for a denser layout.
+                            </p>
+                        </div>
+                        <Switch />
                     </div>
-                    <Switch />
-                </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Admin Actions</CardTitle>
+                    <CardDescription>These are destructive actions. Use with caution.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive">Reset All Data</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete all of your
+                                logs, goals, points, and recipes, resetting your account to its default state.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleResetData}>Continue</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </CardContent>
+            </Card>
+        </div>
       </div>
     </main>
   );
@@ -486,3 +533,4 @@ export default function SettingsPage() {
     
 
     
+

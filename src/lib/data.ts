@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type {
@@ -162,6 +163,39 @@ const initialFriends: Record<string, Friend[]> = {
 
 
 // --- Data Access Functions using localStorage ---
+
+export const resetUserData = (userId: string) => {
+    let users = getFromStorage('MOCK_USERS', initialUsers);
+    let pantry = getFromStorage('MOCK_PANTRY', initialPantry);
+    let foodLogs = getFromStorage('MOCK_FOOD_LOGS', initialFoodLogs);
+    let activityLogs = getFromStorage('MOCK_ACTIVITY_LOGS', initialActivityLogs);
+    let recipes = getFromStorage('MOCK_RECIPES', initialRecipes);
+    let goals = getFromStorage('MOCK_GOALS', initialGoals);
+    let awards = getFromStorage('MOCK_AWARDS', initialAwards);
+
+    users[userId] = JSON.parse(JSON.stringify(initialUsers[userId]));
+    pantry[userId] = JSON.parse(JSON.stringify(initialPantry[userId]));
+    foodLogs[userId] = JSON.parse(JSON.stringify(initialFoodLogs[userId]));
+    activityLogs[userId] = JSON.parse(JSON.stringify(initialActivityLogs[userId]));
+    recipes[userId] = JSON.parse(JSON.stringify(initialRecipes[userId]));
+    goals[userId] = JSON.parse(JSON.stringify(initialGoals[userId]));
+    awards[userId] = JSON.parse(JSON.stringify(initialAwards[userId]));
+
+    saveToStorage('MOCK_USERS', users);
+    saveToStorage('MOCK_PANTRY', pantry);
+    saveToStorage('MOCK_FOOD_LOGS', foodLogs);
+    saveToStorage('MOCK_ACTIVITY_LOGS', activityLogs);
+    saveToStorage('MOCK_RECIPES', recipes);
+    saveToStorage('MOCK_GOALS', goals);
+    saveToStorage('MOCK_AWARDS', awards);
+
+    // Also clear any cached city grids
+    Object.keys(localStorage).forEach(key => {
+        if(key.startsWith(`city-grid-${userId}`)) {
+            localStorage.removeItem(key);
+        }
+    })
+}
 
 const checkAndGrantAwards = async (userId: string, completedGoal: Goal) => {
     let MOCK_AWARDS = getFromStorage('MOCK_AWARDS', initialAwards);
@@ -462,5 +496,6 @@ export const getFriends = async (userId: string): Promise<Friend[]> => {
   
 
     
+
 
 
