@@ -28,7 +28,7 @@ export default function AiRecipesPage() {
     const { user } = useAuth();
     const { toast } = useToast();
 
-    const [expiringItems, setExpiringItems] = useState<PantryItem[]>([]);
+    const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
     const [healthGoal, setHealthGoal] = useState('');
     const [recipeIdeas, setRecipeIdeas] = useState<RecipeIdea[]>([]);
     const [loading, setLoading] = useState(false);
@@ -39,11 +39,10 @@ export default function AiRecipesPage() {
         if(user) {
             setHealthGoal(user.profile?.healthGoal || '');
             getPantryItems(user.id).then(items => {
-                const expiring = items
+                const sortedItems = items
                     .map(item => ({...item, daysUntilExpiry: differenceInDays(new Date(item.expirationDate), new Date())}))
-                    .filter(item => item.daysUntilExpiry >= -1 && item.daysUntilExpiry <= 7) // Allow items that expired yesterday
                     .sort((a,b) => a.daysUntilExpiry - b.daysUntilExpiry);
-                setExpiringItems(expiring);
+                setPantryItems(sortedItems);
             });
         }
     }, [user]);
@@ -54,7 +53,7 @@ export default function AiRecipesPage() {
         setRecipeIdeas([]);
         try {
             const result = await generatePantryRecipes({
-                pantryItems: expiringItems.map(({name, quantity, unit}) => ({name, quantity, unit})),
+                pantryItems: pantryItems.map(({name, quantity, unit}) => ({name, quantity, unit})),
                 healthGoal,
                 userPrompt
             });
@@ -91,6 +90,8 @@ export default function AiRecipesPage() {
             setSavingRecipe(null);
         }
     }
+    
+    const expiringItems = pantryItems.filter(item => item.daysUntilExpiry <= 7);
 
     return (
         <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -99,18 +100,20 @@ export default function AiRecipesPage() {
                 <div className="lg:col-span-1 space-y-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Flame /> Expiring Soon</CardTitle>
-                            <CardDescription>Use these items before they go bad.</CardDescription>
+                            <CardTitle className="flex items-center gap-2"><Flame /> Your Pantry</CardTitle>
+                            <CardDescription>Generate recipes based on your pantry items.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {expiringItems.length > 0 ? (
+                            {pantryItems.length > 0 ? (
                                 <ul className="space-y-2">
-                                    {expiringItems.map(item => (
+                                    {pantryItems.map(item => (
                                         <li key={item.id} className="flex justify-between items-center">
                                             <span>{item.name}</span>
-                                            <Badge variant={item.daysUntilExpiry < 1 ? 'destructive' : 'secondary'}>
-                                                {item.daysUntilExpiry < 0 ? 'Expired' : item.daysUntilExpiry === 0 ? 'Today' : `in ${item.daysUntilExpiry}d`}
-                                            </Badge>
+                                            {item.daysUntilExpiry <= 7 && (
+                                                <Badge variant={item.daysUntilExpiry < 1 ? 'destructive' : 'secondary'}>
+                                                    {item.daysUntilExpiry < 0 ? 'Expired' : item.daysUntilExpiry === 0 ? 'Today' : `in ${item.daysUntilExpiry}d`}
+                                                </Badge>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>
@@ -131,7 +134,7 @@ export default function AiRecipesPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="font-headline">Recipe Ideas</CardTitle>
-                            <CardDescription>Generate recipe ideas based on your expiring items, health goal, and preferences.</CardDescription>
+                            <CardDescription>Generate recipe ideas based on your pantry items, health goal, and preferences.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                              <div className='space-y-2'>
@@ -143,13 +146,13 @@ export default function AiRecipesPage() {
                                     onChange={e => setUserPrompt(e.target.value)}
                                 />
                              </div>
-                             <Button onClick={handleGenerateRecipes} disabled={loading || expiringItems.length === 0}>
+                             <Button onClick={handleGenerateRecipes} disabled={loading || pantryItems.length === 0}>
                                 {loading ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
                                     <Sparkles className="mr-2 h-4 w-4" />
                                 )}
-                                {expiringItems.length === 0 ? 'Add expiring items to pantry' : 'Generate Ideas'}
+                                {pantryItems.length === 0 ? 'Add items to your pantry first' : 'Generate Ideas'}
                             </Button>
                             
                             <div className="space-y-4">
@@ -214,5 +217,3 @@ export default function AiRecipesPage() {
         </main>
     )
 }
-
-    

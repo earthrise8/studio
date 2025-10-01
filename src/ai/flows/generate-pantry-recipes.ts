@@ -49,14 +49,14 @@ const prompt = ai.definePrompt({
   output: {schema: GeneratePantryRecipesOutputSchema},
   prompt: `You are a personal chef who specializes in creating recipes based on available ingredients and health goals.
 
-  Given the following list of pantry items, suggest 3-5 recipe ideas.
+  Given the following list of pantry items, suggest 3-5 recipe ideas. Your suggestions should primarily use the ingredients available in the pantry.
   
   {{#if healthGoal}}
-  Keep the user's health goal of "{{healthGoal}}" in mind when creating recipes.
+  The user's current health goal is: "{{healthGoal}}". All recipes you generate must align with this goal.
   {{/if}}
 
   {{#if userPrompt}}
-  The user has also specified they are looking for: "{{userPrompt}}". Prioritize this request.
+  The user has also specified they are looking for: "{{userPrompt}}". Prioritize this request when creating recipes.
   {{/if}}
 
   For each recipe, provide a name, a single emoji, and a short, appetizing description.
