@@ -109,11 +109,11 @@ const getCityLevel = (points: number) => {
 
 const getCityInfo = (points: number) => {
     const level = getCityLevel(points);
-    if (level < 100) return { name: 'Village', population: points * 10 };
-    if (level < 500) return { name: 'Town', population: points * 20 };
-    if (level < 1000) return { name: 'Small City', population: points * 50 };
-    if (level < 2000) return { name: 'Large City', population: points * 100 };
-    return { name: 'Metropolis', population: points * 250 };
+    if (level < 100) return { name: 'Village', population: points * 10, numberOfHouses: Math.floor(points / 10), totalRevenue: points * 100 };
+    if (level < 500) return { name: 'Town', population: points * 20, numberOfHouses: Math.floor(points / 5), totalRevenue: points * 250 };
+    if (level < 1000) return { name: 'Small City', population: points * 50, numberOfHouses: Math.floor(points / 2), totalRevenue: points * 600 };
+    if (level < 2000) return { name: 'Large City', population: points * 100, numberOfHouses: points, totalRevenue: points * 1500 };
+    return { name: 'Metropolis', population: points * 250, numberOfHouses: points * 2, totalRevenue: points * 4000 };
 };
 
 export default function DashboardPage() {
@@ -269,7 +269,7 @@ export default function DashboardPage() {
   };
 
   const availableBuildings = user ? getBuildingSet(user.profile.totalPoints || 0) : [];
-  const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0) : { name: 'Empty Lot', population: 0 };
+  const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0) : { name: 'Empty Lot', population: 0, numberOfHouses: 0, totalRevenue: 0 };
 
 
   if (loading || !data || !user) {
@@ -371,6 +371,14 @@ export default function DashboardPage() {
                     <div className="flex justify-between text-sm">
                       <span className='font-medium text-muted-foreground'>Population:</span>
                       <span className='font-bold'>{cityInfo.population.toLocaleString()}</span>
+                    </div>
+                     <div className="flex justify-between text-sm">
+                      <span className='font-medium text-muted-foreground'>Houses:</span>
+                      <span className='font-bold'>{cityInfo.numberOfHouses.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className='font-medium text-muted-foreground'>Revenue:</span>
+                      <span className='font-bold'>${cityInfo.totalRevenue.toLocaleString()}/day</span>
                     </div>
                      <div className="flex justify-between text-sm">
                       <span className='font-medium text-muted-foreground'>Total Points:</span>
@@ -604,3 +612,5 @@ export default function DashboardPage() {
   );
 
 }
+
+    
