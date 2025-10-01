@@ -27,6 +27,7 @@ import {
   LifeBuoy,
   Lightbulb,
   Loader2,
+  Building,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-provider';
 import { usePathname, useRouter } from 'next/navigation';
@@ -47,6 +48,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/ai-recipes', label: 'AI Recipes', icon: Sparkles },
     { href: '/advisor', label: 'AI Advisor', icon: Lightbulb },
     { href: '/awards', label: 'Awards', icon: Trophy },
+    { href: '/city', label: 'City', icon: Building },
   ];
 
   const pageContent = (
