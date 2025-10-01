@@ -17,8 +17,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['PT Sans', 'sans-serif'],
-        headline: ['Poppins', 'sans-serif'],
+        body: ['"Press Start 2P"', 'sans-serif'],
+        headline: ['"VT323"', 'monospace'],
         code: ['monospace'],
       },
       colors: {
