@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Card,
@@ -22,7 +23,8 @@ export default function AwardsPage() {
   useEffect(() => {
     if (user) {
       getAwards(user.id).then((data) => {
-        setAwards(data);
+        const sortedData = data.sort((a, b) => new Date(b.dateAchieved).getTime() - new Date(a.dateAchieved).getTime());
+        setAwards(sortedData);
         setLoading(false);
       });
     }
