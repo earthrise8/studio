@@ -43,24 +43,32 @@ const GRID_HEIGHT = 20;
 export async function generateCityScape(input: GenerateCityScapeInput): Promise<GenerateCityScapeOutput> {
   const grid: string[][] = Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(TILES.EMPTY));
   const buildingSet = getBuildingSet(input.points);
+  const roadY = GRID_HEIGHT - 5;
+
 
   // Simple generation logic
   for (let y = 0; y < GRID_HEIGHT; y++) {
     for (let x = 0; x < GRID_WIDTH; x++) {
-      // Horizon
-      if (y > GRID_HEIGHT / 2 ) {
-         grid[y][x] = TILES.GRASS;
+      
+      // Default to grass below horizon
+      if (y > GRID_HEIGHT / 2) {
+        grid[y][x] = TILES.GRASS;
       }
       
       // Road
-      if (y === GRID_HEIGHT - 5) {
+      if (y === roadY) {
         grid[y][x] = TILES.ROAD;
+        continue; // Skip other generation for road tiles
       }
 
-      // Buildings
-      if (y > GRID_HEIGHT / 2 && y < GRID_HEIGHT - 5) {
-        if (Math.random() > 0.6) {
-            grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
+      // Buildings and stuff
+      if (y > GRID_HEIGHT / 2) {
+        // Place buildings near the road, on both sides
+        const distFromRoad = Math.abs(y - roadY);
+        if (distFromRoad > 0 && distFromRoad < 4) {
+             if (Math.random() > 0.6) {
+                grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
+            }
         }
       }
     }
