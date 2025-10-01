@@ -32,6 +32,8 @@ import { useAuth } from '@/lib/auth-provider';
 import { usePathname, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -57,10 +59,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <>
         <Sidebar collapsible="icon">
           <SidebarHeader>
-            <div className="flex w-full items-center justify-between p-2">
-                <Logo hideTextOnCollapse />
-                <SidebarTrigger className="hidden md:flex" />
-            </div>
+             <SidebarTrigger asChild className="w-full justify-start p-2 hover:bg-sidebar-accent">
+                <Button variant="ghost">
+                    <Logo hideTextOnCollapse />
+                </Button>
+            </SidebarTrigger>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>

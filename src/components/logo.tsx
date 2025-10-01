@@ -1,10 +1,8 @@
-import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 export default function Logo({ className, hideTextOnCollapse = false }: { className?: string, hideTextOnCollapse?: boolean }) {
   return (
-    <Link
-      href="/"
+    <div
       className={cn(
         'flex items-center space-x-2 text-2xl font-bold font-headline',
         className
@@ -14,6 +12,6 @@ export default function Logo({ className, hideTextOnCollapse = false }: { classN
         <span>F</span>
       </div>
       <span className={cn(hideTextOnCollapse && 'group-data-[collapsible=icon]:hidden')}>Fitropolis</span>
-    </Link>
+    </div>
   );
 }
