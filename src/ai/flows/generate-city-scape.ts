@@ -46,10 +46,6 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
   const grid: string[][] = Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(TILES.EMPTY));
   const buildingSet = getBuildingSet(input.points);
 
-  // River
-  const riverStart = Math.floor(GRID_WIDTH / 4);
-  const riverEnd = riverStart + 3;
-
   // Simple generation logic
   for (let y = 0; y < GRID_HEIGHT; y++) {
     for (let x = 0; x < GRID_WIDTH; x++) {
@@ -58,14 +54,6 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
          grid[y][x] = TILES.GRASS;
       }
       
-      // River
-      if (x >= riverStart && x <= riverEnd) {
-        grid[y][x] = TILES.WATER;
-        if(Math.random() < 0.05) {
-            grid[y][x] = TILES.BOAT
-        }
-      }
-
       // Road
       if (y === GRID_HEIGHT - 5) {
         grid[y][x] = TILES.ROAD;
@@ -73,11 +61,9 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
 
       // Buildings
       if (y > GRID_HEIGHT / 2 && y < GRID_HEIGHT - 5) {
-          if (x < riverStart || x > riverEnd) {
-            if (Math.random() > 0.6) {
-                grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
-            }
-          }
+        if (Math.random() > 0.6) {
+            grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
+        }
       }
     }
   }
