@@ -31,6 +31,7 @@ import {
   Building,
   Loader2,
   RefreshCw,
+  Edit,
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -42,6 +43,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { generateCityScape } from '@/ai/flows/generate-city-scape';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -78,6 +80,25 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
     )
 }
 
+const TILES = {
+  EMPTY: ' ',
+  ROAD: '➖',
+  GRASS: '🌲',
+  VILLAGE: ['🏡', '🌳', '🌳'],
+  TOWN: ['🏠', '🏡', '🏬', '🌳'],
+  SMALL_CITY: ['🏢', '🏠', '🏬', '🏫', '🌳'],
+  LARGE_CITY: ['🏢', '🏬', '🏙️', '🏫', '🌳'],
+  METROPOLIS: ['🏙️', '🌃', '🏢', '🚀'],
+};
+
+const getBuildingSet = (points: number) => {
+  if (points < 100) return TILES.VILLAGE;
+  if (points < 500) return TILES.TOWN;
+  if (points < 1000) return TILES.SMALL_CITY;
+  if (points < 2000) return TILES.LARGE_CITY;
+  return TILES.METROPOLIS;
+};
+
 const getCityLevel = (points: number) => {
     if (points < 100) return 0;
     if (points < 500) return 100;
@@ -86,6 +107,15 @@ const getCityLevel = (points: number) => {
     return 2000;
 }
 
+const getCityInfo = (points: number) => {
+    const level = getCityLevel(points);
+    if (level < 100) return { name: 'Village', population: points * 10 };
+    if (level < 500) return { name: 'Town', population: points * 20 };
+    if (level < 1000) return { name: 'Small City', population: points * 50 };
+    if (level < 2000) return { name: 'Large City', population: points * 100 };
+    return { name: 'Metropolis', population: points * 250 };
+};
+
 export default function DashboardPage() {
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
@@ -93,6 +123,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [cityGrid, setCityGrid] = useState<string[][] | null>(null);
   const [cityLoading, setCityLoading] = useState(true);
+  const [selectedTile, setSelectedTile] = useState<{y: number, x: number} | null>(null);
+  const [isTilePickerOpen, setTilePickerOpen] = useState(false);
 
   const [data, setData] = useState<{
     pantryItems: PantryItem[],
@@ -108,25 +140,31 @@ export default function DashboardPage() {
     return cached ? JSON.parse(cached) : null;
   }, [user]);
 
-  const handleGenerateCity = useCallback(async () => {
+  const saveGridToCache = useCallback((level: number, grid: string[][]) => {
+     if (typeof window !== 'undefined' && user) {
+        localStorage.setItem(`city-grid-${user.id}-${level}`, JSON.stringify(grid));
+     }
+  }, [user]);
+
+  const handleGenerateCity = useCallback(async (forceRefresh = false) => {
     if (!user) return;
 
     const currentLevel = getCityLevel(user.profile.totalPoints || 0);
 
-    const cachedGrid = getCachedGrid(currentLevel);
-    if (cachedGrid) {
-      setCityGrid(cachedGrid);
-      setCityLoading(false);
-      return;
+    if (!forceRefresh) {
+        const cachedGrid = getCachedGrid(currentLevel);
+        if (cachedGrid) {
+        setCityGrid(cachedGrid);
+        setCityLoading(false);
+        return;
+        }
     }
 
     setCityLoading(true);
     try {
       const result = await generateCityScape({ points: currentLevel });
       setCityGrid(result.grid);
-       if (typeof window !== 'undefined') {
-        localStorage.setItem(`city-grid-${user.id}-${currentLevel}`, JSON.stringify(result.grid));
-      }
+      saveGridToCache(currentLevel, result.grid);
     } catch (error) {
       console.error(error);
       toast({
@@ -137,7 +175,7 @@ export default function DashboardPage() {
     } finally {
       setCityLoading(false);
     }
-  }, [user, toast, getCachedGrid]);
+  }, [user, toast, getCachedGrid, saveGridToCache]);
 
   const loadDashboardData = useCallback(async () => {
     if (!user) return;
@@ -212,6 +250,28 @@ export default function DashboardPage() {
     }
   }
 
+  const handleTileClick = (y: number, x: number) => {
+    if (cityGrid && cityGrid[y][x] !== ' ' && cityGrid[y][x] !== '➖') {
+      setSelectedTile({y, x});
+      setTilePickerOpen(true);
+    }
+  }
+
+  const handleTileSelect = (newTile: string) => {
+    if (selectedTile && cityGrid && user) {
+      const newGrid = cityGrid.map(row => [...row]);
+      newGrid[selectedTile.y][selectedTile.x] = newTile;
+      setCityGrid(newGrid);
+      const currentLevel = getCityLevel(user.profile.totalPoints || 0);
+      saveGridToCache(currentLevel, newGrid);
+      setTilePickerOpen(false);
+    }
+  };
+
+  const availableBuildings = user ? getBuildingSet(user.profile.totalPoints || 0) : [];
+  const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0) : { name: 'Empty Lot', population: 0 };
+
+
   if (loading || !data || !user) {
     return (
        <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -267,11 +327,12 @@ export default function DashboardPage() {
                 Your Fitropolis
             </CardTitle>
             <CardDescription>
-                Your city grows as you earn points! A new stage is generated at key milestones.
+                Your city grows as you earn points! Click a tile to customize it.
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <div className="w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto">
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto">
                 {cityLoading ? (
                     <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -282,7 +343,9 @@ export default function DashboardPage() {
                      {cityGrid.map((row, y) => (
                         <div key={y} className="flex">
                             {row.map((cell, x) => (
-                                <span key={x}>{cell}</span>
+                                <button key={x} onClick={() => handleTileClick(y,x)} className='hover:bg-primary/20 rounded-sm transition-colors'>
+                                    <span>{cell}</span>
+                                </button>
                             ))}
                         </div>
                      ))}
@@ -294,6 +357,29 @@ export default function DashboardPage() {
                     </div>
                 )}
             </div>
+
+            <div className="lg:col-span-1 space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className='font-headline'>City Info</CardTitle>
+                </CardHeader>
+                <CardContent className='space-y-2'>
+                   <div className="flex justify-between text-sm">
+                      <span className='font-medium text-muted-foreground'>City Size:</span>
+                      <span className='font-bold'>{cityInfo.name}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className='font-medium text-muted-foreground'>Population:</span>
+                      <span className='font-bold'>{cityInfo.population.toLocaleString()}</span>
+                    </div>
+                     <div className="flex justify-between text-sm">
+                      <span className='font-medium text-muted-foreground'>Total Points:</span>
+                      <span className='font-bold'>{(user.profile.totalPoints || 0).toLocaleString()}</span>
+                    </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </CardContent>
     </Card>
 
@@ -494,12 +580,27 @@ export default function DashboardPage() {
             </CardContent>
             </Card>
        </div>
+
+        <Dialog open={isTilePickerOpen} onOpenChange={setTilePickerOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Customize Tile</DialogTitle>
+                </DialogHeader>
+                <div className='grid grid-cols-4 gap-2'>
+                    {availableBuildings.map(building => (
+                        <Button
+                            key={building}
+                            variant="outline"
+                            className='text-3xl h-20'
+                            onClick={() => handleTileSelect(building)}
+                        >
+                            {building}
+                        </Button>
+                    ))}
+                </div>
+            </DialogContent>
+       </Dialog>
     </main>
   );
 
-    
-
-
-
-    
-
+}

@@ -22,8 +22,6 @@ const TILES = {
   EMPTY: ' ',
   ROAD: '➖',
   GRASS: '🌲',
-  WATER: '🟦',
-  BOAT: '⛵️',
   VILLAGE: ['🏡', '🌳', '🌳'],
   TOWN: ['🏠', '🏡', '🏬', '🌳'],
   SMALL_CITY: ['🏢', '🏠', '🏬', '🏫', '🌳'],
