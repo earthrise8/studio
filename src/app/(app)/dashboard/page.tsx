@@ -39,6 +39,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProgressRing } from '@/components/ui/progress-ring';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -188,6 +189,7 @@ export default function DashboardPage() {
     0
   );
   const calorieGoal = user.profile?.dailyCalorieGoal || 2200;
+  const activityGoal = 500; // Example goal for calories out
 
   const expiringSoonItems = pantryItems
     .map((item) => ({
@@ -206,71 +208,35 @@ export default function DashboardPage() {
         Welcome, {user.name.split(' ')[0]}!
       </h2>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Today&apos;s Summary</CardTitle>
-            <CardDescription>
-              Your progress towards your daily calorie goal.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between text-lg font-bold">
-              <span>{caloriesIn}</span>
-              <span>{calorieGoal} kcal</span>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <ProgressRing value={caloriesIn} max={calorieGoal} size={150} strokeWidth={12}>
+            <div className="text-center">
+                <p className="text-xs text-muted-foreground">Calories In</p>
+                <p className="text-2xl font-bold">{caloriesIn}</p>
+                <p className="text-xs text-muted-foreground">/ {calorieGoal} kcal</p>
             </div>
-            <Progress value={(caloriesIn / calorieGoal) * 100} />
-            <p className="text-sm text-muted-foreground">
-              You have{' '}
-              <span className="font-bold text-foreground">
-                {Math.max(0, calorieGoal - caloriesIn)}
-              </span>{' '}
-              calories remaining.
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Calories In</CardTitle>
-            <Apple className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="flex-1 flex items-end">
-            <div className="text-2xl font-bold">{caloriesIn} kcal</div>
-          </CardContent>
-        </Card>
-        <Card className="flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Calories Out
-            </CardTitle>
-            <Flame className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="flex-1 flex items-end">
-            <div className="text-2xl font-bold">{caloriesOut} kcal</div>
-          </CardContent>
-        </Card>
-         <Card className="flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Completed Goals
-            </CardTitle>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="flex-1 flex items-end">
-             <div className="text-2xl font-bold">{completedGoals.length}</div>
-          </CardContent>
-        </Card>
-         <Card className="flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Points
-            </CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="flex-1 flex items-end">
-             <div className="text-2xl font-bold">{user.profile.totalPoints || 0}</div>
-          </CardContent>
-        </Card>
+        </ProgressRing>
+        <ProgressRing value={caloriesOut} max={activityGoal} size={150} strokeWidth={12} variant="accent">
+            <div className="text-center">
+                <p className="text-xs text-muted-foreground">Calories Out</p>
+                <p className="text-2xl font-bold">{caloriesOut}</p>
+                <p className="text-xs text-muted-foreground">/ {activityGoal} kcal</p>
+            </div>
+        </ProgressRing>
+        <ProgressRing value={completedGoals.length} max={goals.length} size={150} strokeWidth={12} variant="secondary">
+             <div className="text-center">
+                <p className="text-xs text-muted-foreground">Goals Done</p>
+                <p className="text-2xl font-bold">{completedGoals.length}/{goals.length}</p>
+                 <p className="text-xs text-muted-foreground">&nbsp;</p>
+            </div>
+        </ProgressRing>
+        <ProgressRing value={user.profile.totalPoints || 0} max={(user.profile.totalPoints || 0) + 100} size={150} strokeWidth={12} variant="primary">
+             <div className="text-center">
+                <p className="text-xs text-muted-foreground">Total Points</p>
+                <p className="text-2xl font-bold">{user.profile.totalPoints || 0}</p>
+                <p className="text-xs text-muted-foreground">points</p>
+            </div>
+        </ProgressRing>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -377,3 +343,4 @@ export default function DashboardPage() {
     
 
     
+
