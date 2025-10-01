@@ -44,6 +44,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { generateCityScape } from '@/ai/flows/generate-city-scape';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -81,22 +82,41 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
 }
 
 const TILES = {
-  EMPTY: ' ',
-  ROAD: '➖',
-  GRASS: '🌲',
-  VILLAGE: ['🏡', '🌳', '🌳'],
-  TOWN: ['🏠', '🏡', '🏬', '🌳'],
-  SMALL_CITY: ['🏢', '🏠', '🏬', '🏫', '🌳'],
-  LARGE_CITY: ['🏢', '🏬', '🏙️', '🏫', '🌳'],
-  METROPOLIS: ['🏙️', '🌃', '🏢', '🚀'],
+  EMPTY: { emoji: ' ', name: 'Empty' },
+  ROAD: { emoji: '➖', name: 'Road' },
+  GRASS: { emoji: '🌲', name: 'Tree' },
+  VILLAGE: [
+    { emoji: '🏡', name: 'House' },
+    { emoji: '🌳', name: 'Big Tree' },
+  ],
+  TOWN: [
+    { emoji: '🏠', name: 'Family Home' },
+    { emoji: '🏬', name: 'Store' },
+  ],
+  SMALL_CITY: [
+    { emoji: '🏢', name: 'Apartment' },
+    { emoji: '🏫', name: 'School' },
+  ],
+  LARGE_CITY: [
+    { emoji: '🏙️', name: 'Skyscraper' },
+  ],
+  METROPOLIS: [
+    { emoji: '🌃', name: 'City at Night' },
+    { emoji: '🚀', name: 'Rocket' },
+  ],
 };
 
 const getBuildingSet = (points: number) => {
-  if (points < 100) return TILES.VILLAGE;
-  if (points < 500) return TILES.TOWN;
-  if (points < 1000) return TILES.SMALL_CITY;
-  if (points < 2000) return TILES.LARGE_CITY;
-  return TILES.METROPOLIS;
+  let available = [...TILES.VILLAGE, TILES.GRASS];
+  if (points >= 100) available.push(...TILES.TOWN);
+  if (points >= 500) available.push(...TILES.SMALL_CITY);
+  if (points >= 1000) available.push(...TILES.LARGE_CITY);
+  if (points >= 2000) available.push(...TILES.METROPOLIS);
+
+  // Remove duplicates by emoji
+  const uniqueAvailable = available.filter((v,i,a)=>a.findIndex(t=>(t.emoji === v.emoji))===i);
+
+  return uniqueAvailable;
 };
 
 const getCityLevel = (points: number) => {
@@ -599,18 +619,26 @@ export default function DashboardPage() {
                 <DialogHeader>
                     <DialogTitle>Customize Tile</DialogTitle>
                 </DialogHeader>
-                <div className='grid grid-cols-4 gap-2'>
-                    {availableBuildings.map(building => (
-                        <Button
-                            key={building}
-                            variant="outline"
-                            className='text-3xl h-20'
-                            onClick={() => handleTileSelect(building)}
-                        >
-                            {building}
-                        </Button>
-                    ))}
-                </div>
+                 <TooltipProvider>
+                    <div className='grid grid-cols-4 gap-2'>
+                        {availableBuildings.map(building => (
+                            <Tooltip key={building.emoji}>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className='text-3xl h-20'
+                                        onClick={() => handleTileSelect(building.emoji)}
+                                    >
+                                        {building.emoji}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{building.name}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        ))}
+                    </div>
+                </TooltipProvider>
             </DialogContent>
        </Dialog>
     </main>
@@ -619,3 +647,5 @@ export default function DashboardPage() {
 }
 
     
+
+
