@@ -41,7 +41,7 @@ export default function AiRecipesPage() {
             getPantryItems(user.id).then(items => {
                 const expiring = items
                     .map(item => ({...item, daysUntilExpiry: differenceInDays(new Date(item.expirationDate), new Date())}))
-                    .filter(item => item.daysUntilExpiry >= 0 && item.daysUntilExpiry <= 7)
+                    .filter(item => item.daysUntilExpiry >= -1 && item.daysUntilExpiry <= 7) // Allow items that expired yesterday
                     .sort((a,b) => a.daysUntilExpiry - b.daysUntilExpiry);
                 setExpiringItems(expiring);
             });
@@ -109,7 +109,7 @@ export default function AiRecipesPage() {
                                         <li key={item.id} className="flex justify-between items-center">
                                             <span>{item.name}</span>
                                             <Badge variant={item.daysUntilExpiry < 1 ? 'destructive' : 'secondary'}>
-                                                {item.daysUntilExpiry === 0 ? 'Today' : `in ${item.daysUntilExpiry}d`}
+                                                {item.daysUntilExpiry < 0 ? 'Expired' : item.daysUntilExpiry === 0 ? 'Today' : `in ${item.daysUntilExpiry}d`}
                                             </Badge>
                                         </li>
                                     ))}
@@ -214,3 +214,5 @@ export default function AiRecipesPage() {
         </main>
     )
 }
+
+    

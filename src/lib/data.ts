@@ -1,4 +1,3 @@
-// This file mocks a database using localStorage.
 'use client';
 
 import type {
@@ -76,6 +75,15 @@ const initialPantry: Record<string, PantryItem[]> = {
       category: 'Dairy',
       purchaseDate: subDays(today, 1).toISOString(),
       expirationDate: addDays(today, 6).toISOString(),
+    },
+     {
+      id: 'p3',
+      name: 'Avocado',
+      quantity: 3,
+      unit: 'units',
+      category: 'Produce',
+      purchaseDate: subDays(today, 3).toISOString(),
+      expirationDate: addDays(today, 2).toISOString(),
     },
   ],
 };
@@ -421,3 +429,5 @@ export const getAwards = async (userId: string): Promise<Award[]> => {
   const MOCK_AWARDS = getFromStorage('MOCK_AWARDS', initialAwards);
   return MOCK_AWARDS[userId] || [];
 };
+
+  
