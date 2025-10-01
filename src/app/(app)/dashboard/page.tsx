@@ -27,7 +27,10 @@ import {
   Plus,
   Minus,
   Target,
-  Users
+  Users,
+  Building,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -38,6 +41,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { generateCityScape } from '@/ai/flows/generate-city-scape';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -74,11 +78,23 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
     )
 }
 
+const getCityLevel = (points: number) => {
+    if (points < 100) return 0;
+    if (points < 500) return 100;
+    if (points < 1000) return 500;
+    if (points < 2000) return 1000;
+    return 2000;
+}
+
 export default function DashboardPage() {
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   
   const [loading, setLoading] = useState(true);
+  const [cityGrid, setCityGrid] = useState<string[][] | null>(null);
+  const [cityLoading, setCityLoading] = useState(true);
+  const [cityLevel, setCityLevel] = useState(0);
+
   const [data, setData] = useState<{
     pantryItems: PantryItem[],
     foodLogsToday: FoodLog[],
@@ -87,10 +103,49 @@ export default function DashboardPage() {
     friends: Friend[],
   } | null>(null);
 
+  const getCachedGrid = useCallback((level: number) => {
+    if (!user) return null;
+    const cached = localStorage.getItem(`city-grid-${user.id}-${level}`);
+    return cached ? JSON.parse(cached) : null;
+  }, [user]);
+
+  const handleGenerateCity = useCallback(async (forceRefresh = false) => {
+    if (!user) return;
+
+    const currentLevel = getCityLevel(user.profile.totalPoints || 0);
+    setCityLevel(currentLevel);
+
+    if (!forceRefresh) {
+      const cachedGrid = getCachedGrid(currentLevel);
+      if (cachedGrid) {
+        setCityGrid(cachedGrid);
+        setCityLoading(false);
+        return;
+      }
+    }
+
+    setCityLoading(true);
+    try {
+      const result = await generateCityScape({ points: currentLevel });
+      setCityGrid(result.grid);
+      localStorage.setItem(`city-grid-${user.id}-${currentLevel}`, JSON.stringify(result.grid));
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'City Generation Failed',
+        description: 'Could not generate your city. Please try again.',
+      });
+    } finally {
+      setCityLoading(false);
+    }
+  }, [user, toast, getCachedGrid]);
+
   const loadDashboardData = useCallback(async () => {
     if (!user) return;
     
     setLoading(true);
+    await handleGenerateCity();
     const todayStr = formatISO(new Date(), { representation: 'date' });
 
     const [
@@ -109,7 +164,7 @@ export default function DashboardPage() {
 
     setData({ pantryItems, foodLogsToday, activityLogsToday, goals, friends });
     setLoading(false);
-  }, [user]);
+  }, [user, handleGenerateCity]);
 
   useEffect(() => {
     loadDashboardData();
@@ -203,6 +258,51 @@ export default function DashboardPage() {
       <h2 className="text-3xl font-bold font-headline">
         Welcome, {user.name.split(' ')[0]}!
       </h2>
+
+      <Card>
+        <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2">
+                <Building />
+                Your Fitropolis
+            </CardTitle>
+            <CardDescription>
+                Your city grows as you earn points! A new stage is generated at key milestones.
+            </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            <div className="w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto">
+                {cityLoading ? (
+                    <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <p>Constructing your glorious city...</p>
+                    </div>
+                ) : cityGrid ? (
+                   <div className="font-mono text-center text-3xl leading-none">
+                     {cityGrid.map((row, y) => (
+                        <div key={y} className="flex">
+                            {row.map((cell, x) => (
+                                <span key={x}>{cell}</span>
+                            ))}
+                        </div>
+                     ))}
+                   </div>
+                ) : (
+                     <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
+                        <Building className="h-12 w-12" />
+                        <p>Start earning points to build your city!</p>
+                    </div>
+                )}
+            </div>
+             <Button onClick={() => handleGenerateCity(true)} disabled={cityLoading}>
+                {cityLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Regenerate City
+            </Button>
+        </CardContent>
+    </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="flex flex-col">
@@ -406,3 +506,6 @@ export default function DashboardPage() {
 
     
 
+
+
+    

@@ -48,7 +48,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/ai-recipes', label: 'AI Recipes', icon: Sparkles },
     { href: '/advisor', label: 'AI Advisor', icon: Lightbulb },
     { href: '/awards', label: 'Awards', icon: Trophy },
-    { href: '/city', label: 'City', icon: Building },
   ];
 
   const pageContent = (
@@ -138,3 +137,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    
