@@ -1,3 +1,4 @@
+
 "use client";
 
 import { cn } from "@/lib/utils";
@@ -36,10 +37,10 @@ export function ProgressRing({
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center rounded-lg border bg-card text-card-foreground shadow-sm p-6",
+        "relative flex items-center justify-center",
         className
       )}
-      style={{ width: size + strokeWidth, height: size + strokeWidth }}
+      style={{ width: size, height: size }}
     >
       <svg
         className="absolute -rotate-90"

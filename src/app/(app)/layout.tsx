@@ -36,6 +36,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { ProgressRing } from '@/components/ui/progress-ring';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -132,6 +133,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Progress value={((user.profile?.totalPoints || 0) % 100)} className="h-2" />
                 </div>
               </div>
+               <div className="hidden items-center justify-center p-2 group-data-[collapsible=icon]:flex">
+                  <ProgressRing
+                    value={((user.profile?.totalPoints || 0) % 100)}
+                    size={40}
+                    strokeWidth={4}
+                    className='bg-transparent border-none shadow-none p-0'
+                  >
+                   <span className='text-xs font-bold font-body'>
+                     {Math.floor((user.profile?.totalPoints || 0) / 100)}
+                   </span>
+                  </ProgressRing>
+               </div>
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>{children}</SidebarInset>
