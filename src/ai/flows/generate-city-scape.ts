@@ -2,13 +2,11 @@
 'use server';
 
 /**
- * @fileOverview Generates a city scape image based on user points.
+ * @fileOverview Generates an emoji city grid based on user points.
  *
- * - generateCityScape - A function that generates a city image.
+ * - generateCityScape - A function that generates a city grid.
  */
-
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const GenerateCityScapeInputSchema = z.object({
   points: z.number().describe('The total points the user has accumulated.'),
@@ -16,43 +14,58 @@ const GenerateCityScapeInputSchema = z.object({
 export type GenerateCityScapeInput = z.infer<typeof GenerateCityScapeInputSchema>;
 
 const GenerateCityScapeOutputSchema = z.object({
-  imageUrl: z.string().describe('The data URI of the generated city image.'),
+  grid: z.array(z.array(z.string())).describe('The 2D grid of emojis representing the city.'),
 });
 export type GenerateCityScapeOutput = z.infer<typeof GenerateCityScapeOutputSchema>;
 
-function getCityDescription(points: number): string {
-  if (points < 100) {
-    return 'A small, humble village with a few small houses and a dirt path, pixel art style.';
-  } else if (points < 500) {
-    return 'A growing town with a mix of houses and small shops, a town square, and paved roads, pixel art style.';
-  } else if (points < 1000) {
-    return 'A bustling small city with multi-story buildings, a park, and cars on the street, vibrant pixel art style.';
-  } else if (points < 2000) {
-    return 'A large, modern city with skyscrapers, public transportation like buses and trains, and many citizens, detailed pixel art style.';
-  } else {
-    return 'A massive, futuristic metropolis with towering sci-fi skyscrapers, flying vehicles, and neon lights, epic pixel art cityscape.';
-  }
-}
+const TILES = {
+  EMPTY: ' ',
+  ROAD: '➖',
+  GRASS: '🌲',
+  WATER: '🟦',
+  VILLAGE: ['🏡', '🌳', '🌳'],
+  TOWN: ['🏠', '🏡', '🏬', '🌳'],
+  SMALL_CITY: ['🏢', '🏠', '🏬', '🏫', '🌳'],
+  LARGE_CITY: ['🏢', '🏬', '🏙️', '🏫', '🌳'],
+  METROPOLIS: ['🏙️', '🌃', ' skyscraper', '🚀'],
+};
+
+const getBuildingSet = (points: number) => {
+  if (points < 100) return TILES.VILLAGE;
+  if (points < 500) return TILES.TOWN;
+  if (points < 1000) return TILES.SMALL_CITY;
+  if (points < 2000) return TILES.LARGE_CITY;
+  return TILES.METROPOLIS;
+};
+
+const GRID_WIDTH = 32;
+const GRID_HEIGHT = 16;
 
 export async function generateCityScape(input: GenerateCityScapeInput): Promise<GenerateCityScapeOutput> {
-  const cityDescription = getCityDescription(input.points);
-  const prompt = `Generate a 2D panoramic cityscape of ${cityDescription}. The style should be clean, retro-modern pixel art with a vibrant color palette. The city should look prosperous and clean.`;
+  const grid: string[][] = Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(TILES.EMPTY));
+  const buildingSet = getBuildingSet(input.points);
 
-  const { media } = await ai.generate({
-    model: 'googleai/gemini-pro-vision',
-    prompt: prompt,
-     config: {
-      responseModalities: ['IMAGE'],
-    },
-  });
+  // Simple generation logic
+  for (let y = 0; y < GRID_HEIGHT; y++) {
+    for (let x = 0; x < GRID_WIDTH; x++) {
+      // Horizon
+      if (y > GRID_HEIGHT / 2 - 2) {
+         grid[y][x] = TILES.GRASS;
+      }
+      
+      // Road
+      if (y === GRID_HEIGHT - 3) {
+        grid[y][x] = TILES.ROAD;
+      }
 
-  const imageUrl = media.url;
-  if (!imageUrl) {
-    throw new Error('Image generation failed.');
+      // Buildings
+      if (y > GRID_HEIGHT / 2 -1 && y < GRID_HEIGHT - 3) {
+          if (Math.random() > 0.7) {
+            grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
+          }
+      }
+    }
   }
 
-  return { imageUrl };
+  return { grid };
 }
-
-// Note: defineFlow and definePrompt are not needed here as we are directly using ai.generate
-// with a dynamically constructed prompt.
