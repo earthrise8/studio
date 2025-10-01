@@ -135,9 +135,8 @@ export default function DashboardPage() {
           description: `You've achieved: ${goal.description} and earned ${goal.points} points!`,
           action: <Button asChild variant="secondary"><Link href="/awards">View Awards</Link></Button>
         });
+        await refreshUser(); // Refresh user to get updated points total
       }
-      // Refresh user to get updated points total
-      await refreshUser(); 
       await loadDashboardData(); 
     } catch (e) {
       // Revert if error
@@ -322,5 +321,7 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
 
     

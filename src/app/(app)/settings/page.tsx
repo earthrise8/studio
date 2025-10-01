@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Button } from '@/components/ui/button';
 import {
@@ -409,7 +410,7 @@ export default function SettingsPage() {
                         goals.map(goal => (
                             <div key={goal.id} className="flex items-center gap-4">
                                 <div className="flex-1">
-                                    <p className={`text-sm ${goal.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{goal.description}</p>
+                                    <p className={`text-sm font-medium ${goal.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{goal.description}</p>
                                     <p className="text-xs text-muted-foreground">Target: {goal.target} | Points: {goal.points}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -481,5 +482,7 @@ export default function SettingsPage() {
     </main>
   );
 }
+
+    
 
     
