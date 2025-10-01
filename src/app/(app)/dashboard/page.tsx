@@ -50,7 +50,7 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
             <div className="flex justify-between items-center text-sm">
                 <div className='flex-1'>
                     <p className={goal.isCompleted ? 'line-through text-muted-foreground' : ''}>{goal.description}</p>
-                    <p className='text-xs text-muted-foreground'>{goal.points} points</p>
+                    <p className='text-xs text-muted-foreground'>{goal.points}</p>
                 </div>
                 <div className="flex items-center gap-2 font-medium">
                     <Button
