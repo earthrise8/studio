@@ -38,8 +38,8 @@ const getBuildingSet = (points: number) => {
   return TILES.METROPOLIS;
 };
 
-const GRID_WIDTH = 64;
-const GRID_HEIGHT = 16;
+const GRID_WIDTH = 20;
+const GRID_HEIGHT = 20;
 
 export async function generateCityScape(input: GenerateCityScapeInput): Promise<GenerateCityScapeOutput> {
   const grid: string[][] = Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(TILES.EMPTY));
@@ -49,18 +49,18 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
   for (let y = 0; y < GRID_HEIGHT; y++) {
     for (let x = 0; x < GRID_WIDTH; x++) {
       // Horizon
-      if (y > GRID_HEIGHT / 2 - 2) {
+      if (y > GRID_HEIGHT / 2 ) {
          grid[y][x] = TILES.GRASS;
       }
       
       // Road
-      if (y === GRID_HEIGHT - 3) {
+      if (y === GRID_HEIGHT - 5) {
         grid[y][x] = TILES.ROAD;
       }
 
       // Buildings
-      if (y > GRID_HEIGHT / 2 -1 && y < GRID_HEIGHT - 3) {
-          if (Math.random() > 0.7) {
+      if (y > GRID_HEIGHT / 2 && y < GRID_HEIGHT - 5) {
+          if (Math.random() > 0.6) {
             grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
           }
       }

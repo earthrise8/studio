@@ -92,7 +92,7 @@ export default function CityPage() {
                                 <p>Constructing your glorious city...</p>
                             </div>
                         ) : cityGrid ? (
-                           <div className="font-mono text-center text-sm leading-relaxed whitespace-pre">
+                           <div className="font-mono text-center text-2xl leading-none whitespace-pre">
                              {cityGrid.map((row, y) => (
                                 <div key={y} className="flex">
                                     {row.map((cell, x) => (
