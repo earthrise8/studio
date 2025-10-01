@@ -209,34 +209,46 @@ export default function DashboardPage() {
       </h2>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <ProgressRing value={caloriesIn} max={calorieGoal} size={150} strokeWidth={12}>
-            <div className="text-center">
-                <p className="text-xs text-muted-foreground">Calories In</p>
-                <p className="text-2xl font-bold">{caloriesIn}</p>
-                <p className="text-xs text-muted-foreground">/ {calorieGoal} kcal</p>
-            </div>
-        </ProgressRing>
-        <ProgressRing value={caloriesOut} max={activityGoal} size={150} strokeWidth={12} variant="accent">
-            <div className="text-center">
-                <p className="text-xs text-muted-foreground">Calories Out</p>
-                <p className="text-2xl font-bold">{caloriesOut}</p>
-                <p className="text-xs text-muted-foreground">/ {activityGoal} kcal</p>
-            </div>
-        </ProgressRing>
-        <ProgressRing value={completedGoals.length} max={goals.length} size={150} strokeWidth={12} variant="secondary">
-             <div className="text-center">
-                <p className="text-xs text-muted-foreground">Goals Done</p>
-                <p className="text-2xl font-bold">{completedGoals.length}/{goals.length}</p>
-                 <p className="text-xs text-muted-foreground">&nbsp;</p>
-            </div>
-        </ProgressRing>
-        <ProgressRing value={user.profile.totalPoints || 0} max={(user.profile.totalPoints || 0) + 100} size={150} strokeWidth={12} variant="primary">
-             <div className="text-center">
-                <p className="text-xs text-muted-foreground">Total Points</p>
-                <p className="text-2xl font-bold">{user.profile.totalPoints || 0}</p>
-                <p className="text-xs text-muted-foreground">points</p>
-            </div>
-        </ProgressRing>
+        <Card className="flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Calories In</CardTitle>
+            <Apple className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center">
+            <div className="text-2xl font-bold">{caloriesIn}</div>
+            <p className="text-xs text-muted-foreground">/ {calorieGoal} kcal</p>
+          </CardContent>
+        </Card>
+        <Card className="flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Calories Out</CardTitle>
+            <Flame className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center">
+            <div className="text-2xl font-bold">{caloriesOut}</div>
+            <p className="text-xs text-muted-foreground">/ {activityGoal} kcal</p>
+          </CardContent>
+        </Card>
+        <Card className="flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Goals Done</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center">
+            <div className="text-2xl font-bold">{completedGoals.length}/{goals.length}</div>
+            <p className="text-xs text-muted-foreground">&nbsp;</p>
+          </CardContent>
+        </Card>
+        <Card className="flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Points</CardTitle>
+            <Trophy className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center">
+            <div className="text-2xl font-bold">{user.profile.totalPoints || 0}</div>
+            <p className="text-xs text-muted-foreground">points</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -395,12 +407,5 @@ export default function DashboardPage() {
        </div>
     </main>
   );
-}
-
-    
-
-    
-
-
 
     
