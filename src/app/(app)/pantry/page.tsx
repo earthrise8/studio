@@ -18,6 +18,14 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
   Form,
   FormControl,
   FormField,
@@ -31,8 +39,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { getPantryItems, updatePantryItem, addPantryItem, deletePantryItem } from '@/lib/data';
 import type { PantryItem } from '@/lib/types';
-import { PlusCircle, UtensilsCrossed, Edit, Trash2, CalendarIcon, Loader2, ScanLine } from 'lucide-react';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { PlusCircle, UtensilsCrossed, Edit, Trash2, CalendarIcon, Loader2, ScanLine, Search } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { differenceInDays, format, addDays } from 'date-fns';
@@ -474,7 +482,8 @@ export default function PantryPage() {
   const { toast } = useToast();
   const [items, setItems] = useState<PantryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('All');
+  const [categoryFilter, setCategoryFilter] = useState<string>('All');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchItems = useCallback(() => {
     if (user) {
@@ -511,11 +520,15 @@ export default function PantryPage() {
 
   const categories = ['All', 'Produce', 'Dairy', 'Meat', 'Pantry', 'Frozen', 'Other'];
   
-  const filteredItems = items.filter(item => filter === 'All' || item.category === filter);
+  const filteredItems = useMemo(() => {
+    return items
+      .filter(item => categoryFilter === 'All' || item.category === categoryFilter)
+      .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [items, categoryFilter, searchTerm]);
 
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <h2 className="font-headline text-3xl font-bold tracking-tight">
           Virtual Pantry
         </h2>
@@ -524,100 +537,116 @@ export default function PantryPage() {
         </div>
       </div>
 
-      <div className="flex space-x-2">
-        {categories.map(category => (
-            <Button 
-                key={category} 
-                variant={filter === category ? 'default' : 'outline'}
-                onClick={() => setFilter(category)}
-            >
-                {category}
-            </Button>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(8)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-10 w-full" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : filteredItems.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {filteredItems.map((item) => {
-            const daysUntilExpiry = differenceInDays(new Date(item.expirationDate), new Date());
-            let expiryBadgeVariant: 'default' | 'secondary' | 'destructive' | 'outline' = 'secondary';
-            if (daysUntilExpiry < 1) expiryBadgeVariant = 'destructive';
-            else if (daysUntilExpiry < 7) expiryBadgeVariant = 'default';
-            
-            return (
-                <Card key={item.id}>
-                <CardHeader>
-                  <CardTitle>{item.name}</CardTitle>
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm text-muted-foreground">{item.category}</p>
-                    <Badge variant={expiryBadgeVariant}>
-                        {daysUntilExpiry < 0 ? 'Expired' : daysUntilExpiry === 0 ? 'Expires Today' : `Expires in ${daysUntilExpiry}d`}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">
-                    {item.quantity} <span className="text-lg font-normal text-muted-foreground">{item.unit}</span>
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-end gap-2">
-                    <EditPantryItemDialog item={item} onUpdate={handleItemUpdate} />
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
+      <Card>
+        <CardHeader>
+            <div className="flex flex-col md:flex-row gap-4 justify-between">
+                <div className="flex space-x-2">
+                    {categories.map(category => (
+                        <Button 
+                            key={category} 
+                            variant={categoryFilter === category ? 'default' : 'outline'}
+                            onClick={() => setCategoryFilter(category)}
+                            size="sm"
+                        >
+                            {category}
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete "{item.name}" from your pantry.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleItemDelete(item.id)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                </CardFooter>
-              </Card>
-            )
-        })}
-        </div>
-      ) : (
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm mt-10">
-          <div className="flex flex-col items-center gap-1 text-center py-20">
-            <UtensilsCrossed className="h-16 w-16 text-muted-foreground" />
-            <h3 className="mt-4 text-2xl font-semibold font-headline">
-              Your Pantry is Empty
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Add your first item to start tracking.
-            </p>
-            <div className="mt-4">
-                 <AddPantryItemDialog onAdd={handleItemAdd} />
+                    ))}
+                </div>
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        placeholder="Search items..."
+                        className="pl-10 max-w-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
             </div>
-          </div>
-        </div>
-      )}
+        </CardHeader>
+        <CardContent>
+            {loading ? (
+                <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                </div>
+            ) : filteredItems.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Quantity</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Expires</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredItems.map((item) => {
+                            const daysUntilExpiry = differenceInDays(new Date(item.expirationDate), new Date());
+                            let expiryBadgeVariant: 'default' | 'secondary' | 'destructive' | 'outline' = 'secondary';
+                            if (daysUntilExpiry < 1) expiryBadgeVariant = 'destructive';
+                            else if (daysUntilExpiry < 7) expiryBadgeVariant = 'default';
+
+                            return (
+                                <TableRow key={item.id}>
+                                    <TableCell className="font-medium">{item.name}</TableCell>
+                                    <TableCell>{item.quantity} {item.unit}</TableCell>
+                                    <TableCell>{item.category}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={expiryBadgeVariant}>
+                                            {daysUntilExpiry < 0 ? 'Expired' : daysUntilExpiry === 0 ? 'Today' : `in ${daysUntilExpiry}d`}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <EditPantryItemDialog item={item} onUpdate={handleItemUpdate} />
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This will permanently delete "{item.name}" from your pantry.
+                                                </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleItemDelete(item.id)}>
+                                                    Delete
+                                                </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                    </TableBody>
+                </Table>
+            ) : (
+                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm mt-10">
+                    <div className="flex flex-col items-center gap-1 text-center py-20">
+                        <UtensilsCrossed className="h-16 w-16 text-muted-foreground" />
+                        <h3 className="mt-4 text-2xl font-semibold font-headline">
+                            Your Pantry is Empty
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                            Add your first item to start tracking.
+                        </p>
+                        <div className="mt-4">
+                            <AddPantryItemDialog onAdd={handleItemAdd} />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </CardContent>
+      </Card>
     </main>
   );
 }
+
+    
