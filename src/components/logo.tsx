@@ -9,7 +9,7 @@ export default function Logo({ className, hideTextOnCollapse = false }: { classN
         className
       )}
     >
-      <div className="flex items-center justify-center h-8 w-8 transition-all group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7">
+      <div className="flex items-center justify-center h-11 w-11 transition-all group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
         <svg
           role="img"
           viewBox="0 0 100 100"
