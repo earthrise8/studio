@@ -239,8 +239,8 @@ export default function DashboardPage() {
         </ProgressRing>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="font-headline">Your Goals</CardTitle>
             <CardDescription>
@@ -262,11 +262,11 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="font-headline">Friends Weekly Leaderboard</CardTitle>
+            <CardTitle className="font-headline">Friends</CardTitle>
             <CardDescription>
-              See how your friends are doing this week.
+              Your friends' weekly points.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -302,6 +302,63 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Today's Meals</CardTitle>
+                <CardDescription>A summary of your food logs for today.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {foodLogsToday.length > 0 ? (
+                    <ul className="space-y-2">
+                        {foodLogsToday.map(log => (
+                            <li key={log.id} className="flex justify-between items-center">
+                                <span>{log.name}</span>
+                                <span className="font-medium text-muted-foreground">{log.calories} kcal</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <div className="flex flex-col items-center justify-center text-center p-4 border border-dashed rounded-lg">
+                        <Apple className="h-10 w-10 text-muted-foreground" />
+                        <h3 className="mt-2 font-semibold">No Meals Logged</h3>
+                        <p className="text-sm text-muted-foreground mt-1">Log your first meal of the day!</p>
+                        <Button asChild variant="secondary" size="sm" className="mt-4">
+                            <Link href="/logs?tab=food">Log Meal</Link>
+                        </Button>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+         <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Today's Activities</CardTitle>
+                <CardDescription>A summary of your activity logs for today.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 {activityLogsToday.length > 0 ? (
+                    <ul className="space-y-2">
+                        {activityLogsToday.map(log => (
+                            <li key={log.id} className="flex justify-between items-center">
+                                <span>{log.name} ({log.duration} min)</span>
+                                <span className="font-medium text-muted-foreground">{log.caloriesBurned} kcal</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <div className="flex flex-col items-center justify-center text-center p-4 border border-dashed rounded-lg">
+                        <Dumbbell className="h-10 w-10 text-muted-foreground" />
+                        <h3 className="mt-2 font-semibold">No Activities Logged</h3>
+                        <p className="text-sm text-muted-foreground mt-1">Log your first activity of the day!</p>
+                        <Button asChild variant="secondary" size="sm" className="mt-4">
+                            <Link href="/logs?tab=activity">Log Activity</Link>
+                        </Button>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+       </div>
 
        <div className="grid gap-4">
          <Card>
@@ -344,3 +401,6 @@ export default function DashboardPage() {
 
     
 
+
+
+    
