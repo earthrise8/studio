@@ -96,13 +96,16 @@ const TILES = {
   SMALL_CITY: [
     { emoji: '🏢', name: 'Apartment' },
     { emoji: '🏫', name: 'School' },
+    { emoji: '🏭', name: 'Factory' },
   ],
   LARGE_CITY: [
     { emoji: '🏙️', name: 'Skyscraper' },
+    { emoji: '🚉', name: 'Train Station' },
   ],
   METROPOLIS: [
     { emoji: '🌃', name: 'City at Night' },
     { emoji: '🚀', name: 'Rocket' },
+    { emoji: '✈️', name: 'Airport' },
   ],
 };
 
@@ -645,7 +648,3 @@ export default function DashboardPage() {
   );
 
 }
-
-    
-
-

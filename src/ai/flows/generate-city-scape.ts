@@ -24,9 +24,12 @@ const TILES = {
   GRASS: '🌲',
   VILLAGE: ['🏡', '🌳', '🌳'],
   TOWN: ['🏠', '🏡', '🏬', '🌳'],
-  SMALL_CITY: ['🏢', '🏠', '🏬', '🏫', '🌳'],
-  LARGE_CITY: ['🏢', '🏬', '🏙️', '🏫', '🌳'],
-  METROPOLIS: ['🏙️', '🌃', '🏢', '🚀'],
+  SMALL_CITY: ['🏢', '🏠', '🏬', '🏫', '🏭'],
+  LARGE_CITY: ['🏢', '🏬', '🏙️', '🏫', '🚉'],
+  METROPOLIS: ['🏙️', '🌃', '🏢', '🚀', '✈️'],
+  FACTORY: '🏭',
+  STATION: '🚉',
+  AIRPORT: '✈️',
 };
 
 const getBuildingSet = (points: number) => {
@@ -50,24 +53,36 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
   for (let y = 0; y < GRID_HEIGHT; y++) {
     for (let x = 0; x < GRID_WIDTH; x++) {
       
-      // Default to grass below horizon
+      let baseTile = TILES.EMPTY;
       if (y > GRID_HEIGHT / 2) {
-        grid[y][x] = TILES.GRASS;
+        baseTile = TILES.GRASS;
       }
+      grid[y][x] = baseTile;
       
       // Road
       if (y === roadY) {
         grid[y][x] = TILES.ROAD;
-        continue; // Skip other generation for road tiles
+        continue;
       }
 
       // Buildings and stuff
       if (y > GRID_HEIGHT / 2) {
-        // Place buildings near the road, on both sides
+        // Place buildings near the road
         const distFromRoad = Math.abs(y - roadY);
         if (distFromRoad > 0 && distFromRoad < 4) {
              if (Math.random() > 0.6) {
                 grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
+            }
+        } else if (baseTile === TILES.GRASS) {
+            // Further away from road, chance for special buildings
+            if (input.points >= 500 && Math.random() > 0.95) {
+                grid[y][x] = TILES.FACTORY;
+            }
+             if (input.points >= 1000 && Math.random() > 0.98) {
+                grid[y][x] = TILES.STATION;
+            }
+             if (input.points >= 2000 && Math.random() > 0.99) {
+                grid[y][x] = TILES.AIRPORT;
             }
         }
       }
