@@ -38,7 +38,7 @@ const getBuildingSet = (points: number) => {
   return TILES.METROPOLIS;
 };
 
-const GRID_WIDTH = 32;
+const GRID_WIDTH = 64;
 const GRID_HEIGHT = 16;
 
 export async function generateCityScape(input: GenerateCityScapeInput): Promise<GenerateCityScapeOutput> {
