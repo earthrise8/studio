@@ -27,7 +27,7 @@ const TILES = {
   TOWN: ['🏠', '🏡', '🏬', '🌳'],
   SMALL_CITY: ['🏢', '🏠', '🏬', '🏫', '🌳'],
   LARGE_CITY: ['🏢', '🏬', '🏙️', '🏫', '🌳'],
-  METROPOLIS: ['🏙️', '🌃', ' skyscraper', '🚀'],
+  METROPOLIS: ['🏙️', '🌃', '🏢', '🚀'],
 };
 
 const getBuildingSet = (points: number) => {
