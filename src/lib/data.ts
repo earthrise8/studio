@@ -1,3 +1,4 @@
+
 'use client';
 
 import type {
@@ -42,8 +43,8 @@ const saveToStorage = <T>(key: string, value: T) => {
 const initialUsers: Record<string, User> = {
   'user123': {
     id: 'user123',
-    email: 'user@example.com',
-    name: 'Alex Doe',
+    email: 'dylan.kwok@example.com',
+    name: 'Dylan Kwok',
     profile: {
       dailyCalorieGoal: 2200,
       healthGoal: 'Lose weight and build muscle',
@@ -51,7 +52,7 @@ const initialUsers: Record<string, User> = {
       height: 178,
       weight: 75,
       activityLevel: 'moderate',
-      avatarUrl: 'https://i.pravatar.cc/150?u=user123'
+      avatarUrl: 'https://i.pravatar.cc/150?u=dylan'
     },
   },
 };

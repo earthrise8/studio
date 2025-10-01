@@ -7,8 +7,8 @@ import type { User } from '@/lib/types';
 // Mock user for public access
 const mockUser: User = {
     id: 'user123',
-    email: 'user@example.com',
-    name: 'Alex Doe',
+    email: 'dylan.kwok@example.com',
+    name: 'Dylan Kwok',
     profile: {
       dailyCalorieGoal: 2200,
       healthGoal: 'Stay healthy and active',
@@ -16,7 +16,7 @@ const mockUser: User = {
       height: 178,
       weight: 75,
       activityLevel: 'moderate',
-      avatarUrl: 'https://i.pravatar.cc/150?u=user123'
+      avatarUrl: 'https://i.pravatar.cc/150?u=dylan'
     },
 };
 
