@@ -671,7 +671,7 @@ export default function LogsPage() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="font-headline">
+          <CardTitle>
             {type === 'food' ? 'Food Log' : 'Activity Log'}
           </CardTitle>
           {date && (
@@ -793,7 +793,7 @@ export default function LogsPage() {
             <Button
               variant={'outline'}
               className={cn(
-                'w-[240px] justify-start text-left font-normal',
+                'w-full md:w-auto justify-start text-left font-normal',
                 !date && 'text-muted-foreground'
               )}
             >
