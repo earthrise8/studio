@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 export default function AwardsPage() {
   const { user } = useAuth();
@@ -54,8 +55,8 @@ export default function AwardsPage() {
       ) : awards.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {awards.map((award) => (
-            <Card key={award.id} className="text-center">
-              <CardHeader className="items-center">
+            <Card key={award.id} className="text-center flex flex-col">
+              <CardHeader className="items-center flex-1">
                 <div className="p-4 bg-primary/20 rounded-full mb-4">
                   <Trophy className="h-8 w-8 text-primary" />
                 </div>
@@ -66,6 +67,7 @@ export default function AwardsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">{award.description}</p>
+                <Badge className="mt-4">+{award.points} Points</Badge>
               </CardContent>
             </Card>
           ))}

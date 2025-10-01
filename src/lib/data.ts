@@ -145,9 +145,9 @@ const initialGoals: Record<string, Goal[]> = {
 
 const initialAwards: Record<string, Award[]> = {
   'user123': [
-    { id: 'a1', name: 'First Workout', description: 'Completed your first logged activity.', dateAchieved: subDays(today, 10).toISOString() },
-    { id: 'a2', name: 'Perfect Week', description: 'Logged an activity every day for 7 days.', dateAchieved: subDays(today, 3).toISOString() },
-    { id: 'a3', name: 'Goal Achiever: Drink 8 glasses of water daily', description: 'You successfully completed a personal goal.', dateAchieved: today.toISOString()},
+    { id: 'a1', name: 'First Workout', description: 'Completed your first logged activity.', dateAchieved: subDays(today, 10).toISOString(), points: 25 },
+    { id: 'a2', name: 'Perfect Week', description: 'Logged an activity every day for 7 days.', dateAchieved: subDays(today, 3).toISOString(), points: 75 },
+    { id: 'a3', name: 'Goal Achiever: Drink 8 glasses of water daily', description: 'You successfully completed a personal goal.', dateAchieved: today.toISOString(), points: 100 },
   ],
 };
 
@@ -166,7 +166,8 @@ const checkAndGrantAwards = async (userId: string, completedGoal: Goal) => {
             id: `a${Date.now()}`,
             name: awardName,
             description: 'You successfully completed a personal goal.',
-            dateAchieved: new Date().toISOString()
+            dateAchieved: new Date().toISOString(),
+            points: completedGoal.points,
         };
         MOCK_AWARDS[userId].push(newAward);
         saveToStorage('MOCK_AWARDS', MOCK_AWARDS);
@@ -448,3 +449,4 @@ export const getAwards = async (userId: string): Promise<Award[]> => {
   
 
     
+

@@ -1,3 +1,4 @@
+
 export type User = {
   id: string; // This is the Firebase UID
   email: string;
@@ -74,4 +75,5 @@ export type Award = {
   name: string;
   description: string;
   dateAchieved: string; // ISO 8601 date string
+  points: number;
 };
