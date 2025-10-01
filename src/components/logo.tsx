@@ -1,3 +1,4 @@
+
 import { cn } from '@/lib/utils';
 
 export default function Logo({ className, hideTextOnCollapse = false }: { className?: string, hideTextOnCollapse?: boolean }) {
@@ -10,22 +11,33 @@ export default function Logo({ className, hideTextOnCollapse = false }: { classN
     >
       <div className="flex items-center justify-center h-8 w-8 transition-all group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7">
         <svg
-            role="img"
-            viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
-            >
-            <text
-              x="50%"
-              y="50%"
-              dominantBaseline="central"
-              textAnchor="middle"
-              fontSize="110"
-              fontWeight="bold"
-              fontFamily="sans-serif"
-              fill="hsl(var(--primary))"
-            >
-              F
-            </text>
+          role="img"
+          viewBox="0 0 100 100"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            x="5"
+            y="5"
+            width="90"
+            height="90"
+            rx="20"
+            ry="20"
+            fill="none"
+            stroke="hsl(var(--primary))"
+            strokeWidth="8"
+          />
+          <text
+            x="50%"
+            y="50%"
+            dominantBaseline="central"
+            textAnchor="middle"
+            fontSize="110"
+            fontWeight="bold"
+            fontFamily="sans-serif"
+            fill="hsl(var(--primary))"
+          >
+            F
+          </text>
         </svg>
       </div>
       <span className={cn(hideTextOnCollapse && 'group-data-[collapsible=icon]:hidden')}>Fitropolis</span>
