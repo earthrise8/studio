@@ -5,8 +5,6 @@
  * @fileOverview Generates a city scape image based on user points.
  *
  * - generateCityScape - A function that generates a city image.
- * - GenerateCityScapeInput - The input type for the generateCityScape function.
- * - GenerateCityScapeOutput - The return type for the generateCityScape function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -41,8 +39,11 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
   const prompt = `Generate a 2D panoramic cityscape of ${cityDescription}. The style should be clean, retro-modern pixel art with a vibrant color palette. The city should look prosperous and clean.`;
 
   const { media } = await ai.generate({
-    model: 'googleai/imagen-4.0-fast-generate-001',
+    model: 'googleai/gemini-pro-vision',
     prompt: prompt,
+     config: {
+      responseModalities: ['IMAGE'],
+    },
   });
 
   const imageUrl = media.url;
