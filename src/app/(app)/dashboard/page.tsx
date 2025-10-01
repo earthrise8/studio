@@ -25,7 +25,8 @@ import {
   CheckCircle2,
   Trophy,
   Plus,
-  Minus
+  Minus,
+  Target
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -70,7 +71,7 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   
   const [loading, setLoading] = useState(true);
@@ -111,10 +112,12 @@ export default function DashboardPage() {
     if (!user || !data) return;
 
     const newProgress = Math.max(0, goal.progress + amount);
+    const isNowCompleted = newProgress >= goal.target;
+    
     const updatedGoal: Goal = {
       ...goal,
       progress: newProgress,
-      isCompleted: newProgress >= goal.target,
+      isCompleted: isNowCompleted,
     };
     
     // Optimistically update UI
@@ -129,11 +132,12 @@ export default function DashboardPage() {
       if (updatedGoal.isCompleted && !goal.isCompleted) {
         toast({
           title: "Goal Complete!",
-          description: `You've achieved: ${goal.description}`,
+          description: `You've achieved: ${goal.description} and earned ${goal.points} points!`,
           action: <Button asChild variant="secondary"><Link href="/awards">View Awards</Link></Button>
         });
       }
-      // Data will be re-synced if needed, but optimistic update is usually enough
+      // Refresh user to get updated points total
+      await refreshUser(); 
       await loadDashboardData(); 
     } catch (e) {
       // Revert if error
@@ -193,7 +197,7 @@ export default function DashboardPage() {
         Welcome, {user.name.split(' ')[0]}!
       </h2>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Today&apos;s Summary</CardTitle>
@@ -245,6 +249,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="flex-1 flex items-end">
              <div className="text-2xl font-bold">{completedGoals.length}</div>
+          </CardContent>
+        </Card>
+         <Card className="flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Points
+            </CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex-1 flex items-end">
+             <div className="text-2xl font-bold">{user.profile.totalPoints || 0}</div>
           </CardContent>
         </Card>
       </div>

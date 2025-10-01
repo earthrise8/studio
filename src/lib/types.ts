@@ -13,6 +13,7 @@ export type UserProfile = {
   age?: number;
   activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
   avatarUrl?: string;
+  totalPoints?: number;
 };
 
 export type PantryItem = {
@@ -65,6 +66,7 @@ export type Goal = {
   progress: number;
   target: number;
   isCompleted: boolean;
+  points: number;
 };
 
 export type Award = {

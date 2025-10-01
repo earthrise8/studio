@@ -53,6 +53,7 @@ const profileFormSchema = z.object({
 const goalFormSchema = z.object({
     description: z.string().min(3, "Goal description is required."),
     target: z.coerce.number().min(1, "Target must be at least 1."),
+    points: z.coerce.number().min(0, "Points must be a positive number.")
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -84,6 +85,7 @@ export default function SettingsPage() {
     defaultValues: {
         description: '',
         target: 1,
+        points: 50,
     }
   });
 
@@ -123,6 +125,7 @@ export default function SettingsPage() {
         const { name, email, ...profileData} = data;
         
         const profileToUpdate = {
+          ...user.profile, // Preserve existing profile data like totalPoints
           ...profileData,
           height: profileData.height === '' ? undefined : Number(profileData.height),
           weight: profileData.weight === '' ? undefined : Number(profileData.weight),
@@ -157,6 +160,7 @@ export default function SettingsPage() {
         await addGoal(user.id, {
             description: data.description,
             target: data.target,
+            points: data.points,
             progress: 0,
             isCompleted: false,
         });
@@ -196,6 +200,7 @@ export default function SettingsPage() {
         if(updatedGoal.isCompleted && !goal.isCompleted) {
             toast({ title: 'Goal Complete!', description: `You achieved: ${goal.description}`});
         }
+        await refreshUser();
     } catch(e) {
         //
     }
@@ -243,6 +248,7 @@ export default function SettingsPage() {
                                 type="email"
                                 placeholder="your@email.com"
                                 {...field}
+                                disabled
                             />
                             </FormControl>
                             <FormMessage />
@@ -374,13 +380,22 @@ export default function SettingsPage() {
                                             <FormMessage />
                                         </FormItem>
                                     )} />
-                                    <FormField control={goalForm.control} name="target" render={({field}) => (
-                                        <FormItem>
-                                            <FormLabel>Target</FormLabel>
-                                            <FormControl><Input type="number" {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField control={goalForm.control} name="target" render={({field}) => (
+                                            <FormItem>
+                                                <FormLabel>Target</FormLabel>
+                                                <FormControl><Input type="number" {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <FormField control={goalForm.control} name="points" render={({field}) => (
+                                            <FormItem>
+                                                <FormLabel>Points</FormLabel>
+                                                <FormControl><Input type="number" {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                    </div>
                                     <DialogFooter>
                                         <Button type="submit">Add Goal</Button>
                                     </DialogFooter>
@@ -395,7 +410,7 @@ export default function SettingsPage() {
                             <div key={goal.id} className="flex items-center gap-4">
                                 <div className="flex-1">
                                     <p className={`text-sm ${goal.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{goal.description}</p>
-                                    <p className="text-xs text-muted-foreground">Target: {goal.target}</p>
+                                    <p className="text-xs text-muted-foreground">Target: {goal.target} | Points: {goal.points}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Input

@@ -52,7 +52,8 @@ const initialUsers: Record<string, User> = {
       height: 178,
       weight: 75,
       activityLevel: 'moderate',
-      avatarUrl: 'https://i.pravatar.cc/150?u=dylan'
+      avatarUrl: 'https://i.pravatar.cc/150?u=dylan',
+      totalPoints: 150,
     },
   },
 };
@@ -137,8 +138,8 @@ const initialRecipes: Record<string, Recipe[]> = {
 
 const initialGoals: Record<string, Goal[]> = {
   'user123': [
-    { id: 'g1', description: 'Run 3 times this week', progress: 1, target: 3, isCompleted: false },
-    { id: 'g2', description: 'Drink 8 glasses of water daily', progress: 8, target: 8, isCompleted: true },
+    { id: 'g1', description: 'Run 3 times this week', progress: 1, target: 3, isCompleted: false, points: 50 },
+    { id: 'g2', description: 'Drink 8 glasses of water daily', progress: 8, target: 8, isCompleted: true, points: 100 },
   ],
 };
 
@@ -402,18 +403,31 @@ export const addGoal = async (userId: string, goalData: Omit<Goal, 'id'>): Promi
 }
 
 export const updateGoal = async (userId: string, updatedGoal: Goal): Promise<Goal> => {
+    let MOCK_USERS = getFromStorage('MOCK_USERS', initialUsers);
     let MOCK_GOALS = getFromStorage('MOCK_GOALS', initialGoals);
-    if (!MOCK_GOALS[userId]) throw new Error("User has no goals");
+    if (!MOCK_GOALS[userId] || !MOCK_USERS[userId]) throw new Error("User data not found");
     
     const goalIndex = MOCK_GOALS[userId].findIndex(g => g.id === updatedGoal.id);
     if (goalIndex === -1) throw new Error("Goal not found");
     
-    const wasCompleted = MOCK_GOALS[userId][goalIndex].isCompleted;
+    const oldGoal = MOCK_GOALS[userId][goalIndex];
+    const wasCompleted = oldGoal.isCompleted;
     MOCK_GOALS[userId][goalIndex] = updatedGoal;
     
     if(updatedGoal.isCompleted && !wasCompleted) {
         await checkAndGrantAwards(userId, updatedGoal);
+        const currentUser = MOCK_USERS[userId];
+        const currentPoints = currentUser.profile.totalPoints || 0;
+        currentUser.profile.totalPoints = currentPoints + updatedGoal.points;
+        saveToStorage('MOCK_USERS', MOCK_USERS);
+    } else if (!updatedGoal.isCompleted && wasCompleted) {
+        // If a goal is "un-completed", subtract points
+        const currentUser = MOCK_USERS[userId];
+        const currentPoints = currentUser.profile.totalPoints || 0;
+        currentUser.profile.totalPoints = Math.max(0, currentPoints - updatedGoal.points);
+        saveToStorage('MOCK_USERS', MOCK_USERS);
     }
+    
     saveToStorage('MOCK_GOALS', MOCK_GOALS);
     return updatedGoal;
 }
