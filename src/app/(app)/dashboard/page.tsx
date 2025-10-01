@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import {
   getActivityLogs,
   getFoodLogs,
@@ -39,11 +38,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ProgressRing } from '@/components/ui/progress-ring';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
-    const progressPercentage = (goal.progress / goal.target) * 100;
     return (
         <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
@@ -73,7 +70,6 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
                     </Button>
                 </div>
             </div>
-            <Progress value={progressPercentage} />
         </div>
     )
 }
@@ -254,7 +250,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="font-headline">Your Goals</CardTitle>
+            <CardTitle>Your Goals</CardTitle>
             <CardDescription>
               Your active goals and challenges.
             </CardDescription>
@@ -276,7 +272,7 @@ export default function DashboardPage() {
         </Card>
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="font-headline">Friends</CardTitle>
+            <CardTitle>Friends</CardTitle>
             <CardDescription>
               Your friends' weekly points.
             </CardDescription>
@@ -318,7 +314,7 @@ export default function DashboardPage() {
        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Today's Meals</CardTitle>
+                <CardTitle>Today's Meals</CardTitle>
                 <CardDescription>A summary of your food logs for today.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -345,7 +341,7 @@ export default function DashboardPage() {
         </Card>
          <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Today's Activities</CardTitle>
+                <CardTitle>Today's Activities</CardTitle>
                 <CardDescription>A summary of your activity logs for today.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -375,7 +371,7 @@ export default function DashboardPage() {
        <div className="grid gap-4">
          <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Expiring Soon</CardTitle>
+                <CardTitle>Expiring Soon</CardTitle>
                 <CardDescription>
                 Items from your pantry that are about to expire.
                 </CardDescription>
