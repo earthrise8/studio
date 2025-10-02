@@ -43,6 +43,7 @@ import {
   Info,
   Home,
   DollarSign,
+  ShieldCheck,
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -105,7 +106,7 @@ const TILES = {
   MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 },
   FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20 },
   FACTORY: { emoji: '🏭', name: 'Factory', cost: 250, ratingPenalty: -15, ratingRange: 5, revenueMultiplier: 5 },
-  STATION: { emoji: '🚉', name: 'Train Station', cost: 400 },
+  STATION: { emoji: '🚉', name: 'Train Station', cost: 400, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 5, ratingRange: 6, serviceType: 'transport' },
   AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10 },
   SETTLEMENT: [
     { emoji: '⛺', name: 'Tent', cost: 10, defaultPopulation: 1, maxPopulation: 2, isResidential: true },
@@ -122,10 +123,10 @@ const TILES = {
   ],
   SMALL_CITY: [
     { emoji: '🏢', name: 'Apartment', cost: 300, defaultPopulation: 20, maxPopulation: 60, isResidential: true },
-    { emoji: '🏫', name: 'School', cost: 200, ratingBonus: 10, ratingRange: 5 },
-    { emoji: '🏥', name: 'Hospital', cost: 450 },
-    { emoji: '🚓', name: 'Police Department', cost: 300, ratingBonus: 15, ratingRange: 5 },
-    { emoji: '🚒', name: 'Fire Department', cost: 300, ratingBonus: 15, ratingRange: 5 },
+    { emoji: '🏫', name: 'School', cost: 200, ratingBonus: 10, ratingRange: 5, isPublicService: true, maintenanceCostPerCitizen: 0.2, serviceType: 'education' },
+    { emoji: '🏥', name: 'Hospital', cost: 450, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 10, ratingRange: 7, serviceType: 'health' },
+    { emoji: '🚓', name: 'Police Department', cost: 300, ratingBonus: 15, ratingRange: 5, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'police' },
+    { emoji: '🚒', name: 'Fire Department', cost: 300, ratingBonus: 15, ratingRange: 5, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'fire' },
   ],
   LARGE_CITY: [
     { emoji: '🏙️', name: 'Skyscraper', cost: 500, defaultPopulation: 80, maxPopulation: 250, isResidential: true },
@@ -192,12 +193,18 @@ const allBuildings = getAllBuildings() as {
     ratingPenalty?: number;
     ratingRange?: number;
     revenueMultiplier?: number;
+    isPublicService?: boolean;
+    maintenanceCostPerCitizen?: number;
+    serviceType?: string;
 }[];
 
 const buildingDataMap = new Map(allBuildings.map(b => [b.emoji, b]));
 
 const calculateTileRating = (y: number, x: number, grid: string[][]): number => {
     let rating = 100; // Base rating
+
+    const requiredServices = ['police', 'fire', 'health', 'education'];
+    const foundServices = new Set<string>();
     
     for (let i = 0; i < grid.length; i++) {
         for (let j = 0; j < grid[0].length; j++) {
@@ -217,8 +224,19 @@ const calculateTileRating = (y: number, x: number, grid: string[][]): number => 
                 // Effect diminishes with distance
                 rating += Math.round(building.ratingPenalty * (1 - distance / building.ratingRange));
             }
+
+            // Check for service coverage
+            if(building.isPublicService && building.ratingRange && distance <= building.ratingRange) {
+                foundServices.add(building.serviceType!);
+            }
         }
     }
+
+    // Apply penalty for missing services
+    const missingServices = requiredServices.filter(s => !foundServices.has(s));
+    rating -= missingServices.length * 15;
+
+
     return rating;
 }
 
@@ -250,6 +268,7 @@ const getCityInfo = (points: number, cityGrid: string[][] | null) => {
     
     let totalPopulation = 0;
     let commercialRevenue = 0;
+    let publicServiceCost = 0;
 
     if (cityGrid) {
         // First pass: calculate population
@@ -264,24 +283,32 @@ const getCityInfo = (points: number, cityGrid: string[][] | null) => {
             }
         }
 
-        // Second pass: calculate revenue based on total population
+        // Second pass: calculate revenue and costs based on total population
         for (let y = 0; y < cityGrid.length; y++) {
             for (let x = 0; x < cityGrid[y].length; x++) {
                 const building = buildingDataMap.get(cityGrid[y][x]);
-                if (building && building.revenueMultiplier) {
-                    // Revenue formula: building cost * multiplier * (population / 100)
-                    const buildingRevenue = (building.cost * building.revenueMultiplier * (totalPopulation / 100));
-                    commercialRevenue += buildingRevenue;
+                if (building) {
+                    if (building.revenueMultiplier) {
+                        const buildingRevenue = (building.cost * building.revenueMultiplier * (totalPopulation / 100));
+                        commercialRevenue += buildingRevenue;
+                    }
+                    if (building.isPublicService && building.maintenanceCostPerCitizen) {
+                        const buildingCost = building.maintenanceCostPerCitizen * totalPopulation;
+                        publicServiceCost += buildingCost;
+                    }
                 }
             }
         }
     }
     const residentialRevenue = totalPopulation * 10;
+    const totalRevenue = residentialRevenue + commercialRevenue;
 
     return {
         name: tier.name,
         population: totalPopulation,
-        totalRevenue: residentialRevenue + commercialRevenue,
+        totalRevenue: totalRevenue,
+        totalCost: publicServiceCost,
+        netRevenue: totalRevenue - publicServiceCost,
         nextUpgrade: tier.next,
     };
 };
@@ -668,17 +695,21 @@ export default function DashboardPage() {
     if (!cityGrid) return { cityInfo: null, buildingCounts: null };
 
     const info = getCityInfo(user?.profile.totalPoints || 0, cityGrid);
-    const counts = new Map<string, { count: number; totalRevenue: number }>();
+    const counts = new Map<string, { count: number; totalRevenue: number; totalCost: number; }>();
 
     for (const row of cityGrid) {
         for (const cell of row) {
             const building = buildingDataMap.get(cell);
             if (building && building.name !== 'Tree' && building.name !== 'Remove' && building.emoji !== '⬛' && building.emoji !== '⛰️') {
-                const entry = counts.get(cell) || { count: 0, totalRevenue: 0 };
+                const entry = counts.get(cell) || { count: 0, totalRevenue: 0, totalCost: 0 };
                 entry.count += 1;
                 
                 if (building.revenueMultiplier) {
                     entry.totalRevenue += (building.cost * building.revenueMultiplier * (info.population / 100));
+                }
+
+                if (building.isPublicService && building.maintenanceCostPerCitizen) {
+                    entry.totalCost += (building.maintenanceCostPerCitizen * info.population);
                 }
 
                 counts.set(cell, entry);
@@ -692,6 +723,7 @@ export default function DashboardPage() {
           name: buildingDataMap.get(emoji)?.name || 'Unknown',
           count: data.count,
           totalRevenue: data.totalRevenue,
+          totalCost: data.totalCost,
       }))
       .sort((a,b) => b.count - a.count);
 
@@ -845,6 +877,12 @@ export default function DashboardPage() {
                                             <p className="font-semibold">{building.name}</p>
                                             <p>Daily Revenue: ${Math.floor(revenue).toLocaleString()}</p>
                                         </>
+                                    } else if (building?.isPublicService && cityInfo) {
+                                        const cost = (building.maintenanceCostPerCitizen! * cityInfo.population);
+                                        tooltipContent = <>
+                                            <p className="font-semibold">{building.name}</p>
+                                            <p>Daily Cost: ${Math.floor(cost).toLocaleString()}</p>
+                                        </>
                                     }
 
                                     if (tooltipContent) {
@@ -888,7 +926,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className='font-medium text-muted-foreground'>Revenue:</span>
-                      <span className='font-bold'>${Math.floor(cityInfo.totalRevenue).toLocaleString()}/day</span>
+                      <span className='font-bold'>${Math.floor(cityInfo.netRevenue).toLocaleString()}/day</span>
                     </div>
                      <div className="flex justify-between text-sm">
                         <span className="font-medium text-muted-foreground">Building Tokens:</span>
@@ -981,6 +1019,12 @@ export default function DashboardPage() {
                                                     <span>Commercial: Earns revenue based on population.</span>
                                                 </div>
                                             )}
+                                            {building.isPublicService && (
+                                                <div className="flex items-center gap-2 text-yellow-500">
+                                                    <ShieldCheck className="h-3 w-3" />
+                                                    <span>Public Service: Costs ${building.maintenanceCostPerCitizen} per citizen.</span>
+                                                </div>
+                                            )}
                                             {building.ratingBonus && (
                                                 <div className="flex items-center gap-2 text-green-500">
                                                     <TrendingUp className="h-3 w-3" />
@@ -993,7 +1037,7 @@ export default function DashboardPage() {
                                                     <span>Nuisance: Decreases rating by {building.ratingPenalty} in a {building.ratingRange}-tile radius.</span>
                                                 </div>
                                             )}
-                                             {!building.isResidential && !building.revenueMultiplier && !building.ratingBonus && !building.ratingPenalty && building.name !== 'Road' && building.name !== 'Remove' && (
+                                             {!building.isResidential && !building.revenueMultiplier && !building.isPublicService && !building.ratingBonus && !building.ratingPenalty && building.name !== 'Road' && building.name !== 'Remove' && (
                                                 <div className="flex items-center gap-2">
                                                     <Info className="h-3 w-3" />
                                                     <span>Decorative or special-purpose tile.</span>
@@ -1053,6 +1097,9 @@ export default function DashboardPage() {
                                                 <span className='font-bold'>{b.count}</span>
                                                 {b.totalRevenue > 0 && (
                                                     <p className="text-xs text-green-500">${Math.floor(b.totalRevenue).toLocaleString()}</p>
+                                                )}
+                                                {b.totalCost > 0 && (
+                                                    <p className="text-xs text-red-500">-${Math.floor(b.totalCost).toLocaleString()}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -1266,8 +1313,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
-
-    
-
