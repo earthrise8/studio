@@ -74,7 +74,7 @@ export default function WikiPage() {
                               {building.name}
                             </CardTitle>
                             <CardDescription>
-                              Cost: {building.cost} tokens
+                              Cost: ${building.cost.toLocaleString()}
                             </CardDescription>
                           </div>
                         </div>

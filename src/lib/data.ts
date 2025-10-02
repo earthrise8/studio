@@ -55,7 +55,7 @@ const initialUsers: Record<string, User> = {
       activityLevel: 'moderate',
       avatarUrl: 'https://i.pravatar.cc/150?u=dylan',
       totalPoints: 0,
-      buildingTokens: 0,
+      money: 1000,
       level: 0,
     },
   },
@@ -459,8 +459,6 @@ export const updateGoal = async (userId: string, updatedGoal: Goal): Promise<Goa
     const wasCompleted = oldGoal.isCompleted;
     MOCK_GOALS[userId][goalIndex] = updatedGoal;
     
-    const TOKENS_PER_LEVEL = 100;
-    
     if(updatedGoal.isCompleted && !wasCompleted) {
         await checkAndGrantAwards(userId, updatedGoal);
         const currentUser = MOCK_USERS[userId];
@@ -473,8 +471,8 @@ export const updateGoal = async (userId: string, updatedGoal: Goal): Promise<Goa
 
         if (newLevel > oldLevel) {
             const levelsGained = newLevel - oldLevel;
-            const tokensEarned = levelsGained * TOKENS_PER_LEVEL;
-            currentUser.profile.buildingTokens = (currentUser.profile.buildingTokens || 0) + tokensEarned;
+            const moneyEarned = levelsGained * (500 + oldLevel * 100);
+            currentUser.profile.money = (currentUser.profile.money || 0) + moneyEarned;
             currentUser.profile.level = newLevel;
         }
 
@@ -483,7 +481,7 @@ export const updateGoal = async (userId: string, updatedGoal: Goal): Promise<Goa
         // If a goal is "un-completed", subtract points
         const currentUser = MOCK_USERS[userId];
         currentUser.profile.totalPoints = Math.max(0, (currentUser.profile.totalPoints || 0) - updatedGoal.points);
-        // Note: We are not revoking awards or tokens if a goal is un-completed to keep it simple.
+        // Note: We are not revoking awards or money if a goal is un-completed to keep it simple.
         saveToStorage('MOCK_USERS', MOCK_USERS);
     }
     

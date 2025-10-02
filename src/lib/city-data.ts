@@ -1,49 +1,50 @@
 
 export const TILES = {
   EMPTY: { emoji: ' ', name: 'Remove', cost: 0 },
-  ROAD: { emoji: '⬛', name: 'Road', cost: 10 },
-  GRASS: { emoji: '🌲', name: 'Tree', cost: 5 },
-  POND: { emoji: '💧', name: 'Pond', cost: 15, ratingBonus: 5, ratingRange: 3 },
+  ROAD: { emoji: '⬛', name: 'Road', cost: 100 },
+  GRASS: { emoji: '🌲', name: 'Tree', cost: 25 },
+  POND: { emoji: '💧', name: 'Pond', cost: 150, ratingBonus: 5, ratingRange: 3 },
   MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 },
-  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20, isFarmland: true },
-  FACTORY: { emoji: '🏭', name: 'Factory', cost: 250, ratingPenalty: -15, ratingRange: 5, revenueMultiplier: 5 },
-  STATION: { emoji: '🚉', name: 'Train Station', cost: 400, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 5, ratingRange: 8, serviceType: 'transport' },
-  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10 },
+  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 200, isFarmland: true },
+  FACTORY: { emoji: '🏭', name: 'Factory', cost: 25000, ratingPenalty: -15, ratingRange: 5, revenueMultiplier: 5 },
+  STATION: { emoji: '🚉', name: 'Train Station', cost: 40000, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 10, ratingRange: 10, serviceType: 'transport' },
+  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 80000, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10 },
   SETTLEMENT: [
-    { emoji: '⛺', name: 'Tent', cost: 10, defaultPopulation: 1, maxPopulation: 2, isResidential: true },
-    { emoji: '🌳', name: 'Big Tree', cost: 5 },
+    { emoji: '⛺', name: 'Tent', cost: 100, defaultPopulation: 1, maxPopulation: 2, isResidential: true },
+    { emoji: '🌳', name: 'Big Tree', cost: 50 },
   ],
   VILLAGE: [
-    { emoji: '🏡', name: 'House', cost: 50, defaultPopulation: 2, maxPopulation: 5, isResidential: true },
-    { emoji: '🏠', name: 'Family Home', cost: 75, defaultPopulation: 4, maxPopulation: 8, isResidential: true },
-    { emoji: '⛪', name: 'Church', cost: 100, ratingBonus: 10, ratingRange: 4 },
+    { emoji: '🏡', name: 'House', cost: 5000, defaultPopulation: 2, maxPopulation: 5, isResidential: true },
+    { emoji: '🏠', name: 'Family Home', cost: 7500, defaultPopulation: 4, maxPopulation: 8, isResidential: true },
+    { emoji: '⛪', name: 'Church', cost: 10000, ratingBonus: 10, ratingRange: 4 },
   ],
   TOWN: [
-    { emoji: '🏬', name: 'Store', cost: 150, ratingBonus: 15, ratingRange: 3, revenueMultiplier: 1 },
-    { emoji: '🏨', name: 'Hotel', cost: 350, revenueMultiplier: 2 },
+    { emoji: '🏬', name: 'Store', cost: 15000, ratingBonus: 15, ratingRange: 3, revenueMultiplier: 1 },
+    { emoji: '🏨', name: 'Hotel', cost: 35000, revenueMultiplier: 2 },
   ],
   SMALL_CITY: [
-    { emoji: '🏢', name: 'Apartment', cost: 300, defaultPopulation: 20, maxPopulation: 60, isResidential: true },
-    { emoji: '🏫', name: 'School', cost: 200, ratingBonus: 10, ratingRange: 7, isPublicService: true, maintenanceCostPerCitizen: 0.2, serviceType: 'education' },
-    { emoji: '🏥', name: 'Hospital', cost: 450, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 10, ratingRange: 9, serviceType: 'health' },
-    { emoji: '🚓', name: 'Police Department', cost: 300, ratingBonus: 15, ratingRange: 8, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'police' },
-    { emoji: '🚒', name: 'Fire Department', cost: 300, ratingBonus: 15, ratingRange: 8, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'fire' },
+    { emoji: '🏢', name: 'Apartment', cost: 30000, defaultPopulation: 20, maxPopulation: 60, isResidential: true },
+    { emoji: '🏫', name: 'School', cost: 20000, ratingBonus: 15, ratingRange: 9, isPublicService: true, maintenanceCostPerCitizen: 0.2, serviceType: 'education' },
+    { emoji: '🏥', name: 'Hospital', cost: 45000, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 15, ratingRange: 12, serviceType: 'health' },
+    { emoji: '🚓', name: 'Police Department', cost: 30000, ratingBonus: 20, ratingRange: 10, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'police' },
+    { emoji: '🚒', name: 'Fire Department', cost: 30000, ratingBonus: 20, ratingRange: 10, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'fire' },
   ],
   LARGE_CITY: [
-    { emoji: '🏙️', name: 'Skyscraper', cost: 500, defaultPopulation: 80, maxPopulation: 250, isResidential: true },
-    { emoji: '🎢', name: 'Roller Coaster', cost: 600, ratingBonus: 20, ratingRange: 6, revenueMultiplier: 2.5 },
-    { emoji: '🎪', name: 'Circus', cost: 300, ratingBonus: 15, ratingRange: 5, revenueMultiplier: 1.5 },
+    { emoji: '🏙️', name: 'Skyscraper', cost: 50000, defaultPopulation: 80, maxPopulation: 250, isResidential: true },
+    { emoji: '🎢', name: 'Roller Coaster', cost: 60000, ratingBonus: 20, ratingRange: 6, revenueMultiplier: 2.5 },
+    { emoji: '🎪', name: 'Circus', cost: 30000, ratingBonus: 15, ratingRange: 5, revenueMultiplier: 1.5 },
   ],
   METROPOLIS: [
-    { emoji: '🌃', name: 'City at Night', cost: 1000, defaultPopulation: 200, maxPopulation: 600, isResidential: true },
-    { emoji: '🚀', name: 'Rocket', cost: 2000, ratingPenalty: -30, ratingRange: 10, revenueMultiplier: 20 },
-    { emoji: '⛳', name: 'Golf Course', cost: 700, ratingBonus: 25, ratingRange: 8, revenueMultiplier: 3 },
-    { emoji: '🏟️', name: 'Stadium', cost: 900, ratingBonus: 30, ratingRange: 10, revenueMultiplier: 4 },
+    { emoji: '🌃', name: 'City at Night', cost: 100000, defaultPopulation: 200, maxPopulation: 600, isResidential: true },
+    { emoji: '🚀', name: 'Rocket', cost: 200000, ratingPenalty: -30, ratingRange: 10, revenueMultiplier: 20 },
+    { emoji: '⛳', name: 'Golf Course', cost: 70000, ratingBonus: 25, ratingRange: 8, revenueMultiplier: 3 },
+    { emoji: '🏟️', name: 'Stadium', cost: 90000, ratingBonus: 30, ratingRange: 10, revenueMultiplier: 4 },
   ],
 };
 
 export const getBuildingSet = (points: number) => {
-  let available = [TILES.ROAD, TILES.GRASS, TILES.EMPTY, TILES.POND, TILES.FARMLAND, ...TILES.SETTLEMENT];
+  let available = [TILES.ROAD, TILES.GRASS, TILES.EMPTY, TILES.POND, ...TILES.SETTLEMENT];
+  if (points >= 0) available.push(TILES.FARMLAND)
   if (points >= 100) available.push(...TILES.VILLAGE);
   if (points >= 400) available.push(...TILES.TOWN);
   if (points >= 600) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
@@ -212,7 +213,7 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
             const size = plot.length;
             let totalPlotRevenue = 0;
             if (size >= 4) {
-                const revenuePerTile = 20 + (size - 4);
+                const revenuePerTile = 200 + (size - 4) * 10;
                 totalPlotRevenue = size * revenuePerTile;
                 farmlandRevenue += totalPlotRevenue;
             }

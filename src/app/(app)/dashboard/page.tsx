@@ -228,7 +228,7 @@ export default function DashboardPage() {
           action: <Button asChild variant="secondary"><Link href="/awards">View Awards</Link></Button>
         });
       }
-      // Regardless of completion, refresh user to get latest points and tokens
+      // Regardless of completion, refresh user to get latest points and money
       await refreshUser();
       // We still want to load dashboard data to ensure goal state is accurate from source
       await loadDashboardData();
@@ -326,30 +326,30 @@ export default function DashboardPage() {
         }
     }
 
-    const currentTokens = user.profile.buildingTokens || 0;
+    const currentMoney = user.profile.money || 0;
     
     let totalNetCost = 0;
 
     for(const tile of selectedTiles) {
-        let tokensToRefund = 0;
+        let moneyToRefund = 0;
         const existingEmoji = cityGrid[tile.y][tile.x];
         const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
 
         if (replacedBuilding) {
             if (replacedBuilding.emoji === TILES.ROAD.emoji && (building.name === 'Remove' || building.name === 'Tree')) {
-                 tokensToRefund = replacedBuilding.cost / 2; // Refund half for roads when removing
+                 moneyToRefund = replacedBuilding.cost / 2; // Refund half for roads when removing
             } else if (building.name === 'Remove' || building.name === 'Tree') {
-                tokensToRefund = replacedBuilding.cost; // Full refund for other buildings
+                moneyToRefund = replacedBuilding.cost; // Full refund for other buildings
             }
         }
-        totalNetCost += (building.cost - tokensToRefund);
+        totalNetCost += (building.cost - moneyToRefund);
     }
     
-    if (currentTokens < totalNetCost) {
+    if (currentMoney < totalNetCost) {
       toast({
           variant: 'destructive',
-          title: 'Not enough tokens!',
-          description: `You need ${totalNetCost} tokens for this action, but you only have ${currentTokens}.`,
+          title: 'Not enough money!',
+          description: `You need $${totalNetCost.toLocaleString()} for this action, but you only have $${currentMoney.toLocaleString()}.`,
       });
       return;
     }
@@ -361,31 +361,31 @@ export default function DashboardPage() {
 
     setCityGrid(newGrid);
 
-    const newTotalTokens = currentTokens - totalNetCost;
+    const newTotalMoney = currentMoney - totalNetCost;
     
     const updatedUser = {
       ...user,
       profile: {
         ...user.profile,
-        buildingTokens: newTotalTokens,
+        money: newTotalMoney,
       }
     };
     setUser(updatedUser);
 
     try {
-      await updateUserProfile(user.id, { profile: { buildingTokens: newTotalTokens } });
+      await updateUserProfile(user.id, { profile: { money: newTotalMoney } });
       saveGridToCache(newGrid);
       
       toast({
           title: 'City Updated!',
-          description: `Placed ${selectedTiles.length} "${building.name}" tile(s) for a net cost of ${totalNetCost} tokens.`,
+          description: `Placed ${selectedTiles.length} "${building.name}" tile(s) for a net cost of $${totalNetCost.toLocaleString()}.`,
       });
 
       await refreshUser();
 
     } catch (error) {
       setCityGrid(cityGrid); // Revert grid on error
-      setUser(user); // Revert user tokens on error
+      setUser(user); // Revert user money on error
        toast({
           variant: 'destructive',
           title: 'Update Failed',
@@ -692,8 +692,8 @@ export default function DashboardPage() {
                       <span className='font-bold'>${Math.floor(cityInfo.netRevenue).toLocaleString()}/day</span>
                     </div>
                      <div className="flex justify-between text-sm">
-                        <span className="font-medium text-muted-foreground">Building Tokens:</span>
-                        <span className="font-bold">{(user.profile.buildingTokens || 0).toLocaleString()}</span>
+                        <span className="font-medium text-muted-foreground">Money:</span>
+                        <span className="font-bold">${(user.profile.money || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="font-medium text-muted-foreground">Points to Upgrade:</span>
@@ -745,13 +745,13 @@ export default function DashboardPage() {
                                 {filteredBuildings.map((building) => (
                                 <AccordionItem value={building.name} key={building.name}>
                                     <div className="flex items-center justify-between py-1 pr-4">
-                                        <AccordionTrigger className='flex-1 p-0 hover:no-underline disabled:opacity-50' disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}>
+                                        <AccordionTrigger className='flex-1 p-0 hover:no-underline disabled:opacity-50' disabled={selectedTiles.length === 0 || (user.profile.money || 0) < building.cost * selectedTiles.length}>
                                             <div className='flex items-center gap-4 text-left w-full'>
                                                 <span className="text-3xl p-4">{building.emoji}</span>
                                                 <div className="flex-1">
                                                     <p className="font-semibold">{building.name}</p>
                                                     <p className="text-sm text-muted-foreground">
-                                                        Cost: {building.cost} tokens
+                                                        Cost: ${building.cost.toLocaleString()}
                                                     </p>
                                                 </div>
                                             </div>
@@ -763,7 +763,7 @@ export default function DashboardPage() {
                                                 e.stopPropagation();
                                                 handleTileSelect(building);
                                             }}
-                                            disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
+                                            disabled={selectedTiles.length === 0 || (user.profile.money || 0) < building.cost * selectedTiles.length}
                                         >
                                             Build
                                         </Button>
@@ -829,14 +829,14 @@ export default function DashboardPage() {
                                                       variant="outline"
                                                       className="flex h-20 w-full items-center justify-center text-3xl"
                                                       onClick={() => handleTileSelect(building)}
-                                                      disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
+                                                      disabled={selectedTiles.length === 0 || (user.profile.money || 0) < building.cost * selectedTiles.length}
                                                   >
                                                       {building.emoji}
                                                   </Button>
                                               </TooltipTrigger>
                                               <TooltipContent>
                                                   <p className="font-semibold">{building.name}</p>
-                                                  <p>Cost: {building.cost} tokens</p>
+                                                  <p>Cost: ${building.cost.toLocaleString()}</p>
                                               </TooltipContent>
                                           </Tooltip>
                                       </TooltipProvider>
@@ -1082,7 +1082,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-
-
-

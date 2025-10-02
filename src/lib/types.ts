@@ -16,7 +16,7 @@ export type UserProfile = {
   activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
   avatarUrl?: string;
   totalPoints?: number;
-  buildingTokens?: number;
+  money?: number;
   level?: number;
 };
 

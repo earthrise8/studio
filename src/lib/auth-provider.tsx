@@ -17,7 +17,8 @@ const mockUser: User = {
       height: 178,
       weight: 75,
       activityLevel: 'moderate',
-      avatarUrl: 'https://i.pravatar.cc/150?u=dylan'
+      avatarUrl: 'https://i.pravatar.cc/150?u=dylan',
+      money: 1000
     },
 };
 
