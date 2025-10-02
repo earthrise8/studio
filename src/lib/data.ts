@@ -54,9 +54,9 @@ const initialUsers: Record<string, User> = {
       weight: 75,
       activityLevel: 'moderate',
       avatarUrl: 'https://i.pravatar.cc/150?u=dylan',
-      totalPoints: 1500,
-      buildingTokens: 500,
-      level: 15,
+      totalPoints: 0,
+      buildingTokens: 0,
+      level: 0,
     },
   },
 };
