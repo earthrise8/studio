@@ -933,7 +933,7 @@ export default function DashboardPage() {
                             <Accordion type="single" collapsible className="w-full">
                                 {filteredBuildings.map((building) => (
                                 <AccordionItem value={building.name} key={building.name}>
-                                    <div className="flex items-center py-1">
+                                    <div className="flex items-center justify-between py-1">
                                         <AccordionTrigger
                                             className='flex-1 p-0 hover:no-underline disabled:opacity-50'
                                             disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
