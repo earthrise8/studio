@@ -22,7 +22,8 @@ const TILES = {
   EMPTY: ' ',
   ROAD: '➖',
   GRASS: '🌲',
-  VILLAGE: ['🏡', '🌳', '🌳'],
+  SETTLEMENT: ['🏡', '🌳'],
+  VILLAGE: ['🏡', '🏠', '🌳'],
   TOWN: ['🏠', '🏡', '🏬', '🌳'],
   SMALL_CITY: ['🏢', '🏠', '🏬', '🏫', '🏭'],
   LARGE_CITY: ['🏢', '🏬', '🏙️', '🏫', '🚉'],
@@ -33,10 +34,11 @@ const TILES = {
 };
 
 const getBuildingSet = (points: number) => {
-  if (points < 100) return TILES.VILLAGE;
-  if (points < 500) return TILES.TOWN;
-  if (points < 1000) return TILES.SMALL_CITY;
-  if (points < 2000) return TILES.LARGE_CITY;
+  if (points < 200) return TILES.SETTLEMENT;
+  if (points < 400) return TILES.VILLAGE;
+  if (points < 600) return TILES.TOWN;
+  if (points < 800) return TILES.SMALL_CITY;
+  if (points < 1000) return TILES.LARGE_CITY;
   return TILES.METROPOLIS;
 };
 
@@ -53,38 +55,33 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
   for (let y = 0; y < GRID_HEIGHT; y++) {
     for (let x = 0; x < GRID_WIDTH; x++) {
       
-      let baseTile = TILES.EMPTY;
-      if (y > GRID_HEIGHT / 2) {
-        baseTile = TILES.GRASS;
-      }
+      let baseTile = Math.random() > 0.1 ? TILES.GRASS : TILES.EMPTY;
       grid[y][x] = baseTile;
       
       // Road
-      if (y === roadY) {
+      if (y === roadY || y === roadY + 1) {
         grid[y][x] = TILES.ROAD;
         continue;
       }
 
       // Buildings and stuff
-      if (y > GRID_HEIGHT / 2) {
-        // Place buildings near the road
+      if (baseTile === TILES.GRASS) {
         const distFromRoad = Math.abs(y - roadY);
-        if (distFromRoad > 0 && distFromRoad < 4) {
-             if (Math.random() > 0.6) {
-                grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
-            }
-        } else if (baseTile === TILES.GRASS) {
-            // Further away from road, chance for special buildings
-            if (input.points >= 500 && Math.random() > 0.95) {
-                grid[y][x] = TILES.FACTORY;
-            }
-             if (input.points >= 1000 && Math.random() > 0.98) {
-                grid[y][x] = TILES.STATION;
-            }
-             if (input.points >= 2000 && Math.random() > 0.99) {
-                grid[y][x] = TILES.AIRPORT;
-            }
-        }
+        // Higher chance of buildings closer to the road
+        if (Math.random() < 0.3 / (distFromRoad + 1)) {
+           grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
+       } else {
+           // Further away from road, chance for special buildings
+           if (input.points >= 600 && Math.random() > 0.95) {
+               grid[y][x] = TILES.FACTORY;
+           }
+            if (input.points >= 800 && Math.random() > 0.98) {
+               grid[y][x] = TILES.STATION;
+           }
+            if (input.points >= 1000 && Math.random() > 0.99) {
+               grid[y][x] = TILES.AIRPORT;
+           }
+       }
       }
     }
   }

@@ -85,8 +85,13 @@ const TILES = {
   EMPTY: { emoji: ' ', name: 'Empty' },
   ROAD: { emoji: '➖', name: 'Road' },
   GRASS: { emoji: '🌲', name: 'Tree' },
+  SETTLEMENT: [
+    { emoji: '🏡', name: 'House' },
+    { emoji: '🌳', name: 'Big Tree' },
+  ],
   VILLAGE: [
     { emoji: '🏡', name: 'House' },
+    { emoji: '🏠', name: 'Family Home' },
     { emoji: '🌳', name: 'Big Tree' },
   ],
   TOWN: [
@@ -110,11 +115,12 @@ const TILES = {
 };
 
 const getBuildingSet = (points: number) => {
-  let available = [...TILES.VILLAGE, TILES.GRASS];
-  if (points >= 100) available.push(...TILES.TOWN);
-  if (points >= 500) available.push(...TILES.SMALL_CITY);
-  if (points >= 1000) available.push(...TILES.LARGE_CITY);
-  if (points >= 2000) available.push(...TILES.METROPOLIS);
+  let available = [...TILES.SETTLEMENT, TILES.GRASS];
+  if (points >= 200) available.push(...TILES.VILLAGE);
+  if (points >= 400) available.push(...TILES.TOWN);
+  if (points >= 600) available.push(...TILES.SMALL_CITY);
+  if (points >= 800) available.push(...TILES.LARGE_CITY);
+  if (points >= 1000) available.push(...TILES.METROPOLIS);
 
   // Remove duplicates by emoji
   const uniqueAvailable = available.filter((v,i,a)=>a.findIndex(t=>(t.emoji === v.emoji))===i);
@@ -123,19 +129,21 @@ const getBuildingSet = (points: number) => {
 };
 
 const getCityLevel = (points: number) => {
-    if (points < 100) return 0;
-    if (points < 500) return 100;
-    if (points < 1000) return 500;
-    if (points < 2000) return 1000;
-    return 2000;
+    if (points < 200) return 0;
+    if (points < 400) return 200;
+    if (points < 600) return 400;
+    if (points < 800) return 600;
+    if (points < 1000) return 800;
+    return 1000;
 }
 
 const getCityInfo = (points: number) => {
     const level = getCityLevel(points);
-    if (level < 100) return { name: 'Village', population: points * 10, numberOfHouses: Math.floor(points / 10), totalRevenue: points * 100, nextUpgrade: 100 };
-    if (level < 500) return { name: 'Town', population: points * 20, numberOfHouses: Math.floor(points / 5), totalRevenue: points * 250, nextUpgrade: 500 };
-    if (level < 1000) return { name: 'Small City', population: points * 50, numberOfHouses: Math.floor(points / 2), totalRevenue: points * 600, nextUpgrade: 1000 };
-    if (level < 2000) return { name: 'Large City', population: points * 100, numberOfHouses: points, totalRevenue: points * 1500, nextUpgrade: 2000 };
+    if (level < 200) return { name: 'Settlement', population: points * 5, numberOfHouses: Math.floor(points / 20), totalRevenue: points * 50, nextUpgrade: 200 };
+    if (level < 400) return { name: 'Village', population: points * 10, numberOfHouses: Math.floor(points / 10), totalRevenue: points * 100, nextUpgrade: 400 };
+    if (level < 600) return { name: 'Town', population: points * 20, numberOfHouses: Math.floor(points / 5), totalRevenue: points * 250, nextUpgrade: 600 };
+    if (level < 800) return { name: 'Small City', population: points * 50, numberOfHouses: Math.floor(points / 2), totalRevenue: points * 600, nextUpgrade: 800 };
+    if (level < 1000) return { name: 'Large City', population: points * 100, numberOfHouses: points, totalRevenue: points * 1500, nextUpgrade: 1000 };
     return { name: 'Metropolis', population: points * 250, numberOfHouses: points * 2, totalRevenue: points * 4000, nextUpgrade: null };
 };
 
