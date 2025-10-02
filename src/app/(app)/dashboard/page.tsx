@@ -124,6 +124,8 @@ const TILES = {
     { emoji: '🏢', name: 'Apartment', cost: 300, defaultPopulation: 20, maxPopulation: 60, isResidential: true },
     { emoji: '🏫', name: 'School', cost: 200, ratingBonus: 10, ratingRange: 5 },
     { emoji: '🏥', name: 'Hospital', cost: 450 },
+    { emoji: '🚓', name: 'Police Department', cost: 300, ratingBonus: 15, ratingRange: 5 },
+    { emoji: '🚒', name: 'Fire Department', cost: 300, ratingBonus: 15, ratingRange: 5 },
   ],
   LARGE_CITY: [
     { emoji: '🏙️', name: 'Skyscraper', cost: 500, defaultPopulation: 80, maxPopulation: 250, isResidential: true },
@@ -705,14 +707,20 @@ export default function DashboardPage() {
     );
   }, [availableBuildings, tileSearchTerm]);
 
-  if (!cityInfo) { // Use derived state for loading check
-    const tempCityInfo = user ? getCityInfo(user.profile.totalPoints || 0, null) : { name: 'Empty Lot', population: 0, totalRevenue: 0, nextUpgrade: 100 };
+  if (!user) {
+    return (
+       <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+          <div className="flex h-screen w-full items-center justify-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          </div>
+       </main>
+    )
   }
 
-  const pointsToUpgrade = user && cityInfo?.nextUpgrade ? cityInfo.nextUpgrade - (user.profile.totalPoints || 0) : 0;
+  const cityInfoForLoading = cityInfo || getCityInfo(user.profile.totalPoints || 0, null);
 
 
-  if (loading || !data || !user || !cityInfo) {
+  if (loading || !data || !cityInfo) {
     return (
        <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
             <Skeleton className="h-8 w-48" />
@@ -753,6 +761,8 @@ export default function DashboardPage() {
     
   const activeGoals = goals.filter(g => !g.isCompleted);
   const completedGoals = goals.filter(g => g.isCompleted);
+  const pointsToUpgrade = cityInfo.nextUpgrade ? cityInfo.nextUpgrade - (user.profile.totalPoints || 0) : 0;
+
 
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -934,10 +944,7 @@ export default function DashboardPage() {
                                 {filteredBuildings.map((building) => (
                                 <AccordionItem value={building.name} key={building.name}>
                                     <div className="flex items-center justify-between py-1">
-                                        <AccordionTrigger
-                                            className='flex-1 p-0 hover:no-underline disabled:opacity-50'
-                                            disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
-                                        >
+                                        <AccordionTrigger className='flex-1 p-0 hover:no-underline disabled:opacity-50' disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}>
                                             <div className='flex items-center gap-4 text-left w-full'>
                                                 <span className="text-3xl p-4">{building.emoji}</span>
                                                 <div className="flex-1">
@@ -1263,3 +1270,4 @@ export default function DashboardPage() {
     
 
     
+
