@@ -53,7 +53,7 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
             <div className="flex justify-between items-center text-sm">
                 <div className='flex-1'>
                     <p className={goal.isCompleted ? 'line-through text-muted-foreground' : ''}>{goal.description}</p>
-                    <p className='text-xs text-muted-foreground'>{goal.points}</p>
+                    <p className='text-xs text-muted-foreground'>{goal.points} points</p>
                 </div>
                 <div className="flex items-center gap-2 font-medium">
                     <Button
@@ -88,6 +88,9 @@ const TILES = {
   POND: { emoji: '💧', name: 'Pond' },
   MOUNTAIN: { emoji: '⛰️', name: 'Mountain' },
   FARMLAND: { emoji: '🌾', name: 'Farmland' },
+  FACTORY: { emoji: '🏭', name: 'Factory' },
+  STATION: { emoji: '🚉', name: 'Train Station' },
+  AIRPORT: { emoji: '✈️', name: 'Airport' },
   SETTLEMENT: [
     { emoji: '🏡', name: 'House' },
     { emoji: '🌳', name: 'Big Tree' },
@@ -103,16 +106,13 @@ const TILES = {
   SMALL_CITY: [
     { emoji: '🏢', name: 'Apartment' },
     { emoji: '🏫', name: 'School' },
-    { emoji: '🏭', name: 'Factory' },
   ],
   LARGE_CITY: [
     { emoji: '🏙️', name: 'Skyscraper' },
-    { emoji: '🚉', name: 'Train Station' },
   ],
   METROPOLIS: [
     { emoji: '🌃', name: 'City at Night' },
     { emoji: '🚀', name: 'Rocket' },
-    { emoji: '✈️', name: 'Airport' },
   ],
 };
 
@@ -120,9 +120,9 @@ const getBuildingSet = (points: number) => {
   let available = [TILES.GRASS, TILES.POND, TILES.MOUNTAIN, ...TILES.SETTLEMENT];
   if (points >= 200) available.push(...TILES.VILLAGE, TILES.FARMLAND);
   if (points >= 400) available.push(...TILES.TOWN);
-  if (points >= 600) available.push(...TILES.SMALL_CITY);
-  if (points >= 800) available.push(...TILES.LARGE_CITY);
-  if (points >= 1000) available.push(...TILES.METROPOLIS);
+  if (points >= 600) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
+  if (points >= 800) available.push(...TILES.LARGE_CITY, TILES.STATION);
+  if (points >= 1000) available.push(...TILES.METROPOLIS, TILES.AIRPORT);
 
   // Remove duplicates by emoji
   const uniqueAvailable = available.filter((v,i,a)=>a.findIndex(t=>(t.emoji === v.emoji))===i);
@@ -210,7 +210,7 @@ export default function DashboardPage() {
 
     setCityLoading(true);
     try {
-      const result = await generateCityScape({ points: currentLevel });
+      const result = await generateCityScape({ points: user.profile.totalPoints || 0 });
       setCityGrid(result.grid);
       saveGridToCache(currentLevel, result.grid);
     } catch (error) {
@@ -299,7 +299,7 @@ export default function DashboardPage() {
   }
 
   const handleTileClick = (y: number, x: number) => {
-    if (cityGrid && cityGrid[y][x] !== ' ' && cityGrid[y][x] !== '➖') {
+    if (cityGrid && cityGrid[y][x] !== '➖') { // Allow building on anything but roads
       setSelectedTile({y, x});
       setTilePickerOpen(true);
     }
@@ -673,3 +673,5 @@ export default function DashboardPage() {
   );
 
 }
+
+    

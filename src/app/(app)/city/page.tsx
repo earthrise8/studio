@@ -8,14 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth-provider';
 import { Building, Loader2, RefreshCw } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-
-const getCityLevel = (points: number) => {
-    if (points < 100) return 0;
-    if (points < 500) return 100;
-    if (points < 1000) return 500;
-    if (points < 2000) return 1000;
-    return 2000;
-}
+import Link from 'next/link';
 
 export default function CityPage() {
     const { user } = useAuth();
@@ -23,8 +16,7 @@ export default function CityPage() {
 
     const [cityGrid, setCityGrid] = useState<string[][] | null>(null);
     const [loading, setLoading] = useState(true);
-    const [cityLevel, setCityLevel] = useState(0);
-
+    
     const getCachedGrid = useCallback((level: number) => {
         if (!user) return null;
         const cached = localStorage.getItem(`city-grid-${user.id}-${level}`);
@@ -34,11 +26,10 @@ export default function CityPage() {
     const handleGenerateCity = useCallback(async (forceRefresh = false) => {
         if (!user) return;
         
-        const currentLevel = getCityLevel(user.profile.totalPoints || 0);
-        setCityLevel(currentLevel);
+        const currentPoints = user.profile.totalPoints || 0;
 
         if (!forceRefresh) {
-            const cachedGrid = getCachedGrid(currentLevel);
+            const cachedGrid = getCachedGrid(currentPoints);
             if (cachedGrid) {
                 setCityGrid(cachedGrid);
                 setLoading(false);
@@ -48,9 +39,9 @@ export default function CityPage() {
 
         setLoading(true);
         try {
-            const result = await generateCityScape({ points: currentLevel });
+            const result = await generateCityScape({ points: currentPoints });
             setCityGrid(result.grid);
-            localStorage.setItem(`city-grid-${user.id}-${currentLevel}`, JSON.stringify(result.grid));
+            localStorage.setItem(`city-grid-${user.id}-${currentPoints}`, JSON.stringify(result.grid));
         } catch (error) {
             console.error(error);
             toast({
@@ -78,10 +69,10 @@ export default function CityPage() {
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2">
                         <Building />
-                        City Level: {user?.profile.totalPoints || 0}
+                        City View
                     </CardTitle>
                     <CardDescription>
-                        Your city grows as you earn points! A new stage is generated at key milestones.
+                       This is a read-only view of your city. Go to your dashboard to build and expand.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -108,16 +99,23 @@ export default function CityPage() {
                             </div>
                         )}
                     </div>
-                     <Button onClick={() => handleGenerateCity(true)} disabled={loading}>
-                        {loading ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                        )}
-                        Regenerate City
-                    </Button>
+                     <div className='flex gap-2'>
+                        <Button onClick={() => handleGenerateCity(true)} disabled={loading}>
+                            {loading ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                            )}
+                            Regenerate
+                        </Button>
+                         <Button asChild>
+                            <Link href="/dashboard">Go to Dashboard</Link>
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
         </main>
     );
 }
+
+    
