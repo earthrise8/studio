@@ -92,43 +92,43 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
 }
 
 const TILES = {
-  EMPTY: { emoji: ' ', name: 'Remove', cost: 0, population: 0 },
-  ROAD: { emoji: '⬛', name: 'Road', cost: 10, population: 0 },
-  GRASS: { emoji: '🌲', name: 'Tree', cost: 5, population: 0 },
-  POND: { emoji: '💧', name: 'Pond', cost: 15, population: 0 },
-  MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0, population: 0 },
-  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20, population: 0 },
-  FACTORY: { emoji: '🏭', name: 'Factory', cost: 250, population: 0 },
-  STATION: { emoji: '🚉', name: 'Train Station', cost: 400, population: 0 },
-  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, population: 0 },
+  EMPTY: { emoji: ' ', name: 'Remove', cost: 0 },
+  ROAD: { emoji: '⬛', name: 'Road', cost: 10 },
+  GRASS: { emoji: '🌲', name: 'Tree', cost: 5 },
+  POND: { emoji: '💧', name: 'Pond', cost: 15, ratingBonus: 5, ratingRange: 3 },
+  MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 },
+  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20 },
+  FACTORY: { emoji: '🏭', name: 'Factory', cost: 250, ratingPenalty: -15, ratingRange: 5 },
+  STATION: { emoji: '🚉', name: 'Train Station', cost: 400 },
+  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, ratingPenalty: -20, ratingRange: 7 },
   SETTLEMENT: [
-    { emoji: '⛺', name: 'Tent', cost: 10, population: 1 },
-    { emoji: '🏡', name: 'House', cost: 50, population: 4 },
-    { emoji: '🌳', name: 'Big Tree', cost: 5, population: 0 },
+    { emoji: '⛺', name: 'Tent', cost: 10, defaultPopulation: 1, maxPopulation: 2, isResidential: true },
+    { emoji: '🏡', name: 'House', cost: 50, defaultPopulation: 2, maxPopulation: 5, isResidential: true },
+    { emoji: '🌳', name: 'Big Tree', cost: 5 },
   ],
   VILLAGE: [
-    { emoji: '🏠', name: 'Family Home', cost: 75, population: 5 },
-    { emoji: '⛪', name: 'Church', cost: 100, population: 0 },
+    { emoji: '🏠', name: 'Family Home', cost: 75, defaultPopulation: 4, maxPopulation: 8, isResidential: true },
+    { emoji: '⛪', name: 'Church', cost: 100, ratingBonus: 10, ratingRange: 4 },
   ],
   TOWN: [
-    { emoji: '🏬', name: 'Store', cost: 150, population: 0 },
-    { emoji: '🏨', name: 'Hotel', cost: 350, population: 0 },
+    { emoji: '🏬', name: 'Store', cost: 150, ratingBonus: 15, ratingRange: 3 },
+    { emoji: '🏨', name: 'Hotel', cost: 350 },
   ],
   SMALL_CITY: [
-    { emoji: '🏢', name: 'Apartment', cost: 300, population: 50 },
-    { emoji: '🏫', name: 'School', cost: 200, population: 0 },
-    { emoji: '🏥', name: 'Hospital', cost: 450, population: 0 },
+    { emoji: '🏢', name: 'Apartment', cost: 300, defaultPopulation: 20, maxPopulation: 60, isResidential: true },
+    { emoji: '🏫', name: 'School', cost: 200, ratingBonus: 10, ratingRange: 5 },
+    { emoji: '🏥', name: 'Hospital', cost: 450 },
   ],
   LARGE_CITY: [
-    { emoji: '🏙️', name: 'Skyscraper', cost: 500, population: 200 },
-    { emoji: '🎢', name: 'Roller Coaster', cost: 600, population: 0 },
-    { emoji: '🎪', name: 'Circus', cost: 300, population: 0 },
+    { emoji: '🏙️', name: 'Skyscraper', cost: 500, defaultPopulation: 80, maxPopulation: 250, isResidential: true },
+    { emoji: '🎢', name: 'Roller Coaster', cost: 600, ratingBonus: 20, ratingRange: 6 },
+    { emoji: '🎪', name: 'Circus', cost: 300, ratingBonus: 15, ratingRange: 5 },
   ],
   METROPOLIS: [
-    { emoji: '🌃', name: 'City at Night', cost: 1000, population: 500 },
-    { emoji: '🚀', name: 'Rocket', cost: 2000, population: 0 },
-    { emoji: '⛳', name: 'Golf Course', cost: 700, population: 0 },
-    { emoji: '🏟️', name: 'Stadium', cost: 900, population: 0 },
+    { emoji: '🌃', name: 'City at Night', cost: 1000, defaultPopulation: 200, maxPopulation: 600, isResidential: true },
+    { emoji: '🚀', name: 'Rocket', cost: 2000, ratingPenalty: -30, ratingRange: 10 },
+    { emoji: '⛳', name: 'Golf Course', cost: 700, ratingBonus: 25, ratingRange: 8 },
+    { emoji: '🏟️', name: 'Stadium', cost: 900, ratingBonus: 30, ratingRange: 10 },
   ],
 };
 
@@ -173,19 +173,66 @@ const getAllBuildings = () => {
     return Object.values(TILES).flat().filter(b => typeof b === 'object');
 };
 
-const allBuildings = getAllBuildings() as { emoji: string; name: string; cost: number; population: number }[];
+const allBuildings = getAllBuildings() as {
+    emoji: string;
+    name: string;
+    cost: number;
+    defaultPopulation?: number;
+    maxPopulation?: number;
+    isResidential?: boolean;
+    ratingBonus?: number;
+    ratingPenalty?: number;
+    ratingRange?: number;
+}[];
+
 const buildingDataMap = new Map(allBuildings.map(b => [b.emoji, b]));
+
+const calculateTileRating = (y: number, x: number, grid: string[][]): number => {
+    let rating = 100; // Base rating
+    
+    for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[0].length; j++) {
+            const building = buildingDataMap.get(grid[i][j]);
+            if (!building) continue;
+
+            const distance = Math.abs(i - y) + Math.abs(j - x);
+
+            // Apply amenities
+            if (building.ratingBonus && building.ratingRange && distance <= building.ratingRange) {
+                // Effect diminishes with distance
+                rating += Math.round(building.ratingBonus * (1 - distance / building.ratingRange));
+            }
+
+            // Apply nuisances
+            if (building.ratingPenalty && building.ratingRange && distance <= building.ratingRange) {
+                // Effect diminishes with distance
+                rating += Math.round(building.ratingPenalty * (1 - distance / building.ratingRange));
+            }
+        }
+    }
+    return rating;
+}
+
+const calculateOccupancy = (rating: number, defaultPop: number, maxPop: number): number => {
+    if (rating < 0) return 0; // All occupants leave if rating is too low
+    const percentage = Math.min(rating / 150, 1); // Cap rating effect at 150 for 100%
+    const dynamicPopulation = Math.round(defaultPop + (maxPop - defaultPop) * percentage);
+    return Math.max(0, Math.min(dynamicPopulation, maxPop));
+};
+
 
 const getCityInfo = (points: number, cityGrid: string[][] | null) => {
     const tier = getCityLevel(points);
     
-    let population = 0;
+    let totalPopulation = 0;
     if (cityGrid) {
-        for (const row of cityGrid) {
-            for (const cell of row) {
-                const building = buildingDataMap.get(cell);
-                if (building && building.population) {
-                    population += building.population;
+        for (let y = 0; y < cityGrid.length; y++) {
+            for (let x = 0; x < cityGrid[y].length; x++) {
+                const building = buildingDataMap.get(cityGrid[y][x]);
+                if (building && building.isResidential) {
+                    const rating = calculateTileRating(y, x, cityGrid);
+                    const occupancy = calculateOccupancy(rating, building.defaultPopulation!, building.maxPopulation!);
+                    totalPopulation += occupancy;
                 }
             }
         }
@@ -193,8 +240,8 @@ const getCityInfo = (points: number, cityGrid: string[][] | null) => {
 
     return {
         name: tier.name,
-        population: population,
-        totalRevenue: population * 10,
+        population: totalPopulation,
+        totalRevenue: totalPopulation * 10,
         nextUpgrade: tier.next,
     };
 };
@@ -640,7 +687,6 @@ export default function DashboardPage() {
                             <div key={y} className="flex">
                                 {row.map((cell, x) => {
                                     const building = buildingDataMap.get(cell);
-                                    const hasPopulation = building && building.population > 0;
                                     
                                     const yMin = dragStart && dragOver ? Math.min(dragStart.y, dragOver.y) : -1;
                                     const yMax = dragStart && dragOver ? Math.max(dragStart.y, dragOver.y) : -1;
@@ -661,13 +707,17 @@ export default function DashboardPage() {
                                         </button>
                                     );
 
-                                    if(hasPopulation) {
+                                    if(building?.isResidential && cityGrid) {
+                                        const rating = calculateTileRating(y, x, cityGrid);
+                                        const occupancy = calculateOccupancy(rating, building.defaultPopulation!, building.maxPopulation!);
+                                        
                                         return (
                                             <Tooltip key={x}>
                                                 <TooltipTrigger asChild>{tileButton}</TooltipTrigger>
                                                 <TooltipContent>
                                                     <p className="font-semibold">{building.name}</p>
-                                                    <p>Population: {building.population}</p>
+                                                    <p>Rating: {rating}</p>
+                                                    <p>Occupants: {occupancy} / {building.maxPopulation}</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         )
@@ -1030,9 +1080,5 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
-
-    
 
     
