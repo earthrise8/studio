@@ -36,6 +36,7 @@ import {
   Grid3x3,
   List,
   Trash2,
+  Search,
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -52,6 +53,7 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/comp
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -206,7 +208,9 @@ export default function DashboardPage() {
   const [cityLoading, setCityLoading] = useState(true);
   const [selectedTile, setSelectedTile] = useState<{y: number, x: number} | null>(null);
   const [isTilePickerOpen, setTilePickerOpen] = useState(false);
-  const [tileView, setTileView] = useState<'list' | 'grid'>('list');
+  const [tileView, setTileView] = useState<'list' | 'grid'>('grid');
+  const [tileSearchTerm, setTileSearchTerm] = useState('');
+
 
   const [data, setData] = useState<{
     pantryItems: PantryItem[],
@@ -445,6 +449,15 @@ export default function DashboardPage() {
   }, [cityGrid]);
 
   const availableBuildings = user ? getBuildingSet(user.profile.totalPoints || 0) : [];
+
+  const filteredBuildings = useMemo(() => {
+    if (!tileSearchTerm) return availableBuildings;
+    return availableBuildings.filter(building => 
+        building.name.toLowerCase().includes(tileSearchTerm.toLowerCase())
+    );
+  }, [availableBuildings, tileSearchTerm]);
+
+
   const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0, cityGrid) : { name: 'Empty Lot', population: 0, totalRevenue: 0, nextUpgrade: 100 };
   const pointsToUpgrade = user && cityInfo.nextUpgrade ? cityInfo.nextUpgrade - (user.profile.totalPoints || 0) : 0;
 
@@ -811,21 +824,33 @@ export default function DashboardPage() {
                 <DialogHeader>
                     <DialogTitle>Customize Tile</DialogTitle>
                 </DialogHeader>
-                <div className="flex items-center space-x-2 my-4">
-                    <Grid3x3 className="h-4 w-4" />
-                    <Switch
-                        id="view-mode-switch"
-                        checked={tileView === 'list'}
-                        onCheckedChange={(checked) => setTileView(checked ? 'list' : 'grid')}
-                    />
-                    <List className="h-4 w-4" />
-                    <Label htmlFor="view-mode-switch">{tileView === 'list' ? 'List View' : 'Grid View'}</Label>
+                <div className="space-y-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input 
+                            placeholder="Search tiles..."
+                            className="pl-10"
+                            value={tileSearchTerm}
+                            onChange={(e) => setTileSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                        <Grid3x3 className="h-4 w-4" />
+                        <Switch
+                            id="view-mode-switch"
+                            checked={tileView === 'list'}
+                            onCheckedChange={(checked) => setTileView(checked ? 'list' : 'grid')}
+                        />
+                        <List className="h-4 w-4" />
+                        <Label htmlFor="view-mode-switch">{tileView === 'list' ? 'List View' : 'Grid View'}</Label>
+                    </div>
                 </div>
 
                 {tileView === 'list' ? (
                      <ScrollArea className="h-96">
                         <div className="flex flex-col space-y-2 p-1">
-                            {availableBuildings.map((building) => (
+                            {filteredBuildings.map((building) => (
                             <Button
                                 key={building.emoji}
                                 variant="outline"
@@ -847,7 +872,7 @@ export default function DashboardPage() {
                 ) : (
                     <ScrollArea className="h-96">
                         <div className="grid grid-cols-4 gap-2 p-1">
-                            {availableBuildings.map((building) => (
+                            {filteredBuildings.map((building) => (
                                 <TooltipProvider key={building.emoji}>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
@@ -875,5 +900,7 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
 
     
