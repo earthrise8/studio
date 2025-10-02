@@ -44,6 +44,7 @@ import {
   Home,
   DollarSign,
   ShieldCheck,
+  CalendarDays,
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -109,6 +110,7 @@ export default function DashboardPage() {
   const [selectedTiles, setSelectedTiles] = useState<{y: number, x: number}[]>([]);
   const [tileView, setTileView] = useState<'grid' | 'list'>('grid');
   const [tileSearchTerm, setTileSearchTerm] = useState('');
+  const [inGameDay, setInGameDay] = useState(1);
 
   // Drag selection state
   const [isDragging, setIsDragging] = useState(false);
@@ -211,7 +213,8 @@ export default function DashboardPage() {
       if (lastUpdate) {
         const lastUpdateTime = parseInt(lastUpdate, 10);
         const hoursPassed = (now - lastUpdateTime) / (1000 * 60 * 60);
-        const daysPassed = Math.floor(hoursPassed);
+        // We only collect for full days passed
+        const daysPassed = Math.floor(hoursPassed / 24);
 
         if (daysPassed > 0) {
           moneyToCollect = daysPassed * Math.floor(cityInfo.netRevenue);
@@ -245,6 +248,15 @@ export default function DashboardPage() {
     if (user) {
       loadDashboardData();
       handleGenerateCity();
+      
+      const gameStartDateKey = `game-start-date-${user.id}`;
+      let gameStartDate = localStorage.getItem(gameStartDateKey);
+      if (!gameStartDate) {
+        gameStartDate = new Date().toISOString();
+        localStorage.setItem(gameStartDateKey, gameStartDate);
+      }
+      const hoursPassed = (new Date().getTime() - new Date(gameStartDate).getTime()) / (1000 * 60 * 60);
+      setInGameDay(Math.floor(hoursPassed / 1) + 1); // 1 hour = 1 day
     }
   }, [user, loadDashboardData, handleGenerateCity]);
 
@@ -744,6 +756,10 @@ export default function DashboardPage() {
                         ) : (
                             <span className="font-bold text-primary">Max Level</span>
                         )}
+                    </div>
+                    <div className="flex items-center justify-between text-sm border-t pt-2 mt-2">
+                        <span className="font-medium text-muted-foreground flex items-center gap-2"><CalendarDays className="h-4 w-4" /> In-Game Time:</span>
+                        <span className="font-bold">Day {inGameDay}</span>
                     </div>
                 </CardContent>
               </Card>
