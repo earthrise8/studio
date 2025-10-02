@@ -31,6 +31,9 @@ const TILES = {
   FACTORY: '🏭',
   STATION: '🚉',
   AIRPORT: '✈️',
+  FARMLAND: '🌾',
+  MOUNTAIN: '⛰️',
+  POND: '💧',
 };
 
 const getBuildingSet = (points: number) => {
@@ -45,24 +48,48 @@ const getBuildingSet = (points: number) => {
 const GRID_WIDTH = 20;
 const GRID_HEIGHT = 20;
 
+// Helper to create clusters
+const generateClusters = (grid: string[][], tile: string, clusterCount: number, clusterSize: number) => {
+    for (let i = 0; i < clusterCount; i++) {
+        const startX = Math.floor(Math.random() * GRID_WIDTH);
+        const startY = Math.floor(Math.random() * GRID_HEIGHT);
+
+        for (let j = 0; j < clusterSize; j++) {
+            const x = startX + Math.floor(Math.random() * 5) - 2;
+            const y = startY + Math.floor(Math.random() * 5) - 2;
+
+            if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT && grid[y][x] === TILES.EMPTY) {
+                grid[y][x] = tile;
+            }
+        }
+    }
+}
+
 export async function generateCityScape(input: GenerateCityScapeInput): Promise<GenerateCityScapeOutput> {
   const grid: string[][] = Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(TILES.EMPTY));
   const buildingSet = getBuildingSet(input.points);
   const roadY = GRID_HEIGHT - 5;
 
+  // Generate natural features first
+  generateClusters(grid, TILES.GRASS, 5, 20); // Forests
+  generateClusters(grid, TILES.MOUNTAIN, 2, 8); // Mountains
+  generateClusters(grid, TILES.POND, 3, 5); // Ponds
+  generateClusters(grid, TILES.FARMLAND, 3, 15); // Farmland
 
-  // Simple generation logic
+  // Then add the road
+  for (let x = 0; x < GRID_WIDTH; x++) {
+    grid[roadY][x] = TILES.ROAD;
+    grid[roadY + 1][x] = TILES.ROAD;
+  }
+
+  // Simple generation logic for buildings
   for (let y = 0; y < GRID_HEIGHT; y++) {
     for (let x = 0; x < GRID_WIDTH; x++) {
+      // Don't overwrite road or existing features
+      if (grid[y][x] !== TILES.EMPTY) continue;
       
       let baseTile = Math.random() > 0.1 ? TILES.GRASS : TILES.EMPTY;
       grid[y][x] = baseTile;
-      
-      // Road
-      if (y === roadY || y === roadY + 1) {
-        grid[y][x] = TILES.ROAD;
-        continue;
-      }
 
       // Buildings and stuff
       if (baseTile === TILES.GRASS) {

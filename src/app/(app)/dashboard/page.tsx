@@ -85,6 +85,9 @@ const TILES = {
   EMPTY: { emoji: ' ', name: 'Empty' },
   ROAD: { emoji: '➖', name: 'Road' },
   GRASS: { emoji: '🌲', name: 'Tree' },
+  POND: { emoji: '💧', name: 'Pond' },
+  MOUNTAIN: { emoji: '⛰️', name: 'Mountain' },
+  FARMLAND: { emoji: '🌾', name: 'Farmland' },
   SETTLEMENT: [
     { emoji: '🏡', name: 'House' },
     { emoji: '🌳', name: 'Big Tree' },
@@ -92,7 +95,6 @@ const TILES = {
   VILLAGE: [
     { emoji: '🏡', name: 'House' },
     { emoji: '🏠', name: 'Family Home' },
-    { emoji: '🌳', name: 'Big Tree' },
   ],
   TOWN: [
     { emoji: '🏠', name: 'Family Home' },
@@ -115,8 +117,8 @@ const TILES = {
 };
 
 const getBuildingSet = (points: number) => {
-  let available = [...TILES.SETTLEMENT, TILES.GRASS];
-  if (points >= 200) available.push(...TILES.VILLAGE);
+  let available = [TILES.GRASS, TILES.POND, TILES.MOUNTAIN, ...TILES.SETTLEMENT];
+  if (points >= 200) available.push(...TILES.VILLAGE, TILES.FARMLAND);
   if (points >= 400) available.push(...TILES.TOWN);
   if (points >= 600) available.push(...TILES.SMALL_CITY);
   if (points >= 800) available.push(...TILES.LARGE_CITY);
