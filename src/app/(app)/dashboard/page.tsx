@@ -85,7 +85,7 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
 const TILES = {
   EMPTY: { emoji: ' ', name: 'Empty', cost: 0 },
   ROAD: { emoji: '➖', name: 'Road', cost: 0 },
-  GRASS: { emoji: '🌲', name: 'Tree', cost: 5 },
+  GRASS: { emoji: '🌲', name: 'Tree', cost: 0 },
   POND: { emoji: '💧', name: 'Pond', cost: 15 },
   MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 25 },
   FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20 },
@@ -94,7 +94,7 @@ const TILES = {
   AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800 },
   SETTLEMENT: [
     { emoji: '🏡', name: 'House', cost: 50 },
-    { emoji: '🌳', name: 'Big Tree', cost: 10 },
+    { emoji: '🌳', name: 'Big Tree', cost: 0 },
   ],
   VILLAGE: [
     { emoji: '🏠', name: 'Family Home', cost: 75 },
@@ -303,49 +303,74 @@ export default function DashboardPage() {
     }
   }
 
+  const getAllBuildings = () => {
+    return Object.values(TILES).flat().filter(b => typeof b === 'object' && b.emoji !== ' ');
+  }
+
   const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
-    if (selectedTile && cityGrid && user) {
-      const currentTokens = user.profile.buildingTokens || 0;
-      if (currentTokens < building.cost) {
-        toast({
-            variant: 'destructive',
-            title: 'Not enough tokens!',
-            description: `You need ${building.cost} tokens to build a ${building.name}.`,
-        });
-        return;
-      }
+    if (!selectedTile || !cityGrid || !user) return;
+    
+    const currentTokens = user.profile.buildingTokens || 0;
+    
+    // Refund logic
+    let tokensToRefund = 0;
+    const isPlacingTree = building.name.toLowerCase().includes('tree');
+    const existingEmoji = cityGrid[selectedTile.y][selectedTile.x];
+    if (isPlacingTree && existingEmoji !== TILES.GRASS.emoji) {
+        const allBuildings = getAllBuildings();
+        const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
+        if (replacedBuilding && replacedBuilding.cost > 0) {
+            tokensToRefund = replacedBuilding.cost;
+        }
+    }
 
-      const newGrid = cityGrid.map(row => [...row]);
-      newGrid[selectedTile.y][selectedTile.x] = building.emoji;
-      setCityGrid(newGrid);
+    const netCost = building.cost - tokensToRefund;
 
-      const newTotalTokens = currentTokens - building.cost;
-      const updatedProfile: Partial<UserProfile> = { buildingTokens: newTotalTokens };
+    if (currentTokens < netCost) {
+      toast({
+          variant: 'destructive',
+          title: 'Not enough tokens!',
+          description: `You need ${building.cost} tokens to build a ${building.name}.`,
+      });
+      return;
+    }
 
-      try {
-        await updateUserProfile(user.id, { profile: updatedProfile });
-        await refreshUser();
-        
-        saveGridToCache(newGrid);
+    const newGrid = cityGrid.map(row => [...row]);
+    newGrid[selectedTile.y][selectedTile.x] = building.emoji;
+    setCityGrid(newGrid);
 
+    const newTotalTokens = currentTokens - netCost;
+    const updatedProfile: Partial<UserProfile> = { buildingTokens: newTotalTokens };
+
+    try {
+      await updateUserProfile(user.id, { profile: updatedProfile });
+      await refreshUser();
+      
+      saveGridToCache(newGrid);
+
+      if (tokensToRefund > 0) {
+           toast({
+                title: 'Building Recycled!',
+                description: `You spent ${building.cost} tokens and got ${tokensToRefund} back for a net change of ${-netCost} tokens.`,
+            });
+      } else {
         toast({
             title: 'Building Placed!',
             description: `You spent ${building.cost} tokens on a ${building.name}.`,
         });
-
-      } catch (error) {
-        // Revert grid on error
-        setCityGrid(cityGrid);
-         toast({
-            variant: 'destructive',
-            title: 'Update Failed',
-            description: `Could not update your tokens.`,
-        });
       }
 
-
-      setTilePickerOpen(false);
+    } catch (error) {
+      // Revert grid on error
+      setCityGrid(cityGrid);
+       toast({
+          variant: 'destructive',
+          title: 'Update Failed',
+          description: `Could not update your tokens.`,
+      });
     }
+
+    setTilePickerOpen(false);
   };
 
   const availableBuildings = user ? getBuildingSet(user.profile.totalPoints || 0) : [];
@@ -709,6 +734,8 @@ export default function DashboardPage() {
   );
 
 }
+
+    
 
     
 
