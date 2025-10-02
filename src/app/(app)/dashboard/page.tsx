@@ -125,7 +125,7 @@ const TILES = {
 };
 
 const getBuildingSet = (points: number) => {
-  let available = [TILES.GRASS, TILES.POND, ...TILES.SETTLEMENT];
+  let available = [TILES.GRASS, TILES.EMPTY, TILES.POND, ...TILES.SETTLEMENT];
   if (points >= 200) available.push(...TILES.VILLAGE, TILES.FARMLAND);
   if (points >= 400) available.push(...TILES.TOWN);
   if (points >= 600) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
@@ -328,10 +328,14 @@ export default function DashboardPage() {
     const currentTokens = user.profile.buildingTokens || 0;
 
     let tokensToRefund = 0;
-    const isPlacingTree = building.name.toLowerCase().includes('tree');
+    const isPlacingRefundableTile = building.name.toLowerCase().includes('tree') || building.name.toLowerCase() === 'empty';
     const existingEmoji = cityGrid[selectedTile.y][selectedTile.x];
     
-    if (isPlacingTree && existingEmoji !== TILES.GRASS.emoji) {
+    if (isPlacingRefundableTile && existingEmoji !== TILES.GRASS.emoji && existingEmoji !== TILES.EMPTY.emoji) {
+        if(existingEmoji === '⛰️') {
+            toast({ variant: 'destructive', title: "Cannot destroy mountains!" });
+            return;
+        }
         const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
         if (replacedBuilding && replacedBuilding.cost > 0) {
             tokensToRefund = replacedBuilding.cost;
