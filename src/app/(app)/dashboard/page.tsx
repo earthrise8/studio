@@ -933,30 +933,33 @@ export default function DashboardPage() {
                             <Accordion type="single" collapsible className="w-full">
                                 {filteredBuildings.map((building) => (
                                 <AccordionItem value={building.name} key={building.name}>
-                                    <AccordionTrigger 
-                                        className='p-0 hover:no-underline disabled:opacity-50'
-                                        disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
-                                    >
-                                        <div className='flex items-center gap-4 text-left w-full'>
-                                            <span className="text-3xl p-4">{building.emoji}</span>
-                                            <div className="flex-1">
-                                                <p className="font-semibold">{building.name}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Cost: {building.cost} tokens
-                                                </p>
+                                    <div className="flex items-center py-1">
+                                        <AccordionTrigger
+                                            className='flex-1 p-0 hover:no-underline disabled:opacity-50'
+                                            disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
+                                        >
+                                            <div className='flex items-center gap-4 text-left w-full'>
+                                                <span className="text-3xl p-4">{building.emoji}</span>
+                                                <div className="flex-1">
+                                                    <p className="font-semibold">{building.name}</p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Cost: {building.cost} tokens
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <Button
-                                                size="sm"
-                                                className="mr-4"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleTileSelect(building)
-                                                }}
-                                            >
-                                                Build
-                                            </Button>
-                                        </div>
-                                    </AccordionTrigger>
+                                        </AccordionTrigger>
+                                        <Button
+                                            size="sm"
+                                            className="mr-4"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleTileSelect(building);
+                                            }}
+                                            disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
+                                        >
+                                            Build
+                                        </Button>
+                                    </div>
                                     <AccordionContent className='text-xs text-muted-foreground'>
                                         <div className='p-4 border-t space-y-2'>
                                             {building.isResidential && (
