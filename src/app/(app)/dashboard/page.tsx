@@ -213,8 +213,24 @@ const calculateTileRating = (y: number, x: number, grid: string[][]): number => 
     return rating;
 }
 
+const getRatingGrade = (rating: number): string => {
+    if (rating >= 130) return 'A+';
+    if (rating >= 120) return 'A';
+    if (rating >= 110) return 'A-';
+    if (rating >= 105) return 'B+';
+    if (rating >= 100) return 'B';
+    if (rating >= 95) return 'B-';
+    if (rating >= 90) return 'C+';
+    if (rating >= 80) return 'C';
+    if (rating >= 70) return 'C-';
+    if (rating >= 60) return 'D';
+    return 'F';
+};
+
 const calculateOccupancy = (rating: number, defaultPop: number, maxPop: number): number => {
-    if (rating < 0) return 0; // All occupants leave if rating is too low
+    const grade = getRatingGrade(rating);
+    if (grade === 'F') return 0;
+
     const percentage = Math.min(rating / 150, 1); // Cap rating effect at 150 for 100%
     const dynamicPopulation = Math.round(defaultPop + (maxPop - defaultPop) * percentage);
     return Math.max(0, Math.min(dynamicPopulation, maxPop));
@@ -270,7 +286,7 @@ export default function DashboardPage() {
     activityLogsToday: ActivityLog[],
     goals: Goal[],
     friends: Friend[],
-  } | null>(null);
+  } | null>(data);
 
   const getCachedGrid = useCallback(() => {
     if (typeof window === 'undefined' || !user) return null;
@@ -709,6 +725,7 @@ export default function DashboardPage() {
 
                                     if(building?.isResidential && cityGrid) {
                                         const rating = calculateTileRating(y, x, cityGrid);
+                                        const grade = getRatingGrade(rating);
                                         const occupancy = calculateOccupancy(rating, building.defaultPopulation!, building.maxPopulation!);
                                         
                                         return (
@@ -716,7 +733,7 @@ export default function DashboardPage() {
                                                 <TooltipTrigger asChild>{tileButton}</TooltipTrigger>
                                                 <TooltipContent>
                                                     <p className="font-semibold">{building.name}</p>
-                                                    <p>Rating: {rating}</p>
+                                                    <p>Rating: {grade} ({rating})</p>
                                                     <p>Occupants: {occupancy} / {building.maxPopulation}</p>
                                                 </TooltipContent>
                                             </Tooltip>
@@ -1080,5 +1097,7 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
 
     
