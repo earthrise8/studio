@@ -83,11 +83,11 @@ export default function CityPage() {
                                 <p>Constructing your glorious city...</p>
                             </div>
                         ) : cityGrid ? (
-                           <div className="font-mono text-center text-3xl leading-none">
+                           <div className="font-mono text-center text-3xl leading-none border border-border/50">
                              {cityGrid.map((row, y) => (
                                 <div key={y} className="flex">
                                     {row.map((cell, x) => (
-                                        <span key={x}>{cell}</span>
+                                        <span key={x} className="flex items-center justify-center h-10 w-10 border border-border/20">{cell}</span>
                                     ))}
                                 </div>
                              ))}

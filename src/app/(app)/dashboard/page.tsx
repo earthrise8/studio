@@ -157,7 +157,6 @@ const getCityInfo = (points: number) => {
     return {
         name: tier.name,
         population: points * tier.multiplier,
-        numberOfHouses: Math.floor(points / 20 * tier.multiplier / 2),
         totalRevenue: points * tier.multiplier * 10,
         nextUpgrade: tier.next,
     };
@@ -410,7 +409,7 @@ export default function DashboardPage() {
   }, [cityGrid]);
 
   const availableBuildings = user ? getBuildingSet(user.profile.totalPoints || 0) : [];
-  const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0) : { name: 'Empty Lot', population: 0, numberOfHouses: 0, totalRevenue: 0, nextUpgrade: 100 };
+  const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0) : { name: 'Empty Lot', population: 0, totalRevenue: 0, nextUpgrade: 100 };
   const pointsToUpgrade = user && cityInfo.nextUpgrade ? cityInfo.nextUpgrade - (user.profile.totalPoints || 0) : 0;
 
 
@@ -481,11 +480,11 @@ export default function DashboardPage() {
                         <p>Constructing your glorious city...</p>
                     </div>
                 ) : cityGrid ? (
-                   <div className="font-mono text-center text-3xl leading-none">
+                   <div className="font-mono text-center text-3xl leading-none border border-border/50">
                      {cityGrid.map((row, y) => (
                         <div key={y} className="flex">
                             {row.map((cell, x) => (
-                                <button key={x} onClick={() => handleTileClick(y,x)} className='hover:bg-primary/20 rounded-sm transition-colors'>
+                                <button key={x} onClick={() => handleTileClick(y,x)} className='flex items-center justify-center h-10 w-10 border border-border/20 hover:bg-primary/20 rounded-sm transition-colors'>
                                     <span>{cell}</span>
                                 </button>
                             ))}
