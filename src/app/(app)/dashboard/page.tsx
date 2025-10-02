@@ -48,12 +48,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { generateCityScape } from '@/ai/flows/generate-city-scape';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -207,8 +207,7 @@ export default function DashboardPage() {
   const [cityGrid, setCityGrid] = useState<string[][] | null>(null);
   const [cityLoading, setCityLoading] = useState(true);
   const [selectedTile, setSelectedTile] = useState<{y: number, x: number} | null>(null);
-  const [isTilePickerOpen, setTilePickerOpen] = useState(false);
-  const [tileView, setTileView] = useState<'list' | 'grid'>('grid');
+  const [tileView, setTileView] = useState<'grid' | 'list'>('grid');
   const [tileSearchTerm, setTileSearchTerm] = useState('');
 
 
@@ -341,8 +340,11 @@ export default function DashboardPage() {
         return;
     }
     if (cityGrid && cityGrid[y][x] !== '➖') {
-      setSelectedTile({y, x});
-      setTilePickerOpen(true);
+      if (selectedTile && selectedTile.y === y && selectedTile.x === x) {
+        setSelectedTile(null); // deselect if clicking the same tile
+      } else {
+        setSelectedTile({y, x});
+      }
     }
   }
 
@@ -425,7 +427,7 @@ export default function DashboardPage() {
       });
     }
 
-    setTilePickerOpen(false);
+    setSelectedTile(null);
   };
 
   const buildingCounts = useMemo(() => {
@@ -530,15 +532,16 @@ export default function DashboardPage() {
                     </div>
                 ) : cityGrid ? (
                    <TooltipProvider>
-                       <div className="font-mono text-center text-3xl leading-none border border-border/50">
+                       <div className="font-mono text-center text-3xl leading-none border-t border-l border-border/50">
                          {cityGrid.map((row, y) => (
                             <div key={y} className="flex">
                                 {row.map((cell, x) => {
                                     const building = buildingDataMap.get(cell);
                                     const hasPopulation = building && building.population > 0;
+                                    const isSelected = selectedTile?.y === y && selectedTile?.x === x;
                                     
                                     const tileButton = (
-                                        <button key={x} onClick={() => handleTileClick(y,x)} className='flex items-center justify-center h-10 w-10 border border-border/20 hover:bg-primary/20 rounded-sm transition-colors'>
+                                        <button key={x} onClick={() => handleTileClick(y,x)} className={cn('flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', isSelected && 'bg-primary/30 ring-2 ring-primary')}>
                                             <span>{cell}</span>
                                         </button>
                                     );
@@ -600,6 +603,91 @@ export default function DashboardPage() {
                     </div>
                 </CardContent>
               </Card>
+
+                <Card className={cn("transition-opacity", !selectedTile && 'opacity-50 pointer-events-none')}>
+                  <CardHeader>
+                      <CardTitle className='font-headline'>Customize Tile</CardTitle>
+                      <CardDescription>
+                          {selectedTile ? 'Select a building to place.' : 'Select a tile on the grid to customize.'}
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <div className="space-y-4">
+                          <div className="relative">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                              <Input 
+                                  placeholder="Search tiles..."
+                                  className="pl-10"
+                                  value={tileSearchTerm}
+                                  onChange={(e) => setTileSearchTerm(e.target.value)}
+                                  disabled={!selectedTile}
+                              />
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                              <Grid3x3 className="h-4 w-4" />
+                              <Switch
+                                  id="view-mode-switch"
+                                  checked={tileView === 'list'}
+                                  onCheckedChange={(checked) => setTileView(checked ? 'list' : 'grid')}
+                                  disabled={!selectedTile}
+                              />
+                              <List className="h-4 w-4" />
+                              <Label htmlFor="view-mode-switch">{tileView === 'list' ? 'List View' : 'Grid View'}</Label>
+                          </div>
+                      </div>
+
+                      {tileView === 'list' ? (
+                          <ScrollArea className="h-96 mt-4">
+                              <div className="flex flex-col space-y-2 p-1">
+                                  {filteredBuildings.map((building) => (
+                                  <Button
+                                      key={building.emoji}
+                                      variant="outline"
+                                      className="flex h-auto justify-start gap-4 p-4 text-left"
+                                      onClick={() => handleTileSelect(building)}
+                                      disabled={!selectedTile || (user.profile.buildingTokens || 0) < building.cost}
+                                  >
+                                      <span className="text-3xl">{building.emoji}</span>
+                                      <div className="flex-1">
+                                      <p className="font-semibold">{building.name}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                          Cost: {building.cost} tokens
+                                      </p>
+                                      </div>
+                                  </Button>
+                                  ))}
+                              </div>
+                          </ScrollArea>
+                      ) : (
+                          <ScrollArea className="h-96 mt-4">
+                              <div className="grid grid-cols-4 gap-2 p-1">
+                                  {filteredBuildings.map((building) => (
+                                      <TooltipProvider key={building.emoji}>
+                                          <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                  <Button
+                                                      variant="outline"
+                                                      className="flex h-20 w-full items-center justify-center text-3xl"
+                                                      onClick={() => handleTileSelect(building)}
+                                                      disabled={!selectedTile || (user.profile.buildingTokens || 0) < building.cost}
+                                                  >
+                                                      {building.emoji}
+                                                  </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                  <p className="font-semibold">{building.name}</p>
+                                                  <p>Cost: {building.cost} tokens</p>
+                                              </TooltipContent>
+                                          </Tooltip>
+                                      </TooltipProvider>
+                                  ))}
+                              </div>
+                          </ScrollArea>
+                      )}
+                  </CardContent>
+              </Card>
+
               {buildingCounts && buildingCounts.length > 0 && (
                 <Card>
                     <CardHeader>
@@ -818,88 +906,11 @@ export default function DashboardPage() {
             </CardContent>
             </Card>
        </div>
-
-        <Dialog open={isTilePickerOpen} onOpenChange={setTilePickerOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Customize Tile</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input 
-                            placeholder="Search tiles..."
-                            className="pl-10"
-                            value={tileSearchTerm}
-                            onChange={(e) => setTileSearchTerm(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <Grid3x3 className="h-4 w-4" />
-                        <Switch
-                            id="view-mode-switch"
-                            checked={tileView === 'list'}
-                            onCheckedChange={(checked) => setTileView(checked ? 'list' : 'grid')}
-                        />
-                        <List className="h-4 w-4" />
-                        <Label htmlFor="view-mode-switch">{tileView === 'list' ? 'List View' : 'Grid View'}</Label>
-                    </div>
-                </div>
-
-                {tileView === 'list' ? (
-                     <ScrollArea className="h-96">
-                        <div className="flex flex-col space-y-2 p-1">
-                            {filteredBuildings.map((building) => (
-                            <Button
-                                key={building.emoji}
-                                variant="outline"
-                                className="flex h-auto justify-start gap-4 p-4 text-left"
-                                onClick={() => handleTileSelect(building)}
-                                disabled={(user.profile.buildingTokens || 0) < building.cost}
-                            >
-                                <span className="text-3xl">{building.emoji}</span>
-                                <div className="flex-1">
-                                <p className="font-semibold">{building.name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Cost: {building.cost} tokens
-                                </p>
-                                </div>
-                            </Button>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                ) : (
-                    <ScrollArea className="h-96">
-                        <div className="grid grid-cols-4 gap-2 p-1">
-                            {filteredBuildings.map((building) => (
-                                <TooltipProvider key={building.emoji}>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className="flex h-20 w-full items-center justify-center text-3xl"
-                                                onClick={() => handleTileSelect(building)}
-                                                disabled={(user.profile.buildingTokens || 0) < building.cost}
-                                            >
-                                                {building.emoji}
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p className="font-semibold">{building.name}</p>
-                                            <p>Cost: {building.cost} tokens</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                )}
-            </DialogContent>
-       </Dialog>
     </main>
   );
 }
+
+    
 
     
 
