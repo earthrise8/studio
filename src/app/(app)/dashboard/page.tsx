@@ -210,6 +210,11 @@ export default function DashboardPage() {
   const [tileView, setTileView] = useState<'grid' | 'list'>('grid');
   const [tileSearchTerm, setTileSearchTerm] = useState('');
 
+  // Drag selection state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{y: number, x: number} | null>(null);
+  const [dragOver, setDragOver] = useState<{y: number, x: number} | null>(null);
+
 
   const [data, setData] = useState<{
     pantryItems: PantryItem[],
@@ -430,6 +435,42 @@ export default function DashboardPage() {
     setSelectedTiles([]);
   };
 
+  const handleMouseDown = (y: number, x: number) => {
+    setIsDragging(true);
+    setDragStart({y, x});
+    setDragOver({y,x});
+    setSelectedTiles([]);
+  };
+
+  const handleMouseEnter = (y: number, x: number) => {
+    if (isDragging) {
+      setDragOver({y, x});
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging && dragStart && dragOver && cityGrid) {
+        const newSelectedTiles = [];
+        const yMin = Math.min(dragStart.y, dragOver.y);
+        const yMax = Math.max(dragStart.y, dragOver.y);
+        const xMin = Math.min(dragStart.x, dragOver.x);
+        const xMax = Math.max(dragStart.x, dragOver.x);
+
+        for (let y = yMin; y <= yMax; y++) {
+            for (let x = xMin; x <= xMax; x++) {
+                const tile = cityGrid[y][x];
+                 if (tile !== '⛰️' && tile !== '➖') {
+                    newSelectedTiles.push({ y, x });
+                }
+            }
+        }
+        setSelectedTiles(newSelectedTiles);
+    }
+    setIsDragging(false);
+    setDragStart(null);
+    setDragOver(null);
+  };
+
   const buildingCounts = useMemo(() => {
     if (!cityGrid) return null;
     const counts = new Map<string, number>();
@@ -458,7 +499,6 @@ export default function DashboardPage() {
         building.name.toLowerCase().includes(tileSearchTerm.toLowerCase())
     );
   }, [availableBuildings, tileSearchTerm]);
-
 
   const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0, cityGrid) : { name: 'Empty Lot', population: 0, totalRevenue: 0, nextUpgrade: 100 };
   const pointsToUpgrade = user && cityInfo.nextUpgrade ? cityInfo.nextUpgrade - (user.profile.totalPoints || 0) : 0;
@@ -519,12 +559,16 @@ export default function DashboardPage() {
                 Your Fitropolis
             </CardTitle>
             <CardDescription>
-                Your city grows as you earn points! Click a tile to customize it.
+                Your city grows as you earn points! Click a tile to customize it, or drag to select multiple tiles.
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-3">
-             <div className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto">
+             <div 
+              className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto"
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              >
                 {cityLoading ? (
                     <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -532,16 +576,28 @@ export default function DashboardPage() {
                     </div>
                 ) : cityGrid ? (
                    <TooltipProvider>
-                       <div className="font-mono text-center text-3xl leading-none border-t border-l border-border/50">
+                       <div className="font-mono text-center text-3xl leading-none border-t border-l border-border/50 select-none">
                          {cityGrid.map((row, y) => (
                             <div key={y} className="flex">
                                 {row.map((cell, x) => {
                                     const building = buildingDataMap.get(cell);
                                     const hasPopulation = building && building.population > 0;
-                                    const isSelected = selectedTiles.some(t => t.y === y && t.x === x);
+                                    
+                                    const yMin = dragStart && dragOver ? Math.min(dragStart.y, dragOver.y) : -1;
+                                    const yMax = dragStart && dragOver ? Math.max(dragStart.y, dragOver.y) : -1;
+                                    const xMin = dragStart && dragOver ? Math.min(dragStart.x, dragOver.x) : -1;
+                                    const xMax = dragStart && dragOver ? Math.max(dragStart.x, dragOver.x) : -1;
+
+                                    const isSelected = selectedTiles.some(t => t.y === y && t.x === x) || (isDragging && y >= yMin && y <= yMax && x >= xMin && x <= xMax);
                                     
                                     const tileButton = (
-                                        <button key={x} onClick={() => handleTileClick(y,x)} className={cn('flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', isSelected && 'bg-primary/30 ring-2 ring-primary')}>
+                                        <button 
+                                            key={x} 
+                                            onClick={() => handleTileClick(y,x)}
+                                            onMouseDown={() => handleMouseDown(y, x)}
+                                            onMouseEnter={() => handleMouseEnter(y,x)}
+                                            className={cn('flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', isSelected && 'bg-primary/30 ring-2 ring-primary')}
+                                            >
                                             <span>{cell}</span>
                                         </button>
                                     );
