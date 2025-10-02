@@ -461,7 +461,7 @@ export default function DashboardPage() {
     if (selectedTiles.length === 0 || !cityGrid || !user) return;
 
     // --- Validation Logic ---
-    const exemptFromRoadRule = ['Tree', 'Big Tree', 'Pond', 'Farmland', 'Tent'];
+    const exemptFromRoadRule = ['Tree', 'Big Tree', 'Pond', 'Farmland', 'Tent', 'Remove'];
 
     if (building.emoji === TILES.ROAD.emoji) {
         const isAnyTileAdjacentToRoad = selectedTiles.some(tile => isAdjacentToRoad(tile.y, tile.x, cityGrid));
