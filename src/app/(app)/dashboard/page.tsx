@@ -395,26 +395,23 @@ export default function DashboardPage() {
     if (selectedTiles.length === 0 || !cityGrid || !user) return;
 
     // --- Validation Logic ---
-    for (const tile of selectedTiles) {
-        const {y, x} = tile;
-
-        if (building.emoji === TILES.ROAD.emoji) {
-            // Road placement rule: must be adjacent to another road
-            if (!isAdjacentToRoad(y, x, cityGrid)) {
+    if (building.emoji === TILES.ROAD.emoji) {
+        const isAnyTileAdjacentToRoad = selectedTiles.some(tile => isAdjacentToRoad(tile.y, tile.x, cityGrid));
+        if (!isAnyTileAdjacentToRoad) {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid Road Placement',
+                description: 'At least one road tile must be connected to an existing road.',
+            });
+            return;
+        }
+    } else { // For any non-road building
+        for (const tile of selectedTiles) {
+            if (!isWithinDistanceOfRoad(tile.y, tile.x, cityGrid, 3)) {
                 toast({
                     variant: 'destructive',
-                    title: 'Invalid Road Placement',
-                    description: 'Roads must be connected to another road.',
-                });
-                return;
-            }
-        } else if (building.emoji !== TILES.EMPTY.emoji) {
-            // Building placement rule: must be within 3 tiles of a road
-            if (!isWithinDistanceOfRoad(y, x, cityGrid, 3)) {
-                 toast({
-                    variant: 'destructive',
                     title: 'Invalid Building Placement',
-                    description: 'Buildings must be placed within 3 tiles of a road.',
+                    description: `Building at (${tile.x}, ${tile.y}) must be within 3 tiles of a road.`,
                 });
                 return;
             }
@@ -429,12 +426,13 @@ export default function DashboardPage() {
     for(const tile of selectedTiles) {
         let tokensToRefund = 0;
         const existingEmoji = cityGrid[tile.y][tile.x];
-        
-        if (isPlacingRefundableTile && existingEmoji !== TILES.GRASS.emoji && existingEmoji !== TILES.EMPTY.emoji) {
-            const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
-            // Roads do not give refunds
-            if (replacedBuilding && replacedBuilding.cost > 0 && replacedBuilding.emoji !== TILES.ROAD.emoji) {
-                tokensToRefund = replacedBuilding.cost;
+        const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
+
+        if (isPlacingRefundableTile && replacedBuilding && replacedBuilding.cost > 0) {
+            if (replacedBuilding.emoji === TILES.ROAD.emoji) {
+                tokensToRefund = replacedBuilding.cost / 2; // Refund half for roads
+            } else {
+                tokensToRefund = replacedBuilding.cost; // Full refund for other buildings
             }
         }
         totalNetCost += (building.cost - tokensToRefund);
@@ -1027,5 +1025,7 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
 
     
