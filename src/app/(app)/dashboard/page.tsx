@@ -324,6 +324,12 @@ export default function DashboardPage() {
   const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
     if (!selectedTile || !cityGrid || !user) return;
 
+    if (cityGrid[selectedTile.y][selectedTile.x] === '⛰️') {
+        toast({ variant: 'destructive', title: "Cannot build on mountains!" });
+        setTilePickerOpen(false);
+        return;
+    }
+
     const currentTokens = user.profile.buildingTokens || 0;
 
     let tokensToRefund = 0;
@@ -763,37 +769,28 @@ export default function DashboardPage() {
                 <DialogHeader>
                     <DialogTitle>Customize Tile</DialogTitle>
                 </DialogHeader>
-                 <TooltipProvider>
-                    <div className='grid grid-cols-4 gap-2'>
-                        {availableBuildings.map(building => (
-                            <Tooltip key={building.emoji}>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className='text-3xl h-20'
-                                        onClick={() => handleTileSelect(building)}
-                                        disabled={(user.profile.buildingTokens || 0) < building.cost}
-                                    >
-                                        {building.emoji}
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{building.name}</p>
-                                    <p className='font-bold'>Cost: {building.cost} tokens</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        ))}
-                    </div>
-                </TooltipProvider>
+                <div className="flex flex-col space-y-2">
+                    {availableBuildings.map((building) => (
+                    <Button
+                        key={building.emoji}
+                        variant="outline"
+                        className="flex h-auto justify-start gap-4 p-4 text-left"
+                        onClick={() => handleTileSelect(building)}
+                        disabled={(user.profile.buildingTokens || 0) < building.cost}
+                    >
+                        <span className="text-3xl">{building.emoji}</span>
+                        <div className="flex-1">
+                        <p className="font-semibold">{building.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                            Cost: {building.cost} tokens
+                        </p>
+                        </div>
+                    </Button>
+                    ))}
+                </div>
             </DialogContent>
        </Dialog>
     </main>
   );
 
 }
-
-    
-    
-
-    
-
