@@ -33,6 +33,8 @@ import {
   Loader2,
   RefreshCw,
   Edit,
+  Grid3x3,
+  List,
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -47,6 +49,8 @@ import { generateCityScape } from '@/ai/flows/generate-city-scape';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -187,6 +191,7 @@ export default function DashboardPage() {
   const [cityLoading, setCityLoading] = useState(true);
   const [selectedTile, setSelectedTile] = useState<{y: number, x: number} | null>(null);
   const [isTilePickerOpen, setTilePickerOpen] = useState(false);
+  const [tileView, setTileView] = useState<'list' | 'grid'>('list');
 
   const [data, setData] = useState<{
     pantryItems: PantryItem[],
@@ -768,31 +773,69 @@ export default function DashboardPage() {
                 <DialogHeader>
                     <DialogTitle>Customize Tile</DialogTitle>
                 </DialogHeader>
-                <ScrollArea className="h-96">
-                    <div className="flex flex-col space-y-2 p-1">
-                        {availableBuildings.map((building) => (
-                        <Button
-                            key={building.emoji}
-                            variant="outline"
-                            className="flex h-auto justify-start gap-4 p-4 text-left"
-                            onClick={() => handleTileSelect(building)}
-                            disabled={(user.profile.buildingTokens || 0) < building.cost}
-                        >
-                            <span className="text-3xl">{building.emoji}</span>
-                            <div className="flex-1">
-                            <p className="font-semibold">{building.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                                Cost: {building.cost} tokens
-                            </p>
-                            </div>
-                        </Button>
-                        ))}
-                    </div>
-                </ScrollArea>
+                <div className="flex items-center space-x-2 my-4">
+                    <Grid3x3 className="h-4 w-4" />
+                    <Switch
+                        id="view-mode-switch"
+                        checked={tileView === 'list'}
+                        onCheckedChange={(checked) => setTileView(checked ? 'list' : 'grid')}
+                    />
+                    <List className="h-4 w-4" />
+                    <Label htmlFor="view-mode-switch">{tileView === 'list' ? 'List View' : 'Grid View'}</Label>
+                </div>
+
+                {tileView === 'list' ? (
+                     <ScrollArea className="h-96">
+                        <div className="flex flex-col space-y-2 p-1">
+                            {availableBuildings.map((building) => (
+                            <Button
+                                key={building.emoji}
+                                variant="outline"
+                                className="flex h-auto justify-start gap-4 p-4 text-left"
+                                onClick={() => handleTileSelect(building)}
+                                disabled={(user.profile.buildingTokens || 0) < building.cost}
+                            >
+                                <span className="text-3xl">{building.emoji}</span>
+                                <div className="flex-1">
+                                <p className="font-semibold">{building.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Cost: {building.cost} tokens
+                                </p>
+                                </div>
+                            </Button>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                ) : (
+                    <ScrollArea className="h-96">
+                        <div className="grid grid-cols-4 gap-2 p-1">
+                            {availableBuildings.map((building) => (
+                                <TooltipProvider key={building.emoji}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className="flex h-20 w-full items-center justify-center text-3xl"
+                                                onClick={() => handleTileSelect(building)}
+                                                disabled={(user.profile.buildingTokens || 0) < building.cost}
+                                            >
+                                                {building.emoji}
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p className="font-semibold">{building.name}</p>
+                                            <p>Cost: {building.cost} tokens</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                )}
             </DialogContent>
        </Dialog>
     </main>
   );
-
 }
 
+    
