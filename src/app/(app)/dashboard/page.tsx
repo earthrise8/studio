@@ -35,6 +35,7 @@ import {
   Edit,
   Grid3x3,
   List,
+  Trash2,
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -88,43 +89,43 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
 }
 
 const TILES = {
-  EMPTY: { emoji: ' ', name: 'Remove', cost: 0 },
-  ROAD: { emoji: '➖', name: 'Road', cost: 0 },
-  GRASS: { emoji: '🌲', name: 'Tree', cost: 5 },
-  POND: { emoji: '💧', name: 'Pond', cost: 15 },
-  MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 },
-  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20 },
-  FACTORY: { emoji: '🏭', name: 'Factory', cost: 250 },
-  STATION: { emoji: '🚉', name: 'Train Station', cost: 400 },
-  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800 },
+  EMPTY: { emoji: '🗑️', name: 'Remove', cost: 0, population: 0 },
+  ROAD: { emoji: '➖', name: 'Road', cost: 0, population: 0 },
+  GRASS: { emoji: '🌲', name: 'Tree', cost: 5, population: 0 },
+  POND: { emoji: '💧', name: 'Pond', cost: 15, population: 0 },
+  MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0, population: 0 },
+  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20, population: 0 },
+  FACTORY: { emoji: '🏭', name: 'Factory', cost: 250, population: 0 },
+  STATION: { emoji: '🚉', name: 'Train Station', cost: 400, population: 0 },
+  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, population: 0 },
   SETTLEMENT: [
-    { emoji: '⛺', name: 'Tent', cost: 10 },
-    { emoji: '🏡', name: 'House', cost: 50 },
-    { emoji: '🌳', name: 'Big Tree', cost: 5 },
+    { emoji: '⛺', name: 'Tent', cost: 10, population: 1 },
+    { emoji: '🏡', name: 'House', cost: 50, population: 4 },
+    { emoji: '🌳', name: 'Big Tree', cost: 5, population: 0 },
   ],
   VILLAGE: [
-    { emoji: '🏠', name: 'Family Home', cost: 75 },
-    { emoji: '⛪', name: 'Church', cost: 100 },
+    { emoji: '🏠', name: 'Family Home', cost: 75, population: 5 },
+    { emoji: '⛪', name: 'Church', cost: 100, population: 0 },
   ],
   TOWN: [
-    { emoji: '🏬', name: 'Store', cost: 150 },
-    { emoji: '🏨', name: 'Hotel', cost: 350 },
+    { emoji: '🏬', name: 'Store', cost: 150, population: 0 },
+    { emoji: '🏨', name: 'Hotel', cost: 350, population: 0 },
   ],
   SMALL_CITY: [
-    { emoji: '🏢', name: 'Apartment', cost: 300 },
-    { emoji: '🏫', name: 'School', cost: 200 },
-    { emoji: '🏥', name: 'Hospital', cost: 450 },
+    { emoji: '🏢', name: 'Apartment', cost: 300, population: 50 },
+    { emoji: '🏫', name: 'School', cost: 200, population: 0 },
+    { emoji: '🏥', name: 'Hospital', cost: 450, population: 0 },
   ],
   LARGE_CITY: [
-    { emoji: '🏙️', name: 'Skyscraper', cost: 500 },
-    { emoji: '🎢', name: 'Roller Coaster', cost: 600 },
-    { emoji: '🎪', name: 'Circus', cost: 300 },
+    { emoji: '🏙️', name: 'Skyscraper', cost: 500, population: 200 },
+    { emoji: '🎢', name: 'Roller Coaster', cost: 600, population: 0 },
+    { emoji: '🎪', name: 'Circus', cost: 300, population: 0 },
   ],
   METROPOLIS: [
-    { emoji: '🌃', name: 'City at Night', cost: 1000 },
-    { emoji: '🚀', name: 'Rocket', cost: 2000 },
-    { emoji: '⛳', name: 'Golf Course', cost: 700 },
-    { emoji: '🏟️', name: 'Stadium', cost: 900 },
+    { emoji: '🌃', name: 'City at Night', cost: 1000, population: 500 },
+    { emoji: '🚀', name: 'Rocket', cost: 2000, population: 0 },
+    { emoji: '⛳', name: 'Golf Course', cost: 700, population: 0 },
+    { emoji: '🏟️', name: 'Stadium', cost: 900, population: 0 },
   ],
 };
 
@@ -165,22 +166,36 @@ const getCityLevel = (points: number) => {
     return cityTiers.find(tier => points >= tier.points && (tier.next === null || points < tier.next)) || cityTiers[0];
 }
 
-const getCityInfo = (points: number) => {
+const getAllBuildings = () => {
+    return Object.values(TILES).flat().filter(b => typeof b === 'object');
+};
+
+const allBuildings = getAllBuildings() as { emoji: string; name: string; cost: number; population: number }[];
+const buildingDataMap = new Map(allBuildings.map(b => [b.emoji, b]));
+
+const getCityInfo = (points: number, cityGrid: string[][] | null) => {
     const tier = getCityLevel(points);
+    
+    let population = 0;
+    if (cityGrid) {
+        for (const row of cityGrid) {
+            for (const cell of row) {
+                const building = buildingDataMap.get(cell);
+                if (building && building.population) {
+                    population += building.population;
+                }
+            }
+        }
+    }
+
     return {
         name: tier.name,
-        population: points * tier.multiplier,
-        totalRevenue: points * tier.multiplier * 10,
+        population: population,
+        totalRevenue: population * 10,
         nextUpgrade: tier.next,
     };
 };
 
-const getAllBuildings = () => {
-    return Object.values(TILES).flat().filter(b => typeof b === 'object' && b.emoji !== ' ');
-};
-
-const allBuildings = getAllBuildings();
-const buildingNameMap = new Map(allBuildings.map(b => [b.emoji, b.name]));
 
 export default function DashboardPage() {
   const { user, refreshUser, setUser } = useAuth();
@@ -390,6 +405,8 @@ export default function DashboardPage() {
             title: 'Building Placed!',
             description: `You spent ${building.cost} tokens on a ${building.name}.`,
         });
+      } else if (building.emoji === '🗑️') {
+        toast({ title: 'Tile Cleared!' });
       }
 
       await refreshUser();
@@ -412,7 +429,8 @@ export default function DashboardPage() {
     const counts = new Map<string, number>();
     for (const row of cityGrid) {
         for (const cell of row) {
-            if (cell !== ' ' && cell !== '➖' && cell !== '🌲') {
+            const building = buildingDataMap.get(cell);
+            if (building && building.name !== 'Tree' && building.name !== 'Remove' && building.emoji !== '➖') {
                 counts.set(cell, (counts.get(cell) || 0) + 1);
             }
         }
@@ -420,14 +438,14 @@ export default function DashboardPage() {
     return Array.from(counts.entries())
       .map(([emoji, count]) => ({
           emoji,
-          name: buildingNameMap.get(emoji) || 'Unknown',
+          name: buildingDataMap.get(emoji)?.name || 'Unknown',
           count,
       }))
       .sort((a,b) => b.count - a.count);
   }, [cityGrid]);
 
   const availableBuildings = user ? getBuildingSet(user.profile.totalPoints || 0) : [];
-  const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0) : { name: 'Empty Lot', population: 0, totalRevenue: 0, nextUpgrade: 100 };
+  const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0, cityGrid) : { name: 'Empty Lot', population: 0, totalRevenue: 0, nextUpgrade: 100 };
   const pointsToUpgrade = user && cityInfo.nextUpgrade ? cityInfo.nextUpgrade - (user.profile.totalPoints || 0) : 0;
 
 
@@ -491,24 +509,44 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-3">
-            <div className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto">
+             <div className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto">
                 {cityLoading ? (
                     <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
                         <p>Constructing your glorious city...</p>
                     </div>
                 ) : cityGrid ? (
-                   <div className="font-mono text-center text-3xl leading-none border border-border/50">
-                     {cityGrid.map((row, y) => (
-                        <div key={y} className="flex">
-                            {row.map((cell, x) => (
-                                <button key={x} onClick={() => handleTileClick(y,x)} className='flex items-center justify-center h-10 w-10 border border-border/20 hover:bg-primary/20 rounded-sm transition-colors'>
-                                    <span>{cell}</span>
-                                </button>
-                            ))}
-                        </div>
-                     ))}
-                   </div>
+                   <TooltipProvider>
+                       <div className="font-mono text-center text-3xl leading-none border border-border/50">
+                         {cityGrid.map((row, y) => (
+                            <div key={y} className="flex">
+                                {row.map((cell, x) => {
+                                    const building = buildingDataMap.get(cell);
+                                    const hasPopulation = building && building.population > 0;
+                                    
+                                    const tileButton = (
+                                        <button key={x} onClick={() => handleTileClick(y,x)} className='flex items-center justify-center h-10 w-10 border border-border/20 hover:bg-primary/20 rounded-sm transition-colors'>
+                                            <span>{cell}</span>
+                                        </button>
+                                    );
+
+                                    if(hasPopulation) {
+                                        return (
+                                            <Tooltip key={x}>
+                                                <TooltipTrigger asChild>{tileButton}</TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p className="font-semibold">{building.name}</p>
+                                                    <p>Population: {building.population}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        )
+                                    }
+                                    return tileButton;
+                                })}
+                            </div>
+                         ))}
+                       </div>
+                   </TooltipProvider>
                 ) : (
                      <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
                         <Building className="h-12 w-12" />
@@ -554,7 +592,7 @@ export default function DashboardPage() {
                     <CardHeader>
                         <CardTitle className='font-headline'>City Census</CardTitle>
                     </CardHeader>
-                    <CardContent className='space-y-2'>
+                    <CardContent className='space-y-2 max-h-48 overflow-y-auto'>
                         {buildingCounts.map(b => (
                             <div key={b.emoji} className='flex justify-between items-center text-sm'>
                                 <span className='flex items-center gap-2'>
