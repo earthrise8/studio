@@ -54,7 +54,7 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
             <div className="flex justify-between items-center text-sm">
                 <div className='flex-1'>
                     <p className={goal.isCompleted ? 'line-through text-muted-foreground' : ''}>{goal.description}</p>
-                    <p className='text-xs text-muted-foreground'>{goal.points} points</p>
+                    <p className='text-xs text-muted-foreground'>{goal.points}</p>
                 </div>
                 <div className="flex items-center gap-2 font-medium">
                     <Button
@@ -181,29 +181,27 @@ export default function DashboardPage() {
     friends: Friend[],
   } | null>(null);
 
-  const getCachedGrid = useCallback((level: number) => {
+  const getCachedGrid = useCallback(() => {
     if (typeof window === 'undefined' || !user) return null;
-    const cached = localStorage.getItem(`city-grid-${user.id}-${level}`);
+    const cached = localStorage.getItem(`city-grid-${user.id}`);
     return cached ? JSON.parse(cached) : null;
   }, [user]);
 
-  const saveGridToCache = useCallback((level: number, grid: string[][]) => {
+  const saveGridToCache = useCallback((grid: string[][]) => {
      if (typeof window !== 'undefined' && user) {
-        localStorage.setItem(`city-grid-${user.id}-${level}`, JSON.stringify(grid));
+        localStorage.setItem(`city-grid-${user.id}`, JSON.stringify(grid));
      }
   }, [user]);
 
   const handleGenerateCity = useCallback(async (forceRefresh = false) => {
     if (!user) return;
 
-    const currentLevel = getCityLevel(user.profile.totalPoints || 0).points;
-
     if (!forceRefresh) {
-        const cachedGrid = getCachedGrid(currentLevel);
+        const cachedGrid = getCachedGrid();
         if (cachedGrid) {
-        setCityGrid(cachedGrid);
-        setCityLoading(false);
-        return;
+            setCityGrid(cachedGrid);
+            setCityLoading(false);
+            return;
         }
     }
 
@@ -211,7 +209,7 @@ export default function DashboardPage() {
     try {
       const result = await generateCityScape({ points: user.profile.totalPoints || 0 });
       setCityGrid(result.grid);
-      saveGridToCache(currentLevel, result.grid);
+      saveGridToCache(result.grid);
     } catch (error) {
       console.error(error);
       toast({
@@ -322,14 +320,13 @@ export default function DashboardPage() {
       setCityGrid(newGrid);
 
       const newTotalTokens = currentTokens - building.cost;
-      const updatedProfile: UserProfile = { ...user.profile, buildingTokens: newTotalTokens };
+      const updatedProfile: Partial<UserProfile> = { buildingTokens: newTotalTokens };
 
       try {
         await updateUserProfile(user.id, { profile: updatedProfile });
         await refreshUser();
         
-        const currentLevel = getCityLevel(user.profile.totalPoints || 0).points;
-        saveGridToCache(currentLevel, newGrid);
+        saveGridToCache(newGrid);
 
         toast({
             title: 'Building Placed!',
@@ -612,8 +609,7 @@ export default function DashboardPage() {
                         <h3 className="mt-2 font-semibold">No Meals Logged</h3>
                         <p className="text-sm text-muted-foreground mt-1">Log your first meal of the day!</p>
                         <Button asChild variant="secondary" size="sm" className="mt-4">
-                            <Link href="/logs?tab=food">Log Meal</Link>
-                        </Button>
+                            <Link href="/logs?tab=food">Log Meal</Link></Button>
                     </div>
                 )}
             </CardContent>
@@ -639,8 +635,7 @@ export default function DashboardPage() {
                         <h3 className="mt-2 font-semibold">No Activities Logged</h3>
                         <p className="text-sm text-muted-foreground mt-1">Log your first activity of the day!</p>
                         <Button asChild variant="secondary" size="sm" className="mt-4">
-                            <Link href="/logs?tab=activity">Log Activity</Link>
-                        </Button>
+                            <Link href="/logs?tab=activity">Log Activity</Link></Button>
                     </div>
                 )}
             </CardContent>
@@ -714,5 +709,7 @@ export default function DashboardPage() {
   );
 
 }
+
+    
 
     

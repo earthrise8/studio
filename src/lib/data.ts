@@ -259,7 +259,7 @@ export const createUser = async(userData: Omit<User, 'profile'> & { profile: Use
     return newUser;
 }
 
-export const updateUserProfile = async (userId: string, data: Partial<{ name: string; email: string; profile: UserProfile }>): Promise<User> => {
+export const updateUserProfile = async (userId: string, data: Partial<{ name: string; email: string; profile: Partial<UserProfile> }>): Promise<User> => {
   let MOCK_USERS = getFromStorage('MOCK_USERS', initialUsers);
   if (!MOCK_USERS[userId]) {
     throw new Error('User not found');
@@ -508,5 +508,7 @@ export const getFriends = async (userId: string): Promise<Friend[]> => {
     const MOCK_FRIENDS = getFromStorage('MOCK_FRIENDS', initialFriends);
     return (MOCK_FRIENDS[userId] || []).sort((a,b) => b.weeklyPoints - a.weeklyPoints);
 }
+
+    
 
     
