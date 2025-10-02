@@ -286,7 +286,7 @@ export default function DashboardPage() {
     activityLogsToday: ActivityLog[],
     goals: Goal[],
     friends: Friend[],
-  } | null>(data);
+  } | null>(null);
 
   const getCachedGrid = useCallback(() => {
     if (typeof window === 'undefined' || !user) return null;
@@ -1097,6 +1097,8 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
 
     
 
