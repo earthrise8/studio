@@ -104,7 +104,7 @@ const TILES = {
   GRASS: { emoji: '🌲', name: 'Tree', cost: 5 },
   POND: { emoji: '💧', name: 'Pond', cost: 15, ratingBonus: 5, ratingRange: 3 },
   MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 },
-  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20 },
+  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20, isFarmland: true },
   FACTORY: { emoji: '🏭', name: 'Factory', cost: 250, ratingPenalty: -15, ratingRange: 5, revenueMultiplier: 5 },
   STATION: { emoji: '🚉', name: 'Train Station', cost: 400, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 5, ratingRange: 6, serviceType: 'transport' },
   AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10 },
@@ -186,6 +186,7 @@ const allBuildings = getAllBuildings() as {
     emoji: string;
     name: string;
     cost: number;
+    isFarmland?: boolean;
     defaultPopulation?: number;
     maxPopulation?: number;
     isResidential?: boolean;
@@ -269,9 +270,50 @@ const getCityInfo = (points: number, cityGrid: string[][] | null) => {
     let totalPopulation = 0;
     let commercialRevenue = 0;
     let publicServiceCost = 0;
+    let farmlandRevenue = 0;
+    const farmlandPlots: { size: number; revenue: number; }[] = [];
 
     if (cityGrid) {
-        // First pass: calculate population
+        // --- Farmland Revenue Calculation ---
+        const visited = new Set<string>();
+        const plots: {y: number, x: number}[][] = [];
+
+        const findPlot = (y: number, x: number, currentPlot: {y: number, x: number}[]) => {
+            const key = `${y},${x}`;
+            if (y < 0 || y >= cityGrid.length || x < 0 || x >= cityGrid[0].length || visited.has(key) || !buildingDataMap.get(cityGrid[y][x])?.isFarmland) {
+                return;
+            }
+            visited.add(key);
+            currentPlot.push({y, x});
+            findPlot(y + 1, x, currentPlot);
+            findPlot(y - 1, x, currentPlot);
+            findPlot(y, x + 1, currentPlot);
+            findPlot(y, x - 1, currentPlot);
+        };
+
+        for (let y = 0; y < cityGrid.length; y++) {
+            for (let x = 0; x < cityGrid[y].length; x++) {
+                if (buildingDataMap.get(cityGrid[y][x])?.isFarmland && !visited.has(`${y},${x}`)) {
+                    const newPlot: {y: number, x: number}[] = [];
+                    findPlot(y, x, newPlot);
+                    if (newPlot.length > 0) {
+                        plots.push(newPlot);
+                    }
+                }
+            }
+        }
+
+        for (const plot of plots) {
+            const size = plot.length;
+            if (size >= 4) {
+                const revenuePerTile = 20 + (size - 4);
+                const totalPlotRevenue = size * revenuePerTile;
+                farmlandRevenue += totalPlotRevenue;
+                farmlandPlots.push({ size, revenue: totalPlotRevenue });
+            }
+        }
+        
+        // --- First pass: calculate population ---
         for (let y = 0; y < cityGrid.length; y++) {
             for (let x = 0; x < cityGrid[y].length; x++) {
                 const building = buildingDataMap.get(cityGrid[y][x]);
@@ -283,7 +325,7 @@ const getCityInfo = (points: number, cityGrid: string[][] | null) => {
             }
         }
 
-        // Second pass: calculate revenue and costs based on total population
+        // --- Second pass: calculate revenue and costs based on total population ---
         for (let y = 0; y < cityGrid.length; y++) {
             for (let x = 0; x < cityGrid[y].length; x++) {
                 const building = buildingDataMap.get(cityGrid[y][x]);
@@ -301,7 +343,7 @@ const getCityInfo = (points: number, cityGrid: string[][] | null) => {
         }
     }
     const residentialRevenue = totalPopulation * 10;
-    const totalRevenue = residentialRevenue + commercialRevenue;
+    const totalRevenue = residentialRevenue + commercialRevenue + farmlandRevenue;
 
     return {
         name: tier.name,
@@ -310,6 +352,7 @@ const getCityInfo = (points: number, cityGrid: string[][] | null) => {
         totalCost: publicServiceCost,
         netRevenue: totalRevenue - publicServiceCost,
         nextUpgrade: tier.next,
+        farmlandPlots,
     };
 };
 
@@ -697,10 +740,21 @@ export default function DashboardPage() {
     const info = getCityInfo(user?.profile.totalPoints || 0, cityGrid);
     const counts = new Map<string, { count: number; totalRevenue: number; totalCost: number; }>();
 
+    // Add farmland plot info to census
+    if (info.farmlandPlots.length > 0) {
+        const totalFarmlandCount = info.farmlandPlots.reduce((sum, plot) => sum + plot.size, 0);
+        const totalFarmlandRevenue = info.farmlandPlots.reduce((sum, plot) => sum + plot.revenue, 0);
+        counts.set('🌾', {
+            count: totalFarmlandCount,
+            totalRevenue: totalFarmlandRevenue,
+            totalCost: 0
+        });
+    }
+
     for (const row of cityGrid) {
         for (const cell of row) {
             const building = buildingDataMap.get(cell);
-            if (building && building.name !== 'Tree' && building.name !== 'Remove' && building.emoji !== '⬛' && building.emoji !== '⛰️') {
+            if (building && !building.isFarmland && building.name !== 'Tree' && building.name !== 'Remove' && building.emoji !== '⬛' && building.emoji !== '⛰️') {
                 const entry = counts.get(cell) || { count: 0, totalRevenue: 0, totalCost: 0 };
                 entry.count += 1;
                 
@@ -883,6 +937,16 @@ export default function DashboardPage() {
                                             <p className="font-semibold">{building.name}</p>
                                             <p>Daily Cost: ${Math.floor(cost).toLocaleString()}</p>
                                         </>
+                                    } else if (building?.isFarmland && cityInfo.farmlandPlots.length > 0) {
+                                        const plot = cityInfo.farmlandPlots.find(p => p.size > 0);
+                                        if(plot) {
+                                            const revenuePerTile = plot.revenue / plot.size;
+                                            tooltipContent = <>
+                                                <p className="font-semibold">{building.name}</p>
+                                                <p>Daily Revenue: ${Math.floor(revenuePerTile).toLocaleString()}</p>
+                                                <p className="text-xs text-muted-foreground">Part of a {plot.size}-tile plot</p>
+                                            </>
+                                        }
                                     }
 
                                     if (tooltipContent) {
@@ -1019,6 +1083,12 @@ export default function DashboardPage() {
                                                     <span>Commercial: Earns revenue based on population.</span>
                                                 </div>
                                             )}
+                                            {building.isFarmland && (
+                                                <div className="flex items-center gap-2">
+                                                    <DollarSign className="h-3 w-3" />
+                                                    <span>Special Commercial: Generates income in large plots.</span>
+                                                </div>
+                                            )}
                                             {building.isPublicService && (
                                                 <div className="flex items-center gap-2 text-yellow-500">
                                                     <ShieldCheck className="h-3 w-3" />
@@ -1037,7 +1107,7 @@ export default function DashboardPage() {
                                                     <span>Nuisance: Decreases rating by {building.ratingPenalty} in a {building.ratingRange}-tile radius.</span>
                                                 </div>
                                             )}
-                                             {!building.isResidential && !building.revenueMultiplier && !building.isPublicService && !building.ratingBonus && !building.ratingPenalty && building.name !== 'Road' && building.name !== 'Remove' && (
+                                             {!building.isResidential && !building.revenueMultiplier && !building.isPublicService && !building.ratingBonus && !building.ratingPenalty && !building.isFarmland && building.name !== 'Road' && building.name !== 'Remove' && (
                                                 <div className="flex items-center gap-2">
                                                     <Info className="h-3 w-3" />
                                                     <span>Decorative or special-purpose tile.</span>
@@ -1313,3 +1383,4 @@ export default function DashboardPage() {
     </main>
   );
 }
+
