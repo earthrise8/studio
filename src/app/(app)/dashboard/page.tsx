@@ -130,23 +130,38 @@ const getBuildingSet = (points: number) => {
   return uniqueAvailable;
 };
 
+const cityTiers = [
+    { points: 0, name: 'Tiny Village', multiplier: 2, next: 100 },
+    { points: 100, name: 'Small Village', multiplier: 4, next: 200 },
+    { points: 200, name: 'Large Village', multiplier: 6, next: 300 },
+    { points: 300, name: 'Grand Village', multiplier: 8, next: 400 },
+    { points: 400, name: 'Tiny Town', multiplier: 12, next: 500 },
+    { points: 500, name: 'Boom Town', multiplier: 16, next: 600 },
+    { points: 600, name: 'Busy Town', multiplier: 20, next: 700 },
+    { points: 700, name: 'Big Town', multiplier: 25, next: 800 },
+    { points: 800, name: 'Great Town', multiplier: 30, next: 900 },
+    { points: 900, name: 'Small City', multiplier: 40, next: 1000 },
+    { points: 1000, name: 'Big City', multiplier: 50, next: 1100 },
+    { points: 1100, name: 'Large City', multiplier: 60, next: 1200 },
+    { points: 1200, name: 'Huge City', multiplier: 75, next: 1300 },
+    { points: 1300, name: 'Grand City', multiplier: 100, next: 1400 },
+    { points: 1400, name: 'Metropolis', multiplier: 150, next: 1500 },
+    { points: 1500, name: 'Megalopolis', multiplier: 200, next: null },
+];
+
 const getCityLevel = (points: number) => {
-    if (points < 200) return 0;
-    if (points < 400) return 200;
-    if (points < 600) return 400;
-    if (points < 800) return 600;
-    if (points < 1000) return 800;
-    return 1000;
+    return cityTiers.find(tier => points >= tier.points && (tier.next === null || points < tier.next)) || cityTiers[0];
 }
 
 const getCityInfo = (points: number) => {
-    const level = getCityLevel(points);
-    if (level < 200) return { name: 'Settlement', population: points * 5, numberOfHouses: Math.floor(points / 20), totalRevenue: points * 50, nextUpgrade: 200 };
-    if (level < 400) return { name: 'Village', population: points * 10, numberOfHouses: Math.floor(points / 10), totalRevenue: points * 100, nextUpgrade: 400 };
-    if (level < 600) return { name: 'Town', population: points * 20, numberOfHouses: Math.floor(points / 5), totalRevenue: points * 250, nextUpgrade: 600 };
-    if (level < 800) return { name: 'Small City', population: points * 50, numberOfHouses: Math.floor(points / 2), totalRevenue: points * 600, nextUpgrade: 800 };
-    if (level < 1000) return { name: 'Large City', population: points * 100, numberOfHouses: points, totalRevenue: points * 1500, nextUpgrade: 1000 };
-    return { name: 'Metropolis', population: points * 250, numberOfHouses: points * 2, totalRevenue: points * 4000, nextUpgrade: null };
+    const tier = getCityLevel(points);
+    return {
+        name: tier.name,
+        population: points * tier.multiplier,
+        numberOfHouses: Math.floor(points / 20 * tier.multiplier / 2),
+        totalRevenue: points * tier.multiplier * 10,
+        nextUpgrade: tier.next,
+    };
 };
 
 export default function DashboardPage() {
@@ -182,7 +197,7 @@ export default function DashboardPage() {
   const handleGenerateCity = useCallback(async (forceRefresh = false) => {
     if (!user) return;
 
-    const currentLevel = getCityLevel(user.profile.totalPoints || 0);
+    const currentLevel = getCityLevel(user.profile.totalPoints || 0).points;
 
     if (!forceRefresh) {
         const cachedGrid = getCachedGrid(currentLevel);
@@ -295,7 +310,7 @@ export default function DashboardPage() {
       const newGrid = cityGrid.map(row => [...row]);
       newGrid[selectedTile.y][selectedTile.x] = newTile;
       setCityGrid(newGrid);
-      const currentLevel = getCityLevel(user.profile.totalPoints || 0);
+      const currentLevel = getCityLevel(user.profile.totalPoints || 0).points;
       saveGridToCache(currentLevel, newGrid);
       setTilePickerOpen(false);
     }

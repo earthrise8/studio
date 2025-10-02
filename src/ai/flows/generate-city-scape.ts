@@ -68,7 +68,7 @@ const generateClusters = (grid: string[][], tile: string, clusterCount: number, 
 export async function generateCityScape(input: GenerateCityScapeInput): Promise<GenerateCityScapeOutput> {
   const grid: string[][] = Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(TILES.EMPTY));
   const buildingSet = getBuildingSet(input.points);
-  const roadY = GRID_HEIGHT - 5;
+  const roadY = Math.floor(GRID_HEIGHT / 2);
 
   // Generate natural features first
   generateClusters(grid, TILES.GRASS, 5, 20); // Forests
@@ -79,7 +79,9 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
   // Then add the road
   for (let x = 0; x < GRID_WIDTH; x++) {
     grid[roadY][x] = TILES.ROAD;
-    grid[roadY + 1][x] = TILES.ROAD;
+    if (roadY + 1 < GRID_HEIGHT) {
+      grid[roadY + 1][x] = TILES.ROAD;
+    }
   }
 
   // Simple generation logic for buildings
