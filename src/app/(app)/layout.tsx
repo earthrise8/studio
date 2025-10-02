@@ -44,7 +44,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/city', label: 'City', icon: Building },
     { href: '/pantry', label: 'Pantry', icon: Warehouse },
     { href: '/logs', label: 'Daily Logs', icon: BookOpenCheck },
     { href: '/recipes', label: 'My Recipes', icon: ChefHat },
@@ -161,5 +160,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    
