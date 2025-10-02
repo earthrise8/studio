@@ -39,7 +39,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth-provider';
 import type { Goal, FoodLog, ActivityLog, PantryItem, Friend, UserProfile } from '@/lib/types';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -87,7 +87,7 @@ const TILES = {
   ROAD: { emoji: '➖', name: 'Road', cost: 0 },
   GRASS: { emoji: '🌲', name: 'Tree', cost: 0 },
   POND: { emoji: '💧', name: 'Pond', cost: 15 },
-  MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 }, // Cost 0 as it's not buyable
+  MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 },
   FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20 },
   FACTORY: { emoji: '🏭', name: 'Factory', cost: 250 },
   STATION: { emoji: '🚉', name: 'Train Station', cost: 400 },
@@ -126,7 +126,7 @@ const getBuildingSet = (points: number) => {
   // Remove duplicates by emoji
   const uniqueAvailable = available.filter((v,i,a)=>a.findIndex(t=>(t.emoji === v.emoji))===i);
 
-  return uniqueAvailable;
+  return uniqueAvailable.sort((a, b) => a.cost - b.cost);
 };
 
 const cityTiers = [
@@ -162,6 +162,13 @@ const getCityInfo = (points: number) => {
         nextUpgrade: tier.next,
     };
 };
+
+const getAllBuildings = () => {
+    return Object.values(TILES).flat().filter(b => typeof b === 'object' && b.emoji !== ' ');
+};
+
+const allBuildings = getAllBuildings();
+const buildingNameMap = new Map(allBuildings.map(b => [b.emoji, b.name]));
 
 export default function DashboardPage() {
   const { user, refreshUser, setUser } = useAuth();
@@ -297,14 +304,14 @@ export default function DashboardPage() {
   }
 
   const handleTileClick = (y: number, x: number) => {
-    if (cityGrid && cityGrid[y][x] !== '➖' && cityGrid[y][x] !== '⛰️') { // Allow building on anything but roads and mountains
+    if (cityGrid && cityGrid[y][x] === '⛰️') {
+        toast({ variant: 'destructive', title: "Cannot build on mountains!" });
+        return;
+    }
+    if (cityGrid && cityGrid[y][x] !== '➖') {
       setSelectedTile({y, x});
       setTilePickerOpen(true);
     }
-  }
-
-  const getAllBuildings = () => {
-    return Object.values(TILES).flat().filter(b => typeof b === 'object' && b.emoji !== ' ');
   }
 
   const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
@@ -312,16 +319,11 @@ export default function DashboardPage() {
 
     const currentTokens = user.profile.buildingTokens || 0;
 
-    // Refund logic
     let tokensToRefund = 0;
     const isPlacingTree = building.name.toLowerCase().includes('tree');
     const existingEmoji = cityGrid[selectedTile.y][selectedTile.x];
-    if (existingEmoji === '⛰️') {
-        toast({ variant: 'destructive', title: "Cannot build on mountains!" });
-        return;
-    }
+    
     if (isPlacingTree && existingEmoji !== TILES.GRASS.emoji) {
-        const allBuildings = getAllBuildings();
         const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
         if (replacedBuilding && replacedBuilding.cost > 0) {
             tokensToRefund = replacedBuilding.cost;
@@ -339,7 +341,6 @@ export default function DashboardPage() {
       return;
     }
 
-    // Optimistically update the grid in the UI
     const newGrid = cityGrid.map((row, rowIndex) => 
         rowIndex === selectedTile.y 
             ? row.map((cell, colIndex) => colIndex === selectedTile.x ? building.emoji : cell)
@@ -349,7 +350,6 @@ export default function DashboardPage() {
 
     const newTotalTokens = currentTokens - netCost;
     
-    // Optimistically update the user object in context for instant UI feedback
     const updatedUser = {
       ...user,
       profile: {
@@ -359,7 +359,6 @@ export default function DashboardPage() {
     };
     setUser(updatedUser);
 
-    // Update backend and cache without a full data reload
     try {
       await updateUserProfile(user.id, { profile: { buildingTokens: newTotalTokens } });
       saveGridToCache(newGrid);
@@ -369,19 +368,18 @@ export default function DashboardPage() {
                 title: 'Building Recycled!',
                 description: `You spent ${building.cost} tokens and got ${tokensToRefund} back for a net change of ${-netCost} tokens.`,
             });
-      } else {
+      } else if (building.cost > 0) {
         toast({
             title: 'Building Placed!',
             description: `You spent ${building.cost} tokens on a ${building.name}.`,
         });
       }
-      // Refresh user data to ensure token count is in sync
+
       await refreshUser();
 
     } catch (error) {
-      // Revert grid and user state on error
-      setCityGrid(cityGrid);
-      setUser(user);
+      setCityGrid(cityGrid); // Revert grid on error
+      setUser(user); // Revert user tokens on error
        toast({
           variant: 'destructive',
           title: 'Update Failed',
@@ -391,6 +389,25 @@ export default function DashboardPage() {
 
     setTilePickerOpen(false);
   };
+
+  const buildingCounts = useMemo(() => {
+    if (!cityGrid) return null;
+    const counts = new Map<string, number>();
+    for (const row of cityGrid) {
+        for (const cell of row) {
+            if (cell !== ' ' && cell !== '➖' && cell !== '🌲') {
+                counts.set(cell, (counts.get(cell) || 0) + 1);
+            }
+        }
+    }
+    return Array.from(counts.entries())
+      .map(([emoji, count]) => ({
+          emoji,
+          name: buildingNameMap.get(emoji) || 'Unknown',
+          count,
+      }))
+      .sort((a,b) => b.count - a.count);
+  }, [cityGrid]);
 
   const availableBuildings = user ? getBuildingSet(user.profile.totalPoints || 0) : [];
   const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0) : { name: 'Empty Lot', population: 0, numberOfHouses: 0, totalRevenue: 0, nextUpgrade: 100 };
@@ -519,6 +536,24 @@ export default function DashboardPage() {
                     </div>
                 </CardContent>
               </Card>
+              {buildingCounts && buildingCounts.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='font-headline'>City Census</CardTitle>
+                    </CardHeader>
+                    <CardContent className='space-y-2'>
+                        {buildingCounts.map(b => (
+                            <div key={b.emoji} className='flex justify-between items-center text-sm'>
+                                <span className='flex items-center gap-2'>
+                                    <span className='text-lg'>{b.emoji}</span>
+                                    <span>{b.name}</span>
+                                </span>
+                                <span className='font-bold'>{b.count}</span>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </CardContent>
@@ -755,9 +790,4 @@ export default function DashboardPage() {
 }
 
     
-
-    
-
-    
-
     
