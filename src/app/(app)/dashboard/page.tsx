@@ -84,7 +84,7 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
 }
 
 const TILES = {
-  EMPTY: { emoji: ' ', name: 'Empty', cost: 0 },
+  EMPTY: { emoji: ' ', name: 'Remove', cost: 0 },
   ROAD: { emoji: '➖', name: 'Road', cost: 0 },
   GRASS: { emoji: '🌲', name: 'Tree', cost: 5 },
   POND: { emoji: '💧', name: 'Pond', cost: 15 },
@@ -96,7 +96,7 @@ const TILES = {
   SETTLEMENT: [
     { emoji: '⛺', name: 'Tent', cost: 10 },
     { emoji: '🏡', name: 'House', cost: 50 },
-    { emoji: '🌳', name: 'Big Tree', cost: 0 },
+    { emoji: '🌳', name: 'Big Tree', cost: 5 },
   ],
   VILLAGE: [
     { emoji: '🏠', name: 'Family Home', cost: 75 },
@@ -328,7 +328,7 @@ export default function DashboardPage() {
     const currentTokens = user.profile.buildingTokens || 0;
 
     let tokensToRefund = 0;
-    const isPlacingRefundableTile = building.name.toLowerCase().includes('tree') || building.name.toLowerCase() === 'empty';
+    const isPlacingRefundableTile = building.name.toLowerCase().includes('tree') || building.name.toLowerCase() === 'remove';
     const existingEmoji = cityGrid[selectedTile.y][selectedTile.x];
     
     if (isPlacingRefundableTile && existingEmoji !== TILES.GRASS.emoji && existingEmoji !== TILES.EMPTY.emoji) {
@@ -795,3 +795,4 @@ export default function DashboardPage() {
   );
 
 }
+
