@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +38,11 @@ import {
   List,
   Trash2,
   Search,
+  TrendingUp,
+  TrendingDown,
+  Info,
+  Home,
+  DollarSign,
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -924,25 +930,70 @@ export default function DashboardPage() {
 
                       {tileView === 'list' ? (
                           <ScrollArea className="h-96 mt-4">
-                              <div className="flex flex-col space-y-2 p-1">
-                                  {filteredBuildings.map((building) => (
-                                  <Button
-                                      key={building.emoji}
-                                      variant="outline"
-                                      className="flex h-auto justify-start gap-4 p-4 text-left"
-                                      onClick={() => handleTileSelect(building)}
-                                      disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
-                                  >
-                                      <span className="text-3xl">{building.emoji}</span>
-                                      <div className="flex-1">
-                                      <p className="font-semibold">{building.name}</p>
-                                      <p className="text-sm text-muted-foreground">
-                                          Cost: {building.cost} tokens
-                                      </p>
-                                      </div>
-                                  </Button>
-                                  ))}
-                              </div>
+                            <Accordion type="single" collapsible className="w-full">
+                                {filteredBuildings.map((building) => (
+                                <AccordionItem value={building.name} key={building.name}>
+                                    <AccordionTrigger 
+                                        className='p-0 hover:no-underline disabled:opacity-50'
+                                        disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
+                                    >
+                                        <div className='flex items-center gap-4 text-left w-full'>
+                                            <span className="text-3xl p-4">{building.emoji}</span>
+                                            <div className="flex-1">
+                                                <p className="font-semibold">{building.name}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Cost: {building.cost} tokens
+                                                </p>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                className="mr-4"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleTileSelect(building)
+                                                }}
+                                            >
+                                                Build
+                                            </Button>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className='text-xs text-muted-foreground'>
+                                        <div className='p-4 border-t space-y-2'>
+                                            {building.isResidential && (
+                                                <div className="flex items-center gap-2">
+                                                    <Home className="h-3 w-3" />
+                                                    <span>Residential: Pop. {building.defaultPopulation}-{building.maxPopulation}</span>
+                                                </div>
+                                            )}
+                                             {building.revenueMultiplier && (
+                                                <div className="flex items-center gap-2">
+                                                    <DollarSign className="h-3 w-3" />
+                                                    <span>Commercial: Earns revenue based on population.</span>
+                                                </div>
+                                            )}
+                                            {building.ratingBonus && (
+                                                <div className="flex items-center gap-2 text-green-500">
+                                                    <TrendingUp className="h-3 w-3" />
+                                                    <span>Amenity: Increases rating by +{building.ratingBonus} in a {building.ratingRange}-tile radius.</span>
+                                                </div>
+                                            )}
+                                            {building.ratingPenalty && (
+                                                <div className="flex items-center gap-2 text-red-500">
+                                                    <TrendingDown className="h-3 w-3" />
+                                                    <span>Nuisance: Decreases rating by {building.ratingPenalty} in a {building.ratingRange}-tile radius.</span>
+                                                </div>
+                                            )}
+                                             {!building.isResidential && !building.revenueMultiplier && !building.ratingBonus && !building.ratingPenalty && building.name !== 'Road' && building.name !== 'Remove' && (
+                                                <div className="flex items-center gap-2">
+                                                    <Info className="h-3 w-3" />
+                                                    <span>Decorative or special-purpose tile.</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                ))}
+                            </Accordion>
                           </ScrollArea>
                       ) : (
                           <ScrollArea className="h-96 mt-4">
@@ -1205,5 +1256,7 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
 
     
