@@ -350,17 +350,15 @@ export default function DashboardPage() {
     }
 
     const tileCoord = {y, x};
-    const tileIndex = selectedTiles.findIndex(t => t.y === y && t.x === x);
     
     if(e.shiftKey) {
-        // Shift is pressed, so toggle this tile in the selection
+        const tileIndex = selectedTiles.findIndex(t => t.y === y && t.x === x);
         if (tileIndex > -1) {
             setSelectedTiles(current => current.filter((_, index) => index !== tileIndex));
         } else {
             setSelectedTiles(current => [...current, tileCoord]);
         }
     } else {
-        // Shift is not pressed, so set this tile as the only selection
         setSelectedTiles([tileCoord]);
     }
   }
@@ -400,6 +398,8 @@ export default function DashboardPage() {
     if (selectedTiles.length === 0 || !cityGrid || !user) return;
 
     // --- Validation Logic ---
+    const exemptFromRoadRule = ['Tree', 'Big Tree', 'Pond', 'Farmland', 'Tent'];
+
     if (building.emoji === TILES.ROAD.emoji) {
         const isAnyTileAdjacentToRoad = selectedTiles.some(tile => isAdjacentToRoad(tile.y, tile.x, cityGrid));
         if (!isAnyTileAdjacentToRoad) {
@@ -410,7 +410,7 @@ export default function DashboardPage() {
             });
             return;
         }
-    } else { // For any non-road building
+    } else if (!exemptFromRoadRule.includes(building.name)) {
         for (const tile of selectedTiles) {
             if (!isWithinDistanceOfRoad(tile.y, tile.x, cityGrid, 3)) {
                 toast({
@@ -426,7 +426,6 @@ export default function DashboardPage() {
     const currentTokens = user.profile.buildingTokens || 0;
     
     let totalNetCost = 0;
-    const isPlacingRefundableTile = building.name === 'Tree' || building.name === 'Remove';
 
     for(const tile of selectedTiles) {
         let tokensToRefund = 0;
