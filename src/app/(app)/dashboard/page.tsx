@@ -46,6 +46,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { generateCityScape } from '@/ai/flows/generate-city-scape';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -323,12 +324,6 @@ export default function DashboardPage() {
 
   const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
     if (!selectedTile || !cityGrid || !user) return;
-
-    if (cityGrid[selectedTile.y][selectedTile.x] === '⛰️') {
-        toast({ variant: 'destructive', title: "Cannot build on mountains!" });
-        setTilePickerOpen(false);
-        return;
-    }
 
     const currentTokens = user.profile.buildingTokens || 0;
 
@@ -769,25 +764,27 @@ export default function DashboardPage() {
                 <DialogHeader>
                     <DialogTitle>Customize Tile</DialogTitle>
                 </DialogHeader>
-                <div className="flex flex-col space-y-2">
-                    {availableBuildings.map((building) => (
-                    <Button
-                        key={building.emoji}
-                        variant="outline"
-                        className="flex h-auto justify-start gap-4 p-4 text-left"
-                        onClick={() => handleTileSelect(building)}
-                        disabled={(user.profile.buildingTokens || 0) < building.cost}
-                    >
-                        <span className="text-3xl">{building.emoji}</span>
-                        <div className="flex-1">
-                        <p className="font-semibold">{building.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                            Cost: {building.cost} tokens
-                        </p>
-                        </div>
-                    </Button>
-                    ))}
-                </div>
+                <ScrollArea className="h-96">
+                    <div className="flex flex-col space-y-2 p-1">
+                        {availableBuildings.map((building) => (
+                        <Button
+                            key={building.emoji}
+                            variant="outline"
+                            className="flex h-auto justify-start gap-4 p-4 text-left"
+                            onClick={() => handleTileSelect(building)}
+                            disabled={(user.profile.buildingTokens || 0) < building.cost}
+                        >
+                            <span className="text-3xl">{building.emoji}</span>
+                            <div className="flex-1">
+                            <p className="font-semibold">{building.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                                Cost: {building.cost} tokens
+                            </p>
+                            </div>
+                        </Button>
+                        ))}
+                    </div>
+                </ScrollArea>
             </DialogContent>
        </Dialog>
     </main>
