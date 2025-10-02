@@ -11,10 +11,10 @@ export const TILES = {
   AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10 },
   SETTLEMENT: [
     { emoji: '⛺', name: 'Tent', cost: 10, defaultPopulation: 1, maxPopulation: 2, isResidential: true },
-    { emoji: '🏡', name: 'House', cost: 50, defaultPopulation: 2, maxPopulation: 5, isResidential: true },
     { emoji: '🌳', name: 'Big Tree', cost: 5 },
   ],
   VILLAGE: [
+    { emoji: '🏡', name: 'House', cost: 50, defaultPopulation: 2, maxPopulation: 5, isResidential: true },
     { emoji: '🏠', name: 'Family Home', cost: 75, defaultPopulation: 4, maxPopulation: 8, isResidential: true },
     { emoji: '⛪', name: 'Church', cost: 100, ratingBonus: 10, ratingRange: 4 },
   ],
@@ -43,8 +43,8 @@ export const TILES = {
 };
 
 export const getBuildingSet = (points: number) => {
-  let available = [TILES.ROAD, TILES.GRASS, TILES.EMPTY, TILES.POND, ...TILES.SETTLEMENT];
-  if (points >= 200) available.push(...TILES.VILLAGE, TILES.FARMLAND);
+  let available = [TILES.ROAD, TILES.GRASS, TILES.EMPTY, TILES.POND, TILES.FARMLAND, ...TILES.SETTLEMENT];
+  if (points >= 100) available.push(...TILES.VILLAGE);
   if (points >= 400) available.push(...TILES.TOWN);
   if (points >= 600) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
   if (points >= 800) available.push(...TILES.LARGE_CITY, TILES.STATION);
