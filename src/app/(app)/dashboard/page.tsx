@@ -206,7 +206,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [cityGrid, setCityGrid] = useState<string[][] | null>(null);
   const [cityLoading, setCityLoading] = useState(true);
-  const [selectedTile, setSelectedTile] = useState<{y: number, x: number} | null>(null);
+  const [selectedTiles, setSelectedTiles] = useState<{y: number, x: number}[]>([]);
   const [tileView, setTileView] = useState<'grid' | 'list'>('grid');
   const [tileSearchTerm, setTileSearchTerm] = useState('');
 
@@ -335,58 +335,67 @@ export default function DashboardPage() {
   }
 
   const handleTileClick = (y: number, x: number) => {
-    if (cityGrid && cityGrid[y][x] === '⛰️') {
+    if (!cityGrid) return;
+    
+    const tile = cityGrid[y][x];
+    if (tile === '⛰️') {
         toast({ variant: 'destructive', title: "Cannot build on mountains!" });
         return;
     }
-    if (cityGrid && cityGrid[y][x] !== '➖') {
-      if (selectedTile && selectedTile.y === y && selectedTile.x === x) {
-        setSelectedTile(null); // deselect if clicking the same tile
-      } else {
-        setSelectedTile({y, x});
-      }
+    if (tile === '➖') {
+        toast({ variant: 'destructive', title: "Cannot build on roads!" });
+        return;
+    }
+
+    const tileIndex = selectedTiles.findIndex(t => t.y === y && t.x === x);
+
+    if (tileIndex > -1) {
+        // Deselect tile
+        setSelectedTiles(current => current.filter((_, index) => index !== tileIndex));
+    } else {
+        // Select tile
+        setSelectedTiles(current => [...current, {y, x}]);
     }
   }
 
   const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
-    if (!selectedTile || !cityGrid || !user) return;
+    if (selectedTiles.length === 0 || !cityGrid || !user) return;
 
     const currentTokens = user.profile.buildingTokens || 0;
-
-    let tokensToRefund = 0;
-    const isPlacingRefundableTile = building.name.toLowerCase().includes('tree') || building.name.toLowerCase() === 'remove';
-    const existingEmoji = cityGrid[selectedTile.y][selectedTile.x];
     
-    if (isPlacingRefundableTile && existingEmoji !== TILES.GRASS.emoji && existingEmoji !== TILES.EMPTY.emoji) {
-        if(existingEmoji === '⛰️') {
-            toast({ variant: 'destructive', title: "Cannot destroy mountains!" });
-            return;
+    let totalNetCost = 0;
+    const isPlacingRefundableTile = building.name === 'Tree' || building.name === 'Remove';
+
+    for(const tile of selectedTiles) {
+        let tokensToRefund = 0;
+        const existingEmoji = cityGrid[tile.y][tile.x];
+        
+        if (isPlacingRefundableTile && existingEmoji !== TILES.GRASS.emoji && existingEmoji !== TILES.EMPTY.emoji) {
+            const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
+            if (replacedBuilding && replacedBuilding.cost > 0) {
+                tokensToRefund = replacedBuilding.cost;
+            }
         }
-        const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
-        if (replacedBuilding && replacedBuilding.cost > 0) {
-            tokensToRefund = replacedBuilding.cost;
-        }
+        totalNetCost += (building.cost - tokensToRefund);
     }
-
-    const netCost = building.cost - tokensToRefund;
-
-    if (currentTokens < netCost) {
+    
+    if (currentTokens < totalNetCost) {
       toast({
           variant: 'destructive',
           title: 'Not enough tokens!',
-          description: `You need ${building.cost} tokens to build a ${building.name}.`,
+          description: `You need ${totalNetCost} tokens for this action, but you only have ${currentTokens}.`,
       });
       return;
     }
 
-    const newGrid = cityGrid.map((row, rowIndex) => 
-        rowIndex === selectedTile.y 
-            ? row.map((cell, colIndex) => colIndex === selectedTile.x ? building.emoji : cell)
-            : row
-    );
+    const newGrid = cityGrid.map(row => [...row]);
+    selectedTiles.forEach(tile => {
+        newGrid[tile.y][tile.x] = building.emoji;
+    });
+
     setCityGrid(newGrid);
 
-    const newTotalTokens = currentTokens - netCost;
+    const newTotalTokens = currentTokens - totalNetCost;
     
     const updatedUser = {
       ...user,
@@ -401,19 +410,10 @@ export default function DashboardPage() {
       await updateUserProfile(user.id, { profile: { buildingTokens: newTotalTokens } });
       saveGridToCache(newGrid);
       
-      if (tokensToRefund > 0) {
-           toast({
-                title: 'Building Recycled!',
-                description: `You spent ${building.cost} tokens and got ${tokensToRefund} back for a net change of ${-netCost} tokens.`,
-            });
-      } else if (building.cost > 0) {
-        toast({
-            title: 'Building Placed!',
-            description: `You spent ${building.cost} tokens on a ${building.name}.`,
-        });
-      } else if (building.emoji === '🗑️') {
-        toast({ title: 'Tile Cleared!' });
-      }
+      toast({
+          title: 'City Updated!',
+          description: `Placed ${selectedTiles.length} "${building.name}" tile(s) for a net cost of ${totalNetCost} tokens.`,
+      });
 
       await refreshUser();
 
@@ -423,11 +423,11 @@ export default function DashboardPage() {
        toast({
           variant: 'destructive',
           title: 'Update Failed',
-          description: `Could not update your tokens.`,
+          description: `Could not update your city.`,
       });
     }
 
-    setSelectedTile(null);
+    setSelectedTiles([]);
   };
 
   const buildingCounts = useMemo(() => {
@@ -538,7 +538,7 @@ export default function DashboardPage() {
                                 {row.map((cell, x) => {
                                     const building = buildingDataMap.get(cell);
                                     const hasPopulation = building && building.population > 0;
-                                    const isSelected = selectedTile?.y === y && selectedTile?.x === x;
+                                    const isSelected = selectedTiles.some(t => t.y === y && t.x === x);
                                     
                                     const tileButton = (
                                         <button key={x} onClick={() => handleTileClick(y,x)} className={cn('flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', isSelected && 'bg-primary/30 ring-2 ring-primary')}>
@@ -604,11 +604,11 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-                <Card className={cn("transition-opacity", !selectedTile && 'opacity-50 pointer-events-none')}>
+                <Card className={cn("transition-opacity", selectedTiles.length === 0 && 'opacity-50 pointer-events-none')}>
                   <CardHeader>
                       <CardTitle className='font-headline'>Customize Tile</CardTitle>
                       <CardDescription>
-                          {selectedTile ? 'Select a building to place.' : 'Select a tile on the grid to customize.'}
+                          {selectedTiles.length > 0 ? `Customizing ${selectedTiles.length} tile(s).` : 'Select a tile on the grid to customize.'}
                       </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -620,7 +620,7 @@ export default function DashboardPage() {
                                   className="pl-10"
                                   value={tileSearchTerm}
                                   onChange={(e) => setTileSearchTerm(e.target.value)}
-                                  disabled={!selectedTile}
+                                  disabled={selectedTiles.length === 0}
                               />
                           </div>
 
@@ -630,7 +630,7 @@ export default function DashboardPage() {
                                   id="view-mode-switch"
                                   checked={tileView === 'list'}
                                   onCheckedChange={(checked) => setTileView(checked ? 'list' : 'grid')}
-                                  disabled={!selectedTile}
+                                  disabled={selectedTiles.length === 0}
                               />
                               <List className="h-4 w-4" />
                               <Label htmlFor="view-mode-switch">{tileView === 'list' ? 'List View' : 'Grid View'}</Label>
@@ -646,7 +646,7 @@ export default function DashboardPage() {
                                       variant="outline"
                                       className="flex h-auto justify-start gap-4 p-4 text-left"
                                       onClick={() => handleTileSelect(building)}
-                                      disabled={!selectedTile || (user.profile.buildingTokens || 0) < building.cost}
+                                      disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
                                   >
                                       <span className="text-3xl">{building.emoji}</span>
                                       <div className="flex-1">
@@ -670,7 +670,7 @@ export default function DashboardPage() {
                                                       variant="outline"
                                                       className="flex h-20 w-full items-center justify-center text-3xl"
                                                       onClick={() => handleTileSelect(building)}
-                                                      disabled={!selectedTile || (user.profile.buildingTokens || 0) < building.cost}
+                                                      disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}
                                                   >
                                                       {building.emoji}
                                                   </Button>
@@ -909,9 +909,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
-
-    
-
-    
