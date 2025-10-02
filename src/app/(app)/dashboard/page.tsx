@@ -117,11 +117,11 @@ const TILES = {
 
 const getBuildingSet = (points: number) => {
   let available = [TILES.GRASS, TILES.POND, TILES.MOUNTAIN, ...TILES.SETTLEMENT];
-  if (points >= 100) available.push(...TILES.VILLAGE, TILES.FARMLAND);
-  if (points >= 300) available.push(...TILES.TOWN);
-  if (points >= 500) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
-  if (points >= 700) available.push(...TILES.LARGE_CITY, TILES.STATION);
-  if (points >= 900) available.push(...TILES.METROPOLIS, TILES.AIRPORT);
+  if (points >= 200) available.push(...TILES.VILLAGE, TILES.FARMLAND);
+  if (points >= 400) available.push(...TILES.TOWN);
+  if (points >= 600) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
+  if (points >= 800) available.push(...TILES.LARGE_CITY, TILES.STATION);
+  if (points >= 1000) available.push(...TILES.METROPOLIS, TILES.AIRPORT);
 
   // Remove duplicates by emoji
   const uniqueAvailable = available.filter((v,i,a)=>a.findIndex(t=>(t.emoji === v.emoji))===i);
@@ -282,10 +282,11 @@ export default function DashboardPage() {
           description: `You've achieved: ${goal.description} and earned ${goal.points} points!`,
           action: <Button asChild variant="secondary"><Link href="/awards">View Awards</Link></Button>
         });
-        await refreshUser(); // Refresh user to get updated points total
-      } else {
-        await loadDashboardData();
       }
+      // Regardless of completion, refresh user to get latest points and tokens
+      await refreshUser();
+      // We still want to load dashboard data to ensure goal state is accurate from source
+      await loadDashboardData();
     } catch (e) {
       // Revert if error
       setData({ ...data, goals: originalGoals });
@@ -306,12 +307,12 @@ export default function DashboardPage() {
 
   const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
     if (selectedTile && cityGrid && user) {
-      const currentPoints = user.profile.totalPoints || 0;
-      if (currentPoints < building.cost) {
+      const currentTokens = user.profile.buildingTokens || 0;
+      if (currentTokens < building.cost) {
         toast({
             variant: 'destructive',
-            title: 'Not enough points!',
-            description: `You need ${building.cost} points to build a ${building.name}.`,
+            title: 'Not enough tokens!',
+            description: `You need ${building.cost} tokens to build a ${building.name}.`,
         });
         return;
       }
@@ -320,19 +321,19 @@ export default function DashboardPage() {
       newGrid[selectedTile.y][selectedTile.x] = building.emoji;
       setCityGrid(newGrid);
 
-      const newTotalPoints = currentPoints - building.cost;
-      const updatedProfile: UserProfile = { ...user.profile, totalPoints: newTotalPoints };
+      const newTotalTokens = currentTokens - building.cost;
+      const updatedProfile: UserProfile = { ...user.profile, buildingTokens: newTotalTokens };
 
       try {
         await updateUserProfile(user.id, { profile: updatedProfile });
         await refreshUser();
         
-        const currentLevel = getCityLevel(currentPoints).points;
+        const currentLevel = getCityLevel(user.profile.totalPoints || 0).points;
         saveGridToCache(currentLevel, newGrid);
 
         toast({
             title: 'Building Placed!',
-            description: `You spent ${building.cost} points on a ${building.name}.`,
+            description: `You spent ${building.cost} tokens on a ${building.name}.`,
         });
 
       } catch (error) {
@@ -341,7 +342,7 @@ export default function DashboardPage() {
          toast({
             variant: 'destructive',
             title: 'Update Failed',
-            description: `Could not update your points.`,
+            description: `Could not update your tokens.`,
         });
       }
 
@@ -464,8 +465,8 @@ export default function DashboardPage() {
                       <span className='font-bold'>${cityInfo.totalRevenue.toLocaleString()}/day</span>
                     </div>
                      <div className="flex justify-between text-sm">
-                        <span className="font-medium text-muted-foreground">Your Points:</span>
-                        <span className="font-bold">{(user.profile.totalPoints || 0).toLocaleString()}</span>
+                        <span className="font-medium text-muted-foreground">Building Tokens:</span>
+                        <span className="font-bold">{(user.profile.buildingTokens || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="font-medium text-muted-foreground">Points to Upgrade:</span>
@@ -694,13 +695,14 @@ export default function DashboardPage() {
                                         variant="outline"
                                         className='text-3xl h-20'
                                         onClick={() => handleTileSelect(building)}
+                                        disabled={(user.profile.buildingTokens || 0) < building.cost}
                                     >
                                         {building.emoji}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <p>{building.name}</p>
-                                    <p className='font-bold'>Cost: {building.cost} points</p>
+                                    <p className='font-bold'>Cost: {building.cost} tokens</p>
                                 </TooltipContent>
                             </Tooltip>
                         ))}

@@ -16,6 +16,8 @@ export type UserProfile = {
   activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
   avatarUrl?: string;
   totalPoints?: number;
+  buildingTokens?: number;
+  level?: number;
 };
 
 export type Friend = {
@@ -85,3 +87,5 @@ export type Award = {
   dateAchieved: string; // ISO 8601 date string
   points: number;
 };
+
+    

@@ -55,6 +55,8 @@ const initialUsers: Record<string, User> = {
       activityLevel: 'moderate',
       avatarUrl: 'https://i.pravatar.cc/150?u=dylan',
       totalPoints: 1500,
+      buildingTokens: 500,
+      level: 15,
     },
   },
 };
@@ -457,17 +459,31 @@ export const updateGoal = async (userId: string, updatedGoal: Goal): Promise<Goa
     const wasCompleted = oldGoal.isCompleted;
     MOCK_GOALS[userId][goalIndex] = updatedGoal;
     
+    const TOKENS_PER_LEVEL = 100;
+    
     if(updatedGoal.isCompleted && !wasCompleted) {
         await checkAndGrantAwards(userId, updatedGoal);
         const currentUser = MOCK_USERS[userId];
-        const currentPoints = currentUser.profile.totalPoints || 0;
-        currentUser.profile.totalPoints = currentPoints + updatedGoal.points;
+        const oldPoints = currentUser.profile.totalPoints || 0;
+        const newPoints = oldPoints + updatedGoal.points;
+        currentUser.profile.totalPoints = newPoints;
+        
+        const oldLevel = Math.floor(oldPoints / 100);
+        const newLevel = Math.floor(newPoints / 100);
+
+        if (newLevel > oldLevel) {
+            const levelsGained = newLevel - oldLevel;
+            const tokensEarned = levelsGained * TOKENS_PER_LEVEL;
+            currentUser.profile.buildingTokens = (currentUser.profile.buildingTokens || 0) + tokensEarned;
+            currentUser.profile.level = newLevel;
+        }
+
         saveToStorage('MOCK_USERS', MOCK_USERS);
     } else if (!updatedGoal.isCompleted && wasCompleted) {
         // If a goal is "un-completed", subtract points
         const currentUser = MOCK_USERS[userId];
-        const currentPoints = currentUser.profile.totalPoints || 0;
-        currentUser.profile.totalPoints = Math.max(0, currentPoints - updatedGoal.points);
+        currentUser.profile.totalPoints = Math.max(0, (currentUser.profile.totalPoints || 0) - updatedGoal.points);
+        // Note: We are not revoking awards or tokens if a goal is un-completed to keep it simple.
         saveToStorage('MOCK_USERS', MOCK_USERS);
     }
     
@@ -492,12 +508,5 @@ export const getFriends = async (userId: string): Promise<Friend[]> => {
     const MOCK_FRIENDS = getFromStorage('MOCK_FRIENDS', initialFriends);
     return (MOCK_FRIENDS[userId] || []).sort((a,b) => b.weeklyPoints - a.weeklyPoints);
 }
-  
-
-    
-
-
-
-
 
     
