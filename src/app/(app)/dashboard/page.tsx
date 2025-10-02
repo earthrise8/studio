@@ -192,6 +192,54 @@ export default function DashboardPage() {
     setData({ pantryItems, foodLogsToday, activityLogsToday, goals, friends });
     setLoading(false);
   }, [user]);
+  
+  const { cityInfo, buildingCounts } = useMemo(() => {
+    if (!cityGrid || !user) return { cityInfo: null, buildingCounts: null };
+
+    const { cityInfo: info, buildingCounts: counts } = getCityInfo(user.profile.totalPoints || 0, cityGrid);
+    
+    return { cityInfo: info, buildingCounts: counts };
+  }, [cityGrid, user]);
+  
+  useEffect(() => {
+    if (user && cityInfo) {
+      const lastUpdateKey = `last-revenue-update-${user.id}`;
+      const lastUpdate = localStorage.getItem(lastUpdateKey);
+      const now = new Date().getTime();
+      let moneyToCollect = 0;
+
+      if (lastUpdate) {
+        const lastUpdateTime = parseInt(lastUpdate, 10);
+        const hoursPassed = (now - lastUpdateTime) / (1000 * 60 * 60);
+        const daysPassed = Math.floor(hoursPassed);
+
+        if (daysPassed > 0) {
+          moneyToCollect = daysPassed * Math.floor(cityInfo.netRevenue);
+        }
+      }
+
+      if (moneyToCollect > 0) {
+        const newTotalMoney = (user.profile.money || 0) + moneyToCollect;
+        const updatedUser = {
+          ...user,
+          profile: {
+            ...user.profile,
+            money: newTotalMoney,
+          }
+        };
+        setUser(updatedUser);
+        updateUserProfile(user.id, { profile: { money: newTotalMoney } });
+        localStorage.setItem(lastUpdateKey, now.toString());
+        toast({
+          title: 'Offline Revenue Collected!',
+          description: `Your city earned $${moneyToCollect.toLocaleString()} while you were away.`,
+        });
+      } else if (!lastUpdate) {
+        // First time running, set the initial timestamp
+        localStorage.setItem(lastUpdateKey, now.toString());
+      }
+    }
+  }, [user, cityInfo, setUser, toast]);
 
   useEffect(() => {
     if (user) {
@@ -476,13 +524,7 @@ export default function DashboardPage() {
     setDragOver(null);
   };
 
-    const { cityInfo, buildingCounts } = useMemo(() => {
-    if (!cityGrid || !user) return { cityInfo: null, buildingCounts: null };
 
-    const { cityInfo: info, buildingCounts: counts } = getCityInfo(user.profile.totalPoints || 0, cityGrid);
-    
-    return { cityInfo: info, buildingCounts: counts };
-    }, [cityGrid, user]);
 
   const availableBuildings = user ? getBuildingSet(user.profile.totalPoints || 0) : [];
 
@@ -1082,3 +1124,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
