@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import type {
@@ -55,7 +54,7 @@ const initialUsers: Record<string, User> = {
       weight: 75,
       activityLevel: 'moderate',
       avatarUrl: 'https://i.pravatar.cc/150?u=dylan',
-      totalPoints: 150,
+      totalPoints: 1500,
     },
   },
 };
@@ -499,3 +498,6 @@ export const getFriends = async (userId: string): Promise<Friend[]> => {
 
 
 
+
+
+    

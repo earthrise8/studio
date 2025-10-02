@@ -15,6 +15,7 @@ import {
   getGoals,
   updateGoal,
   getFriends,
+  updateUserProfile,
 } from '@/lib/data';
 import {
   Apple,
@@ -37,7 +38,7 @@ import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth-provider';
-import type { Goal, FoodLog, ActivityLog, PantryItem, Friend } from '@/lib/types';
+import type { Goal, FoodLog, ActivityLog, PantryItem, Friend, UserProfile } from '@/lib/types';
 import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -82,47 +83,45 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
 }
 
 const TILES = {
-  EMPTY: { emoji: ' ', name: 'Empty' },
-  ROAD: { emoji: '➖', name: 'Road' },
-  GRASS: { emoji: '🌲', name: 'Tree' },
-  POND: { emoji: '💧', name: 'Pond' },
-  MOUNTAIN: { emoji: '⛰️', name: 'Mountain' },
-  FARMLAND: { emoji: '🌾', name: 'Farmland' },
-  FACTORY: { emoji: '🏭', name: 'Factory' },
-  STATION: { emoji: '🚉', name: 'Train Station' },
-  AIRPORT: { emoji: '✈️', name: 'Airport' },
+  EMPTY: { emoji: ' ', name: 'Empty', cost: 0 },
+  ROAD: { emoji: '➖', name: 'Road', cost: 0 },
+  GRASS: { emoji: '🌲', name: 'Tree', cost: 5 },
+  POND: { emoji: '💧', name: 'Pond', cost: 15 },
+  MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 25 },
+  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20 },
+  FACTORY: { emoji: '🏭', name: 'Factory', cost: 250 },
+  STATION: { emoji: '🚉', name: 'Train Station', cost: 400 },
+  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800 },
   SETTLEMENT: [
-    { emoji: '🏡', name: 'House' },
-    { emoji: '🌳', name: 'Big Tree' },
+    { emoji: '🏡', name: 'House', cost: 50 },
+    { emoji: '🌳', name: 'Big Tree', cost: 10 },
   ],
   VILLAGE: [
-    { emoji: '🏡', name: 'House' },
-    { emoji: '🏠', name: 'Family Home' },
+    { emoji: '🏠', name: 'Family Home', cost: 75 },
   ],
   TOWN: [
-    { emoji: '🏠', name: 'Family Home' },
-    { emoji: '🏬', name: 'Store' },
+    { emoji: '🏬', name: 'Store', cost: 150 },
   ],
   SMALL_CITY: [
-    { emoji: '🏢', name: 'Apartment' },
-    { emoji: '🏫', name: 'School' },
+    { emoji: '🏢', name: 'Apartment', cost: 300 },
+    { emoji: '🏫', name: 'School', cost: 200 },
   ],
   LARGE_CITY: [
-    { emoji: '🏙️', name: 'Skyscraper' },
+    { emoji: '🏙️', name: 'Skyscraper', cost: 500 },
   ],
   METROPOLIS: [
-    { emoji: '🌃', name: 'City at Night' },
-    { emoji: '🚀', name: 'Rocket' },
+    { emoji: '🌃', name: 'City at Night', cost: 1000 },
+    { emoji: '🚀', name: 'Rocket', cost: 2000 },
   ],
 };
 
 const getBuildingSet = (points: number) => {
   let available = [TILES.GRASS, TILES.POND, TILES.MOUNTAIN, ...TILES.SETTLEMENT];
-  if (points >= 200) available.push(...TILES.VILLAGE, TILES.FARMLAND);
-  if (points >= 400) available.push(...TILES.TOWN);
-  if (points >= 600) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
-  if (points >= 800) available.push(...TILES.LARGE_CITY, TILES.STATION);
-  if (points >= 1000) available.push(...TILES.METROPOLIS, TILES.AIRPORT);
+  if (points >= 100) available.push(...TILES.VILLAGE, TILES.FARMLAND);
+  if (points >= 300) available.push(...TILES.TOWN);
+  if (points >= 500) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
+  if (points >= 700) available.push(...TILES.LARGE_CITY, TILES.STATION);
+  if (points >= 900) available.push(...TILES.METROPOLIS, TILES.AIRPORT);
 
   // Remove duplicates by emoji
   const uniqueAvailable = available.filter((v,i,a)=>a.findIndex(t=>(t.emoji === v.emoji))===i);
@@ -305,13 +304,48 @@ export default function DashboardPage() {
     }
   }
 
-  const handleTileSelect = (newTile: string) => {
+  const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
     if (selectedTile && cityGrid && user) {
+      const currentPoints = user.profile.totalPoints || 0;
+      if (currentPoints < building.cost) {
+        toast({
+            variant: 'destructive',
+            title: 'Not enough points!',
+            description: `You need ${building.cost} points to build a ${building.name}.`,
+        });
+        return;
+      }
+
       const newGrid = cityGrid.map(row => [...row]);
-      newGrid[selectedTile.y][selectedTile.x] = newTile;
+      newGrid[selectedTile.y][selectedTile.x] = building.emoji;
       setCityGrid(newGrid);
-      const currentLevel = getCityLevel(user.profile.totalPoints || 0).points;
-      saveGridToCache(currentLevel, newGrid);
+
+      const newTotalPoints = currentPoints - building.cost;
+      const updatedProfile: UserProfile = { ...user.profile, totalPoints: newTotalPoints };
+
+      try {
+        await updateUserProfile(user.id, { profile: updatedProfile });
+        await refreshUser();
+        
+        const currentLevel = getCityLevel(currentPoints).points;
+        saveGridToCache(currentLevel, newGrid);
+
+        toast({
+            title: 'Building Placed!',
+            description: `You spent ${building.cost} points on a ${building.name}.`,
+        });
+
+      } catch (error) {
+        // Revert grid on error
+        setCityGrid(cityGrid);
+         toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: `Could not update your points.`,
+        });
+      }
+
+
       setTilePickerOpen(false);
     }
   };
@@ -430,6 +464,10 @@ export default function DashboardPage() {
                       <span className='font-bold'>${cityInfo.totalRevenue.toLocaleString()}/day</span>
                     </div>
                      <div className="flex justify-between text-sm">
+                        <span className="font-medium text-muted-foreground">Your Points:</span>
+                        <span className="font-bold">{(user.profile.totalPoints || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
                         <span className="font-medium text-muted-foreground">Points to Upgrade:</span>
                         {cityInfo.nextUpgrade ? (
                             <span className="font-bold">{pointsToUpgrade > 0 ? pointsToUpgrade.toLocaleString() : 'Ready!'}</span>
@@ -655,13 +693,14 @@ export default function DashboardPage() {
                                     <Button
                                         variant="outline"
                                         className='text-3xl h-20'
-                                        onClick={() => handleTileSelect(building.emoji)}
+                                        onClick={() => handleTileSelect(building)}
                                     >
                                         {building.emoji}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <p>{building.name}</p>
+                                    <p className='font-bold'>Cost: {building.cost} points</p>
                                 </TooltipContent>
                             </Tooltip>
                         ))}
