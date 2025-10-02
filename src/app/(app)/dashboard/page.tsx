@@ -514,10 +514,6 @@ export default function DashboardPage() {
                       <span className='font-medium text-muted-foreground'>Population:</span>
                       <span className='font-bold'>{cityInfo.population.toLocaleString()}</span>
                     </div>
-                     <div className="flex justify-between text-sm">
-                      <span className='font-medium text-muted-foreground'>Houses:</span>
-                      <span className='font-bold'>{cityInfo.numberOfHouses.toLocaleString()}</span>
-                    </div>
                     <div className="flex justify-between text-sm">
                       <span className='font-medium text-muted-foreground'>Revenue:</span>
                       <span className='font-bold'>${cityInfo.totalRevenue.toLocaleString()}/day</span>
@@ -790,4 +786,6 @@ export default function DashboardPage() {
 }
 
     
+    
+
     
