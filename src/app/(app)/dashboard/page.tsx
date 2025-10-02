@@ -98,9 +98,9 @@ const TILES = {
   POND: { emoji: '💧', name: 'Pond', cost: 15, ratingBonus: 5, ratingRange: 3 },
   MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 },
   FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20 },
-  FACTORY: { emoji: '🏭', name: 'Factory', cost: 250, ratingPenalty: -15, ratingRange: 5 },
+  FACTORY: { emoji: '🏭', name: 'Factory', cost: 250, ratingPenalty: -15, ratingRange: 5, revenueMultiplier: 5 },
   STATION: { emoji: '🚉', name: 'Train Station', cost: 400 },
-  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, ratingPenalty: -20, ratingRange: 7 },
+  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10 },
   SETTLEMENT: [
     { emoji: '⛺', name: 'Tent', cost: 10, defaultPopulation: 1, maxPopulation: 2, isResidential: true },
     { emoji: '🏡', name: 'House', cost: 50, defaultPopulation: 2, maxPopulation: 5, isResidential: true },
@@ -111,7 +111,7 @@ const TILES = {
     { emoji: '⛪', name: 'Church', cost: 100, ratingBonus: 10, ratingRange: 4 },
   ],
   TOWN: [
-    { emoji: '🏬', name: 'Store', cost: 150, ratingBonus: 15, ratingRange: 3 },
+    { emoji: '🏬', name: 'Store', cost: 150, ratingBonus: 15, ratingRange: 3, revenueMultiplier: 1 },
     { emoji: '🏨', name: 'Hotel', cost: 350 },
   ],
   SMALL_CITY: [
@@ -121,14 +121,14 @@ const TILES = {
   ],
   LARGE_CITY: [
     { emoji: '🏙️', name: 'Skyscraper', cost: 500, defaultPopulation: 80, maxPopulation: 250, isResidential: true },
-    { emoji: '🎢', name: 'Roller Coaster', cost: 600, ratingBonus: 20, ratingRange: 6 },
-    { emoji: '🎪', name: 'Circus', cost: 300, ratingBonus: 15, ratingRange: 5 },
+    { emoji: '🎢', name: 'Roller Coaster', cost: 600, ratingBonus: 20, ratingRange: 6, revenueMultiplier: 2.5 },
+    { emoji: '🎪', name: 'Circus', cost: 300, ratingBonus: 15, ratingRange: 5, revenueMultiplier: 1.5 },
   ],
   METROPOLIS: [
     { emoji: '🌃', name: 'City at Night', cost: 1000, defaultPopulation: 200, maxPopulation: 600, isResidential: true },
-    { emoji: '🚀', name: 'Rocket', cost: 2000, ratingPenalty: -30, ratingRange: 10 },
-    { emoji: '⛳', name: 'Golf Course', cost: 700, ratingBonus: 25, ratingRange: 8 },
-    { emoji: '🏟️', name: 'Stadium', cost: 900, ratingBonus: 30, ratingRange: 10 },
+    { emoji: '🚀', name: 'Rocket', cost: 2000, ratingPenalty: -30, ratingRange: 10, revenueMultiplier: 20 },
+    { emoji: '⛳', name: 'Golf Course', cost: 700, ratingBonus: 25, ratingRange: 8, revenueMultiplier: 3 },
+    { emoji: '🏟️', name: 'Stadium', cost: 900, ratingBonus: 30, ratingRange: 10, revenueMultiplier: 4 },
   ],
 };
 
@@ -183,6 +183,7 @@ const allBuildings = getAllBuildings() as {
     ratingBonus?: number;
     ratingPenalty?: number;
     ratingRange?: number;
+    revenueMultiplier?: number;
 }[];
 
 const buildingDataMap = new Map(allBuildings.map(b => [b.emoji, b]));
@@ -236,12 +237,14 @@ const calculateOccupancy = (rating: number, defaultPop: number, maxPop: number):
     return Math.max(0, Math.min(dynamicPopulation, maxPop));
 };
 
-
 const getCityInfo = (points: number, cityGrid: string[][] | null) => {
     const tier = getCityLevel(points);
     
     let totalPopulation = 0;
+    let commercialRevenue = 0;
+
     if (cityGrid) {
+        // First pass: calculate population
         for (let y = 0; y < cityGrid.length; y++) {
             for (let x = 0; x < cityGrid[y].length; x++) {
                 const building = buildingDataMap.get(cityGrid[y][x]);
@@ -252,12 +255,25 @@ const getCityInfo = (points: number, cityGrid: string[][] | null) => {
                 }
             }
         }
+
+        // Second pass: calculate revenue based on total population
+        for (let y = 0; y < cityGrid.length; y++) {
+            for (let x = 0; x < cityGrid[y].length; x++) {
+                const building = buildingDataMap.get(cityGrid[y][x]);
+                if (building && building.revenueMultiplier) {
+                    // Revenue formula: building cost * multiplier * (population / 100)
+                    const buildingRevenue = (building.cost * building.revenueMultiplier * (totalPopulation / 100));
+                    commercialRevenue += buildingRevenue;
+                }
+            }
+        }
     }
+    const residentialRevenue = totalPopulation * 10;
 
     return {
         name: tier.name,
         population: totalPopulation,
-        totalRevenue: totalPopulation * 10,
+        totalRevenue: residentialRevenue + commercialRevenue,
         nextUpgrade: tier.next,
     };
 };
@@ -640,25 +656,39 @@ export default function DashboardPage() {
     setDragOver(null);
   };
 
-  const buildingCounts = useMemo(() => {
-    if (!cityGrid) return null;
-    const counts = new Map<string, number>();
+    const { cityInfo, buildingCounts } = useMemo(() => {
+    if (!cityGrid) return { cityInfo: null, buildingCounts: null };
+
+    const info = getCityInfo(user?.profile.totalPoints || 0, cityGrid);
+    const counts = new Map<string, { count: number; totalRevenue: number }>();
+
     for (const row of cityGrid) {
         for (const cell of row) {
             const building = buildingDataMap.get(cell);
             if (building && building.name !== 'Tree' && building.name !== 'Remove' && building.emoji !== '⬛' && building.emoji !== '⛰️') {
-                counts.set(cell, (counts.get(cell) || 0) + 1);
+                const entry = counts.get(cell) || { count: 0, totalRevenue: 0 };
+                entry.count += 1;
+                
+                if (building.revenueMultiplier) {
+                    entry.totalRevenue += (building.cost * building.revenueMultiplier * (info.population / 100));
+                }
+
+                counts.set(cell, entry);
             }
         }
     }
-    return Array.from(counts.entries())
-      .map(([emoji, count]) => ({
+    
+    const sortedCounts = Array.from(counts.entries())
+      .map(([emoji, data]) => ({
           emoji,
           name: buildingDataMap.get(emoji)?.name || 'Unknown',
-          count,
+          count: data.count,
+          totalRevenue: data.totalRevenue,
       }))
       .sort((a,b) => b.count - a.count);
-  }, [cityGrid]);
+
+    return { cityInfo: info, buildingCounts: sortedCounts };
+    }, [cityGrid, user]);
 
   const availableBuildings = user ? getBuildingSet(user.profile.totalPoints || 0) : [];
 
@@ -669,11 +699,14 @@ export default function DashboardPage() {
     );
   }, [availableBuildings, tileSearchTerm]);
 
-  const cityInfo = user ? getCityInfo(user.profile.totalPoints || 0, cityGrid) : { name: 'Empty Lot', population: 0, totalRevenue: 0, nextUpgrade: 100 };
-  const pointsToUpgrade = user && cityInfo.nextUpgrade ? cityInfo.nextUpgrade - (user.profile.totalPoints || 0) : 0;
+  if (!cityInfo) { // Use derived state for loading check
+    const tempCityInfo = user ? getCityInfo(user.profile.totalPoints || 0, null) : { name: 'Empty Lot', population: 0, totalRevenue: 0, nextUpgrade: 100 };
+  }
+
+  const pointsToUpgrade = user && cityInfo?.nextUpgrade ? cityInfo.nextUpgrade - (user.profile.totalPoints || 0) : 0;
 
 
-  if (loading || !data || !user) {
+  if (loading || !data || !user || !cityInfo) {
     return (
        <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
             <Skeleton className="h-8 w-48" />
@@ -779,22 +812,36 @@ export default function DashboardPage() {
                                         </button>
                                     );
 
+                                    let tooltipContent: React.ReactNode = null;
+
                                     if(building?.isResidential && cityGrid) {
                                         const rating = calculateTileRating(y, x, cityGrid);
                                         const grade = getRatingGrade(rating);
                                         const occupancy = calculateOccupancy(rating, building.defaultPopulation!, building.maxPopulation!);
-                                        
-                                        return (
+                                        tooltipContent = <>
+                                            <p className="font-semibold">{building.name}</p>
+                                            <p>Rating: {grade} ({rating})</p>
+                                            <p>Occupants: {occupancy} / {building.maxPopulation}</p>
+                                        </>;
+                                    } else if (building?.revenueMultiplier && cityInfo) {
+                                        const revenue = (building.cost * building.revenueMultiplier * (cityInfo.population / 100));
+                                        tooltipContent = <>
+                                            <p className="font-semibold">{building.name}</p>
+                                            <p>Daily Revenue: ${Math.floor(revenue).toLocaleString()}</p>
+                                        </>
+                                    }
+
+                                    if (tooltipContent) {
+                                         return (
                                             <Tooltip key={x}>
                                                 <TooltipTrigger asChild>{tileButton}</TooltipTrigger>
                                                 <TooltipContent>
-                                                    <p className="font-semibold">{building.name}</p>
-                                                    <p>Rating: {grade} ({rating})</p>
-                                                    <p>Occupants: {occupancy} / {building.maxPopulation}</p>
+                                                    {tooltipContent}
                                                 </TooltipContent>
                                             </Tooltip>
                                         )
                                     }
+
                                     return tileButton;
                                 })}
                             </div>
@@ -825,7 +872,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className='font-medium text-muted-foreground'>Revenue:</span>
-                      <span className='font-bold'>${cityInfo.totalRevenue.toLocaleString()}/day</span>
+                      <span className='font-bold'>${Math.floor(cityInfo.totalRevenue).toLocaleString()}/day</span>
                     </div>
                      <div className="flex justify-between text-sm">
                         <span className="font-medium text-muted-foreground">Building Tokens:</span>
@@ -941,7 +988,12 @@ export default function DashboardPage() {
                                                 <span className='text-lg'>{b.emoji}</span>
                                                 <span>{b.name}</span>
                                             </span>
-                                            <span className='font-bold'>{b.count}</span>
+                                            <div className="text-right">
+                                                <span className='font-bold'>{b.count}</span>
+                                                {b.totalRevenue > 0 && (
+                                                    <p className="text-xs text-green-500">${Math.floor(b.totalRevenue).toLocaleString()}</p>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </CardContent>
@@ -1153,9 +1205,5 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
-
-    
 
     
