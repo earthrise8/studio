@@ -309,9 +309,9 @@ export default function DashboardPage() {
 
   const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
     if (!selectedTile || !cityGrid || !user) return;
-    
+
     const currentTokens = user.profile.buildingTokens || 0;
-    
+
     // Refund logic
     let tokensToRefund = 0;
     const isPlacingTree = building.name.toLowerCase().includes('tree');
@@ -375,6 +375,8 @@ export default function DashboardPage() {
             description: `You spent ${building.cost} tokens on a ${building.name}.`,
         });
       }
+      // Refresh user data to ensure token count is in sync
+      await refreshUser();
 
     } catch (error) {
       // Revert grid and user state on error
