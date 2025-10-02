@@ -84,9 +84,7 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
   // Add a vertical road for connectivity
   const roadX = Math.floor(GRID_WIDTH / 2);
   for (let y = 0; y < GRID_HEIGHT; y++) {
-      if(grid[y][roadX] === TILES.EMPTY) {
-         grid[y][roadX] = TILES.ROAD;
-      }
+      grid[y][roadX] = TILES.ROAD;
   }
 
 
@@ -94,10 +92,12 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
   for (let y = 0; y < GRID_HEIGHT; y++) {
     for (let x = 0; x < GRID_WIDTH; x++) {
       // Don't overwrite road or existing features
-      if (grid[y][x] !== TILES.EMPTY) continue;
+      if (grid[y][x] !== TILES.EMPTY && grid[y][x] !== TILES.ROAD) continue;
       
       let baseTile = Math.random() > 0.1 ? TILES.GRASS : TILES.EMPTY;
-      grid[y][x] = baseTile;
+      if (grid[y][x] === TILES.EMPTY) {
+          grid[y][x] = baseTile;
+      }
 
       // Buildings and stuff
       if (baseTile === TILES.GRASS) {
@@ -123,5 +123,3 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
 
   return { grid };
 }
-
-    
