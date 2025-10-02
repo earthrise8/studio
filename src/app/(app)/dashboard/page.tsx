@@ -62,6 +62,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { getBuildingSet, allBuildings, buildingDataMap, getCityInfo, TILES } from '@/lib/city-data';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -97,268 +98,6 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
         </div>
     )
 }
-
-const TILES = {
-  EMPTY: { emoji: ' ', name: 'Remove', cost: 0 },
-  ROAD: { emoji: '⬛', name: 'Road', cost: 10 },
-  GRASS: { emoji: '🌲', name: 'Tree', cost: 5 },
-  POND: { emoji: '💧', name: 'Pond', cost: 15, ratingBonus: 5, ratingRange: 3 },
-  MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 },
-  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20, isFarmland: true },
-  FACTORY: { emoji: '🏭', name: 'Factory', cost: 250, ratingPenalty: -15, ratingRange: 5, revenueMultiplier: 5 },
-  STATION: { emoji: '🚉', name: 'Train Station', cost: 400, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 5, ratingRange: 6, serviceType: 'transport' },
-  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10 },
-  SETTLEMENT: [
-    { emoji: '⛺', name: 'Tent', cost: 10, defaultPopulation: 1, maxPopulation: 2, isResidential: true },
-    { emoji: '🏡', name: 'House', cost: 50, defaultPopulation: 2, maxPopulation: 5, isResidential: true },
-    { emoji: '🌳', name: 'Big Tree', cost: 5 },
-  ],
-  VILLAGE: [
-    { emoji: '🏠', name: 'Family Home', cost: 75, defaultPopulation: 4, maxPopulation: 8, isResidential: true },
-    { emoji: '⛪', name: 'Church', cost: 100, ratingBonus: 10, ratingRange: 4 },
-  ],
-  TOWN: [
-    { emoji: '🏬', name: 'Store', cost: 150, ratingBonus: 15, ratingRange: 3, revenueMultiplier: 1 },
-    { emoji: '🏨', name: 'Hotel', cost: 350, revenueMultiplier: 2 },
-  ],
-  SMALL_CITY: [
-    { emoji: '🏢', name: 'Apartment', cost: 300, defaultPopulation: 20, maxPopulation: 60, isResidential: true },
-    { emoji: '🏫', name: 'School', cost: 200, ratingBonus: 10, ratingRange: 5, isPublicService: true, maintenanceCostPerCitizen: 0.2, serviceType: 'education' },
-    { emoji: '🏥', name: 'Hospital', cost: 450, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 10, ratingRange: 7, serviceType: 'health' },
-    { emoji: '🚓', name: 'Police Department', cost: 300, ratingBonus: 15, ratingRange: 5, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'police' },
-    { emoji: '🚒', name: 'Fire Department', cost: 300, ratingBonus: 15, ratingRange: 5, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'fire' },
-  ],
-  LARGE_CITY: [
-    { emoji: '🏙️', name: 'Skyscraper', cost: 500, defaultPopulation: 80, maxPopulation: 250, isResidential: true },
-    { emoji: '🎢', name: 'Roller Coaster', cost: 600, ratingBonus: 20, ratingRange: 6, revenueMultiplier: 2.5 },
-    { emoji: '🎪', name: 'Circus', cost: 300, ratingBonus: 15, ratingRange: 5, revenueMultiplier: 1.5 },
-  ],
-  METROPOLIS: [
-    { emoji: '🌃', name: 'City at Night', cost: 1000, defaultPopulation: 200, maxPopulation: 600, isResidential: true },
-    { emoji: '🚀', name: 'Rocket', cost: 2000, ratingPenalty: -30, ratingRange: 10, revenueMultiplier: 20 },
-    { emoji: '⛳', name: 'Golf Course', cost: 700, ratingBonus: 25, ratingRange: 8, revenueMultiplier: 3 },
-    { emoji: '🏟️', name: 'Stadium', cost: 900, ratingBonus: 30, ratingRange: 10, revenueMultiplier: 4 },
-  ],
-};
-
-const getBuildingSet = (points: number) => {
-  let available = [TILES.ROAD, TILES.GRASS, TILES.EMPTY, TILES.POND, ...TILES.SETTLEMENT];
-  if (points >= 200) available.push(...TILES.VILLAGE, TILES.FARMLAND);
-  if (points >= 400) available.push(...TILES.TOWN);
-  if (points >= 600) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
-  if (points >= 800) available.push(...TILES.LARGE_CITY, TILES.STATION);
-  if (points >= 1000) available.push(...TILES.METROPOLIS, TILES.AIRPORT);
-
-  // Remove duplicates by emoji
-  const uniqueAvailable = available.filter((v,i,a)=>a.findIndex(t=>(t.emoji === v.emoji))===i);
-
-  return uniqueAvailable.sort((a, b) => a.cost - b.cost);
-};
-
-const cityTiers = [
-    { points: 0, name: 'Tiny Village', multiplier: 2, next: 100 },
-    { points: 100, name: 'Small Village', multiplier: 4, next: 200 },
-    { points: 200, name: 'Large Village', multiplier: 6, next: 300 },
-    { points: 300, name: 'Grand Village', multiplier: 8, next: 400 },
-    { points: 400, name: 'Tiny Town', multiplier: 12, next: 500 },
-    { points: 500, name: 'Boom Town', multiplier: 16, next: 600 },
-    { points: 600, name: 'Busy Town', multiplier: 20, next: 700 },
-    { points: 700, name: 'Big Town', multiplier: 25, next: 800 },
-    { points: 800, name: 'Great Town', multiplier: 30, next: 900 },
-    { points: 900, name: 'Small City', multiplier: 40, next: 1000 },
-    { points: 1000, name: 'Big City', multiplier: 50, next: 1100 },
-    { points: 1100, name: 'Large City', multiplier: 60, next: 1200 },
-    { points: 1200, name: 'Huge City', multiplier: 75, next: 1300 },
-    { points: 1300, name: 'Grand City', multiplier: 100, next: 1400 },
-    { points: 1400, name: 'Metropolis', multiplier: 150, next: 1500 },
-    { points: 1500, name: 'Megalopolis', multiplier: 200, next: null },
-];
-
-const getCityLevel = (points: number) => {
-    return cityTiers.find(tier => points >= tier.points && (tier.next === null || points < tier.next)) || cityTiers[0];
-}
-
-const getAllBuildings = () => {
-    return Object.values(TILES).flat().filter(b => typeof b === 'object');
-};
-
-const allBuildings = getAllBuildings() as {
-    emoji: string;
-    name: string;
-    cost: number;
-    isFarmland?: boolean;
-    defaultPopulation?: number;
-    maxPopulation?: number;
-    isResidential?: boolean;
-    ratingBonus?: number;
-    ratingPenalty?: number;
-    ratingRange?: number;
-    revenueMultiplier?: number;
-    isPublicService?: boolean;
-    maintenanceCostPerCitizen?: number;
-    serviceType?: string;
-}[];
-
-const buildingDataMap = new Map(allBuildings.map(b => [b.emoji, b]));
-
-const calculateTileRating = (y: number, x: number, grid: string[][]): number => {
-    let rating = 100; // Base rating
-
-    const currentBuilding = buildingDataMap.get(grid[y][x]);
-    const requiredServices = ['police', 'fire', 'health', 'education'];
-    const foundServices = new Set<string>();
-    
-    for (let i = 0; i < grid.length; i++) {
-        for (let j = 0; j < grid[0].length; j++) {
-            const building = buildingDataMap.get(grid[i][j]);
-            if (!building) continue;
-
-            const distance = Math.abs(i - y) + Math.abs(j - x);
-
-            // Apply amenities
-            if (building.ratingBonus && building.ratingRange && distance <= building.ratingRange) {
-                // Effect diminishes with distance
-                rating += Math.round(building.ratingBonus * (1 - distance / building.ratingRange));
-            }
-
-            // Apply nuisances
-            if (building.ratingPenalty && building.ratingRange && distance <= building.ratingRange) {
-                // Effect diminishes with distance
-                rating += Math.round(building.ratingPenalty * (1 - distance / building.ratingRange));
-            }
-
-            // Check for service coverage
-            if(building.isPublicService && building.ratingRange && distance <= building.ratingRange) {
-                foundServices.add(building.serviceType!);
-            }
-        }
-    }
-
-    // Apply penalty for missing services, but not for tents
-    if (currentBuilding?.name !== 'Tent') {
-        const missingServices = requiredServices.filter(s => !foundServices.has(s));
-        rating -= missingServices.length * 15;
-    }
-
-
-    return rating;
-}
-
-const getRatingGrade = (rating: number): string => {
-    if (rating >= 130) return 'A+';
-    if (rating >= 120) return 'A';
-    if (rating >= 110) return 'A-';
-    if (rating >= 105) return 'B+';
-    if (rating >= 100) return 'B';
-    if (rating >= 95) return 'B-';
-    if (rating >= 90) return 'C+';
-    if (rating >= 80) return 'C';
-    if (rating >= 70) return 'C-';
-    if (rating >= 60) return 'D';
-    return 'F';
-};
-
-const calculateOccupancy = (rating: number, defaultPop: number, maxPop: number): number => {
-    const grade = getRatingGrade(rating);
-    if (grade === 'F') return 0;
-
-    const percentage = Math.min(rating / 150, 1); // Cap rating effect at 150 for 100%
-    const dynamicPopulation = Math.round(defaultPop + (maxPop - defaultPop) * percentage);
-    return Math.max(0, Math.min(dynamicPopulation, maxPop));
-};
-
-const getCityInfo = (points: number, cityGrid: string[][] | null) => {
-    const tier = getCityLevel(points);
-    
-    let totalPopulation = 0;
-    let commercialRevenue = 0;
-    let publicServiceCost = 0;
-    let farmlandRevenue = 0;
-    const farmlandPlots: { size: number; revenue: number; }[] = [];
-
-    if (cityGrid) {
-        // --- Farmland Revenue Calculation ---
-        const visited = new Set<string>();
-        const plots: {y: number, x: number}[][] = [];
-
-        const findPlot = (y: number, x: number, currentPlot: {y: number, x: number}[]) => {
-            const key = `${y},${x}`;
-            if (y < 0 || y >= cityGrid.length || x < 0 || x >= cityGrid[0].length || visited.has(key) || !buildingDataMap.get(cityGrid[y][x])?.isFarmland) {
-                return;
-            }
-            visited.add(key);
-            currentPlot.push({y, x});
-            findPlot(y + 1, x, currentPlot);
-            findPlot(y - 1, x, currentPlot);
-            findPlot(y, x + 1, currentPlot);
-            findPlot(y, x - 1, currentPlot);
-        };
-
-        for (let y = 0; y < cityGrid.length; y++) {
-            for (let x = 0; x < cityGrid[y].length; x++) {
-                if (buildingDataMap.get(cityGrid[y][x])?.isFarmland && !visited.has(`${y},${x}`)) {
-                    const newPlot: {y: number, x: number}[] = [];
-                    findPlot(y, x, newPlot);
-                    if (newPlot.length > 0) {
-                        plots.push(newPlot);
-                    }
-                }
-            }
-        }
-
-        for (const plot of plots) {
-            const size = plot.length;
-            if (size >= 4) {
-                const revenuePerTile = 20 + (size - 4);
-                const totalPlotRevenue = size * revenuePerTile;
-                farmlandRevenue += totalPlotRevenue;
-                farmlandPlots.push({ size, revenue: totalPlotRevenue });
-            }
-        }
-        
-        // --- First pass: calculate population ---
-        for (let y = 0; y < cityGrid.length; y++) {
-            for (let x = 0; x < cityGrid[y].length; x++) {
-                const building = buildingDataMap.get(cityGrid[y][x]);
-                if (building && building.isResidential) {
-                    const rating = calculateTileRating(y, x, cityGrid);
-                    const occupancy = calculateOccupancy(rating, building.defaultPopulation!, building.maxPopulation!);
-                    totalPopulation += occupancy;
-                }
-            }
-        }
-
-        // --- Second pass: calculate revenue and costs based on total population ---
-        for (let y = 0; y < cityGrid.length; y++) {
-            for (let x = 0; x < cityGrid[y].length; x++) {
-                const building = buildingDataMap.get(cityGrid[y][x]);
-                if (building) {
-                    if (building.revenueMultiplier) {
-                        const buildingRevenue = (building.cost * building.revenueMultiplier * (totalPopulation / 100));
-                        commercialRevenue += buildingRevenue;
-                    }
-                    if (building.isPublicService && building.maintenanceCostPerCitizen) {
-                        const buildingCost = building.maintenanceCostPerCitizen * totalPopulation;
-                        publicServiceCost += buildingCost;
-                    }
-                }
-            }
-        }
-    }
-    const residentialRevenue = totalPopulation * 10;
-    const totalRevenue = residentialRevenue + commercialRevenue + farmlandRevenue;
-
-    return {
-        name: tier.name,
-        population: totalPopulation,
-        totalRevenue: totalRevenue,
-        totalCost: publicServiceCost,
-        netRevenue: totalRevenue - publicServiceCost,
-        nextUpgrade: tier.next,
-        farmlandPlots,
-    };
-};
-
 
 export default function DashboardPage() {
   const { user, refreshUser, setUser } = useAuth();
@@ -738,53 +477,11 @@ export default function DashboardPage() {
   };
 
     const { cityInfo, buildingCounts } = useMemo(() => {
-    if (!cityGrid) return { cityInfo: null, buildingCounts: null };
+    if (!cityGrid || !user) return { cityInfo: null, buildingCounts: null };
 
-    const info = getCityInfo(user?.profile.totalPoints || 0, cityGrid);
-    const counts = new Map<string, { count: number; totalRevenue: number; totalCost: number; }>();
-
-    // Add farmland plot info to census
-    if (info.farmlandPlots.length > 0) {
-        const totalFarmlandCount = info.farmlandPlots.reduce((sum, plot) => sum + plot.size, 0);
-        const totalFarmlandRevenue = info.farmlandPlots.reduce((sum, plot) => sum + plot.revenue, 0);
-        counts.set('🌾', {
-            count: totalFarmlandCount,
-            totalRevenue: totalFarmlandRevenue,
-            totalCost: 0
-        });
-    }
-
-    for (const row of cityGrid) {
-        for (const cell of row) {
-            const building = buildingDataMap.get(cell);
-            if (building && !building.isFarmland && building.name !== 'Tree' && building.name !== 'Remove' && building.emoji !== '⬛' && building.emoji !== '⛰️') {
-                const entry = counts.get(cell) || { count: 0, totalRevenue: 0, totalCost: 0 };
-                entry.count += 1;
-                
-                if (building.revenueMultiplier) {
-                    entry.totalRevenue += (building.cost * building.revenueMultiplier * (info.population / 100));
-                }
-
-                if (building.isPublicService && building.maintenanceCostPerCitizen) {
-                    entry.totalCost += (building.maintenanceCostPerCitizen * info.population);
-                }
-
-                counts.set(cell, entry);
-            }
-        }
-    }
+    const { cityInfo: info, buildingCounts: counts } = getCityInfo(user.profile.totalPoints || 0, cityGrid);
     
-    const sortedCounts = Array.from(counts.entries())
-      .map(([emoji, data]) => ({
-          emoji,
-          name: buildingDataMap.get(emoji)?.name || 'Unknown',
-          count: data.count,
-          totalRevenue: data.totalRevenue,
-          totalCost: data.totalCost,
-      }))
-      .sort((a,b) => b.count - a.count);
-
-    return { cityInfo: info, buildingCounts: sortedCounts };
+    return { cityInfo: info, buildingCounts: counts };
     }, [cityGrid, user]);
 
   const availableBuildings = user ? getBuildingSet(user.profile.totalPoints || 0) : [];
@@ -806,7 +503,7 @@ export default function DashboardPage() {
     )
   }
 
-  const cityInfoForLoading = cityInfo || getCityInfo(user.profile.totalPoints || 0, null);
+  const cityInfoForLoading = cityInfo || getCityInfo(user.profile.totalPoints || 0, null).cityInfo;
 
 
   if (loading || !data || !cityInfo) {
@@ -918,30 +615,29 @@ export default function DashboardPage() {
                                     );
 
                                     let tooltipContent: React.ReactNode = null;
+                                    
+                                    if(cityGrid && cityInfo && building?.isResidential) {
+                                        const { rating, grade, occupancy } = getCityInfo(user.profile.totalPoints || 0, cityGrid, y, x).tileInfo!;
 
-                                    if(building?.isResidential && cityGrid) {
-                                        const rating = calculateTileRating(y, x, cityGrid);
-                                        const grade = getRatingGrade(rating);
-                                        const occupancy = calculateOccupancy(rating, building.defaultPopulation!, building.maxPopulation!);
                                         tooltipContent = <>
                                             <p className="font-semibold">{building.name}</p>
                                             <p>Rating: {grade} ({rating})</p>
                                             <p>Occupants: {occupancy} / {building.maxPopulation}</p>
                                         </>;
-                                    } else if (building?.revenueMultiplier && cityInfo) {
+                                    } else if (cityGrid && cityInfo && building?.revenueMultiplier) {
                                         const revenue = (building.cost * building.revenueMultiplier * (cityInfo.population / 100));
                                         tooltipContent = <>
                                             <p className="font-semibold">{building.name}</p>
                                             <p>Daily Revenue: ${Math.floor(revenue).toLocaleString()}</p>
                                         </>
-                                    } else if (building?.isPublicService && cityInfo) {
+                                    } else if (cityGrid && cityInfo && building?.isPublicService) {
                                         const cost = (building.maintenanceCostPerCitizen! * cityInfo.population);
                                         tooltipContent = <>
                                             <p className="font-semibold">{building.name}</p>
                                             <p>Daily Cost: ${Math.floor(cost).toLocaleString()}</p>
                                         </>
-                                    } else if (building?.isFarmland && cityInfo.farmlandPlots.length > 0) {
-                                        const plot = cityInfo.farmlandPlots.find(p => p.size > 0);
+                                    } else if (cityGrid && cityInfo && building?.isFarmland) {
+                                        const plot = cityInfo.farmlandPlots.find(p => p.tiles.some(t => t.y === y && t.x === x));
                                         if(plot) {
                                             const revenuePerTile = plot.revenue / plot.size;
                                             tooltipContent = <>
@@ -1048,7 +744,7 @@ export default function DashboardPage() {
                             <Accordion type="single" collapsible className="w-full">
                                 {filteredBuildings.map((building) => (
                                 <AccordionItem value={building.name} key={building.name}>
-                                    <div className="flex items-center justify-between py-1">
+                                    <div className="flex items-center justify-between py-1 pr-4">
                                         <AccordionTrigger className='flex-1 p-0 hover:no-underline disabled:opacity-50' disabled={selectedTiles.length === 0 || (user.profile.buildingTokens || 0) < building.cost * selectedTiles.length}>
                                             <div className='flex items-center gap-4 text-left w-full'>
                                                 <span className="text-3xl p-4">{building.emoji}</span>
@@ -1062,7 +758,7 @@ export default function DashboardPage() {
                                         </AccordionTrigger>
                                         <Button
                                             size="sm"
-                                            className="mr-4"
+                                            className="ml-4"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleTileSelect(building);
@@ -1072,7 +768,7 @@ export default function DashboardPage() {
                                             Build
                                         </Button>
                                     </div>
-                                    <AccordionContent className='text-xs text-muted-foreground'>
+                                    <AccordionContent className='text-xs text-muted-foreground ml-4'>
                                         <div className='p-4 border-t space-y-2'>
                                             {building.isResidential && (
                                                 <div className="flex items-center gap-2">
@@ -1386,5 +1082,6 @@ export default function DashboardPage() {
     </main>
   );
 }
+
 
 
