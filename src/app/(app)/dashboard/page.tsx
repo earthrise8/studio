@@ -119,7 +119,7 @@ const TILES = {
   ],
   TOWN: [
     { emoji: '🏬', name: 'Store', cost: 150, ratingBonus: 15, ratingRange: 3, revenueMultiplier: 1 },
-    { emoji: '🏨', name: 'Hotel', cost: 350 },
+    { emoji: '🏨', name: 'Hotel', cost: 350, revenueMultiplier: 2 },
   ],
   SMALL_CITY: [
     { emoji: '🏢', name: 'Apartment', cost: 300, defaultPopulation: 20, maxPopulation: 60, isResidential: true },
