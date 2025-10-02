@@ -67,7 +67,6 @@ const generateClusters = (grid: string[][], tile: string, clusterCount: number, 
 
 export async function generateCityScape(input: GenerateCityScapeInput): Promise<GenerateCityScapeOutput> {
   const grid: string[][] = Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(TILES.EMPTY));
-  const buildingSet = getBuildingSet(input.points);
   const roadY = Math.floor(GRID_HEIGHT / 2);
 
   // Generate natural features first
@@ -81,42 +80,11 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
     grid[roadY][x] = TILES.ROAD;
   }
   
-  // Add a vertical road for connectivity
-  const roadX = Math.floor(GRID_WIDTH / 2);
-  for (let y = 0; y < GRID_HEIGHT; y++) {
-      grid[y][roadX] = TILES.ROAD;
-  }
-
-
-  // Simple generation logic for buildings
+  // Fill remaining empty space with grass
   for (let y = 0; y < GRID_HEIGHT; y++) {
     for (let x = 0; x < GRID_WIDTH; x++) {
-      // Don't overwrite road or existing features
-      if (grid[y][x] !== TILES.EMPTY && grid[y][x] !== TILES.ROAD) continue;
-      
-      let baseTile = Math.random() > 0.1 ? TILES.GRASS : TILES.EMPTY;
       if (grid[y][x] === TILES.EMPTY) {
-          grid[y][x] = baseTile;
-      }
-
-      // Buildings and stuff
-      if (baseTile === TILES.GRASS) {
-        const distFromRoad = Math.min(Math.abs(y - roadY), Math.abs(x-roadX));
-        // Higher chance of buildings closer to the road
-        if (Math.random() < 0.3 / (distFromRoad + 1)) {
-           grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
-       } else {
-           // Further away from road, chance for special buildings
-           if (input.points >= 600 && Math.random() > 0.95) {
-               grid[y][x] = TILES.FACTORY;
-           }
-            if (input.points >= 800 && Math.random() > 0.98) {
-               grid[y][x] = TILES.STATION;
-           }
-            if (input.points >= 1000 && Math.random() > 0.99) {
-               grid[y][x] = TILES.AIRPORT;
-           }
-       }
+          grid[y][x] = TILES.GRASS;
       }
     }
   }
