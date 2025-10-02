@@ -7,7 +7,7 @@ export const TILES = {
   MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 },
   FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 20, isFarmland: true },
   FACTORY: { emoji: '🏭', name: 'Factory', cost: 250, ratingPenalty: -15, ratingRange: 5, revenueMultiplier: 5 },
-  STATION: { emoji: '🚉', name: 'Train Station', cost: 400, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 5, ratingRange: 6, serviceType: 'transport' },
+  STATION: { emoji: '🚉', name: 'Train Station', cost: 400, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 5, ratingRange: 8, serviceType: 'transport' },
   AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10 },
   SETTLEMENT: [
     { emoji: '⛺', name: 'Tent', cost: 10, defaultPopulation: 1, maxPopulation: 2, isResidential: true },
@@ -24,10 +24,10 @@ export const TILES = {
   ],
   SMALL_CITY: [
     { emoji: '🏢', name: 'Apartment', cost: 300, defaultPopulation: 20, maxPopulation: 60, isResidential: true },
-    { emoji: '🏫', name: 'School', cost: 200, ratingBonus: 10, ratingRange: 5, isPublicService: true, maintenanceCostPerCitizen: 0.2, serviceType: 'education' },
-    { emoji: '🏥', name: 'Hospital', cost: 450, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 10, ratingRange: 7, serviceType: 'health' },
-    { emoji: '🚓', name: 'Police Department', cost: 300, ratingBonus: 15, ratingRange: 5, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'police' },
-    { emoji: '🚒', name: 'Fire Department', cost: 300, ratingBonus: 15, ratingRange: 5, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'fire' },
+    { emoji: '🏫', name: 'School', cost: 200, ratingBonus: 10, ratingRange: 7, isPublicService: true, maintenanceCostPerCitizen: 0.2, serviceType: 'education' },
+    { emoji: '🏥', name: 'Hospital', cost: 450, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 10, ratingRange: 9, serviceType: 'health' },
+    { emoji: '🚓', name: 'Police Department', cost: 300, ratingBonus: 15, ratingRange: 8, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'police' },
+    { emoji: '🚒', name: 'Fire Department', cost: 300, ratingBonus: 15, ratingRange: 8, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'fire' },
   ],
   LARGE_CITY: [
     { emoji: '🏙️', name: 'Skyscraper', cost: 500, defaultPopulation: 80, maxPopulation: 250, isResidential: true },

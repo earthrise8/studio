@@ -791,10 +791,10 @@ export default function DashboardPage() {
                                             {building.isPublicService && (
                                                 <div className="flex items-center gap-2 text-yellow-500">
                                                     <ShieldCheck className="h-3 w-3" />
-                                                    <span>Public Service: Costs ${building.maintenanceCostPerCitizen} per citizen.</span>
+                                                    <span>Public Service: Costs ${building.maintenanceCostPerCitizen} per citizen. Increases rating by +{building.ratingBonus} in a {building.ratingRange}-tile radius.</span>
                                                 </div>
                                             )}
-                                            {building.ratingBonus && (
+                                            {building.ratingBonus && !building.isPublicService && (
                                                 <div className="flex items-center gap-2 text-green-500">
                                                     <TrendingUp className="h-3 w-3" />
                                                     <span>Amenity: Increases rating by +{building.ratingBonus} in a {building.ratingRange}-tile radius.</span>
@@ -1082,6 +1082,7 @@ export default function DashboardPage() {
     </main>
   );
 }
+
 
 
 
