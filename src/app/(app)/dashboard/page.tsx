@@ -93,7 +93,7 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
 
 const TILES = {
   EMPTY: { emoji: ' ', name: 'Remove', cost: 0, population: 0 },
-  ROAD: { emoji: '➖', name: 'Road', cost: 0, population: 0 },
+  ROAD: { emoji: '⬛', name: 'Road', cost: 10, population: 0 },
   GRASS: { emoji: '🌲', name: 'Tree', cost: 5, population: 0 },
   POND: { emoji: '💧', name: 'Pond', cost: 15, population: 0 },
   MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0, population: 0 },
@@ -133,7 +133,7 @@ const TILES = {
 };
 
 const getBuildingSet = (points: number) => {
-  let available = [TILES.GRASS, TILES.EMPTY, TILES.POND, ...TILES.SETTLEMENT];
+  let available = [TILES.ROAD, TILES.GRASS, TILES.EMPTY, TILES.POND, ...TILES.SETTLEMENT];
   if (points >= 200) available.push(...TILES.VILLAGE, TILES.FARMLAND);
   if (points >= 400) available.push(...TILES.TOWN);
   if (points >= 600) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
@@ -348,10 +348,6 @@ export default function DashboardPage() {
         toast({ variant: 'destructive', title: "Cannot build on mountains!" });
         return;
     }
-    if (tile === '➖') {
-        toast({ variant: 'destructive', title: "Cannot build on roads!" });
-        return;
-    }
 
     const tileIndex = selectedTiles.findIndex(t => t.y === y && t.x === x);
 
@@ -363,9 +359,67 @@ export default function DashboardPage() {
         setSelectedTiles(current => [...current, {y, x}]);
     }
   }
+  
+  const isAdjacentToRoad = (y: number, x: number, grid: string[][]): boolean => {
+    const neighbors = [
+        {dy: -1, dx: 0}, // up
+        {dy: 1, dx: 0},  // down
+        {dy: 0, dx: -1}, // left
+        {dy: 0, dx: 1}   // right
+    ];
+    for (const {dy, dx} of neighbors) {
+        const ny = y + dy;
+        const nx = x + dx;
+        if (ny >= 0 && ny < grid.length && nx >= 0 && nx < grid[0].length && grid[ny][nx] === TILES.ROAD.emoji) {
+            return true;
+        }
+    }
+    return false;
+  };
+  
+  const isWithinDistanceOfRoad = (y: number, x: number, grid: string[][], distance: number): boolean => {
+      for(let i = 0; i < grid.length; i++) {
+          for (let j = 0; j < grid[i].length; j++) {
+              if (grid[i][j] === TILES.ROAD.emoji) {
+                  const dist = Math.abs(i - y) + Math.abs(j - x); // Manhattan distance
+                  if (dist <= distance) {
+                      return true;
+                  }
+              }
+          }
+      }
+      return false;
+  };
 
   const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
     if (selectedTiles.length === 0 || !cityGrid || !user) return;
+
+    // --- Validation Logic ---
+    for (const tile of selectedTiles) {
+        const {y, x} = tile;
+
+        if (building.emoji === TILES.ROAD.emoji) {
+            // Road placement rule: must be adjacent to another road
+            if (!isAdjacentToRoad(y, x, cityGrid)) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Invalid Road Placement',
+                    description: 'Roads must be connected to another road.',
+                });
+                return;
+            }
+        } else if (building.emoji !== TILES.EMPTY.emoji) {
+            // Building placement rule: must be within 3 tiles of a road
+            if (!isWithinDistanceOfRoad(y, x, cityGrid, 3)) {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Invalid Building Placement',
+                    description: 'Buildings must be placed within 3 tiles of a road.',
+                });
+                return;
+            }
+        }
+    }
 
     const currentTokens = user.profile.buildingTokens || 0;
     
@@ -378,7 +432,8 @@ export default function DashboardPage() {
         
         if (isPlacingRefundableTile && existingEmoji !== TILES.GRASS.emoji && existingEmoji !== TILES.EMPTY.emoji) {
             const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
-            if (replacedBuilding && replacedBuilding.cost > 0) {
+            // Roads do not give refunds
+            if (replacedBuilding && replacedBuilding.cost > 0 && replacedBuilding.emoji !== TILES.ROAD.emoji) {
                 tokensToRefund = replacedBuilding.cost;
             }
         }
@@ -460,7 +515,7 @@ export default function DashboardPage() {
         for (let y = yMin; y <= yMax; y++) {
             for (let x = xMin; x <= xMax; x++) {
                 const tile = cityGrid[y][x];
-                 if (tile !== '⛰️' && tile !== '➖') {
+                 if (tile !== '⛰️') {
                     newSelectedTiles.push({ y, x });
                 }
             }
@@ -478,7 +533,7 @@ export default function DashboardPage() {
     for (const row of cityGrid) {
         for (const cell of row) {
             const building = buildingDataMap.get(cell);
-            if (building && building.name !== 'Tree' && building.name !== 'Remove' && building.emoji !== '➖' && building.emoji !== '⛰️') {
+            if (building && building.name !== 'Tree' && building.name !== 'Remove' && building.emoji !== '⬛' && building.emoji !== '⛰️') {
                 counts.set(cell, (counts.get(cell) || 0) + 1);
             }
         }
@@ -972,3 +1027,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    

@@ -20,7 +20,7 @@ export type GenerateCityScapeOutput = z.infer<typeof GenerateCityScapeOutputSche
 
 const TILES = {
   EMPTY: ' ',
-  ROAD: '➖',
+  ROAD: '⬛',
   GRASS: '🌲',
   SETTLEMENT: ['🏡', '🌳'],
   VILLAGE: ['🏡', '🏠', '🌳'],
@@ -79,10 +79,16 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
   // Then add the road
   for (let x = 0; x < GRID_WIDTH; x++) {
     grid[roadY][x] = TILES.ROAD;
-    if (roadY + 1 < GRID_HEIGHT) {
-      grid[roadY + 1][x] = TILES.ROAD;
-    }
   }
+  
+  // Add a vertical road for connectivity
+  const roadX = Math.floor(GRID_WIDTH / 2);
+  for (let y = 0; y < GRID_HEIGHT; y++) {
+      if(grid[y][roadX] === TILES.EMPTY) {
+         grid[y][roadX] = TILES.ROAD;
+      }
+  }
+
 
   // Simple generation logic for buildings
   for (let y = 0; y < GRID_HEIGHT; y++) {
@@ -95,7 +101,7 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
 
       // Buildings and stuff
       if (baseTile === TILES.GRASS) {
-        const distFromRoad = Math.abs(y - roadY);
+        const distFromRoad = Math.min(Math.abs(y - roadY), Math.abs(x-roadX));
         // Higher chance of buildings closer to the road
         if (Math.random() < 0.3 / (distFromRoad + 1)) {
            grid[y][x] = buildingSet[Math.floor(Math.random() * buildingSet.length)];
@@ -117,3 +123,5 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
 
   return { grid };
 }
+
+    
