@@ -164,7 +164,7 @@ const getCityInfo = (points: number) => {
 };
 
 export default function DashboardPage() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, setUser } = useAuth();
   const { toast } = useToast();
   
   const [loading, setLoading] = useState(true);
@@ -348,27 +348,21 @@ export default function DashboardPage() {
     setCityGrid(newGrid);
 
     const newTotalTokens = currentTokens - netCost;
-    const updatedProfile: Partial<UserProfile> = { buildingTokens: newTotalTokens };
+    
+    // Optimistically update the user object in context for instant UI feedback
+    const updatedUser = {
+      ...user,
+      profile: {
+        ...user.profile,
+        buildingTokens: newTotalTokens,
+      }
+    };
+    setUser(updatedUser);
 
     // Update backend and cache without a full data reload
     try {
-      await updateUserProfile(user.id, { profile: updatedProfile });
+      await updateUserProfile(user.id, { profile: { buildingTokens: newTotalTokens } });
       saveGridToCache(newGrid);
-      
-      // Manually update user context for immediate token reflection
-      // This avoids a full refreshUser() call
-      const updatedUser = {
-        ...user,
-        profile: {
-            ...user.profile,
-            buildingTokens: newTotalTokens,
-        }
-      };
-      // Note: This part of the auth provider is not implemented, but shows intent
-      // In a real scenario, you'd have a `setUser` in your Auth context
-      // For now, we rely on the next full refreshUser() call on other actions.
-      // But since we updated optimistically, the UI feels instant.
-      // The `refreshUser()` call is still needed elsewhere to sync up eventually.
       
       if (tokensToRefund > 0) {
            toast({
@@ -383,8 +377,9 @@ export default function DashboardPage() {
       }
 
     } catch (error) {
-      // Revert grid on error
+      // Revert grid and user state on error
       setCityGrid(cityGrid);
+      setUser(user);
        toast({
           variant: 'destructive',
           title: 'Update Failed',
