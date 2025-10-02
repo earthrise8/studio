@@ -204,6 +204,7 @@ const buildingDataMap = new Map(allBuildings.map(b => [b.emoji, b]));
 const calculateTileRating = (y: number, x: number, grid: string[][]): number => {
     let rating = 100; // Base rating
 
+    const currentBuilding = buildingDataMap.get(grid[y][x]);
     const requiredServices = ['police', 'fire', 'health', 'education'];
     const foundServices = new Set<string>();
     
@@ -233,9 +234,11 @@ const calculateTileRating = (y: number, x: number, grid: string[][]): number => 
         }
     }
 
-    // Apply penalty for missing services
-    const missingServices = requiredServices.filter(s => !foundServices.has(s));
-    rating -= missingServices.length * 15;
+    // Apply penalty for missing services, but not for tents
+    if (currentBuilding?.name !== 'Tent') {
+        const missingServices = requiredServices.filter(s => !foundServices.has(s));
+        rating -= missingServices.length * 15;
+    }
 
 
     return rating;
@@ -1383,4 +1386,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
 
