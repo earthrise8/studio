@@ -54,6 +54,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -477,7 +478,7 @@ export default function DashboardPage() {
     for (const row of cityGrid) {
         for (const cell of row) {
             const building = buildingDataMap.get(cell);
-            if (building && building.name !== 'Tree' && building.name !== 'Remove' && building.emoji !== '➖') {
+            if (building && building.name !== 'Tree' && building.name !== 'Remove' && building.emoji !== '➖' && building.emoji !== '⛰️') {
                 counts.set(cell, (counts.get(cell) || 0) + 1);
             }
         }
@@ -746,20 +747,26 @@ export default function DashboardPage() {
 
               {buildingCounts && buildingCounts.length > 0 && (
                 <Card>
-                    <CardHeader>
-                        <CardTitle className='font-headline'>City Census</CardTitle>
-                    </CardHeader>
-                    <CardContent className='space-y-2 max-h-48 overflow-y-auto'>
-                        {buildingCounts.map(b => (
-                            <div key={b.emoji} className='flex justify-between items-center text-sm'>
-                                <span className='flex items-center gap-2'>
-                                    <span className='text-lg'>{b.emoji}</span>
-                                    <span>{b.name}</span>
-                                </span>
-                                <span className='font-bold'>{b.count}</span>
-                            </div>
-                        ))}
-                    </CardContent>
+                    <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="item-1" className='border-none'>
+                            <AccordionTrigger className='p-6'>
+                                <CardTitle className='font-headline'>City Census</CardTitle>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <CardContent className='space-y-2 max-h-48 overflow-y-auto pt-0'>
+                                    {buildingCounts.map(b => (
+                                        <div key={b.emoji} className='flex justify-between items-center text-sm'>
+                                            <span className='flex items-center gap-2'>
+                                                <span className='text-lg'>{b.emoji}</span>
+                                                <span>{b.name}</span>
+                                            </span>
+                                            <span className='font-bold'>{b.count}</span>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
                 </Card>
               )}
             </div>
