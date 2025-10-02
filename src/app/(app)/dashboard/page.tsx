@@ -45,7 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { generateCityScape } from '@/ai/flows/generate-city-scape';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -93,25 +93,33 @@ const TILES = {
   STATION: { emoji: '🚉', name: 'Train Station', cost: 400 },
   AIRPORT: { emoji: '✈️', name: 'Airport', cost: 800 },
   SETTLEMENT: [
+    { emoji: '⛺', name: 'Tent', cost: 10 },
     { emoji: '🏡', name: 'House', cost: 50 },
     { emoji: '🌳', name: 'Big Tree', cost: 0 },
   ],
   VILLAGE: [
     { emoji: '🏠', name: 'Family Home', cost: 75 },
+    { emoji: '⛪', name: 'Church', cost: 100 },
   ],
   TOWN: [
     { emoji: '🏬', name: 'Store', cost: 150 },
+    { emoji: '🏨', name: 'Hotel', cost: 350 },
   ],
   SMALL_CITY: [
     { emoji: '🏢', name: 'Apartment', cost: 300 },
     { emoji: '🏫', name: 'School', cost: 200 },
+    { emoji: '🏥', name: 'Hospital', cost: 450 },
   ],
   LARGE_CITY: [
     { emoji: '🏙️', name: 'Skyscraper', cost: 500 },
+    { emoji: '🎢', name: 'Roller Coaster', cost: 600 },
+    { emoji: '🎪', name: 'Circus', cost: 300 },
   ],
   METROPOLIS: [
     { emoji: '🌃', name: 'City at Night', cost: 1000 },
     { emoji: '🚀', name: 'Rocket', cost: 2000 },
+    { emoji: '⛳', name: 'Golf Course', cost: 700 },
+    { emoji: '🏟️', name: 'Stadium', cost: 900 },
   ],
 };
 
@@ -788,3 +796,4 @@ export default function DashboardPage() {
     
 
     
+
