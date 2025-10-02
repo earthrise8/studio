@@ -278,6 +278,10 @@ export default function DashboardPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{y: number, x: number} | null>(null);
   const [dragOver, setDragOver] = useState<{y: number, x: number} | null>(null);
+  
+  // Hover highlight state
+  const [hoveredTile, setHoveredTile] = useState<{y: number, x: number} | null>(null);
+  const [highlightedCells, setHighlightedCells] = useState<{y: number, x: number, type: 'positive' | 'negative' | 'area-positive' | 'area-negative'}[]>([]);
 
 
   const [data, setData] = useState<{
@@ -564,11 +568,54 @@ export default function DashboardPage() {
     setSelectedTiles([]);
   };
 
-  const handleMouseEnter = (y: number, x: number) => {
+  const handleMouseEnterTile = (y: number, x: number) => {
     if (isDragging) {
       setDragOver({y, x});
     }
+    
+    if (!cityGrid) return;
+    const building = buildingDataMap.get(cityGrid[y][x]);
+    const highlights: {y: number, x: number, type: 'positive' | 'negative' | 'area-positive' | 'area-negative'}[] = [];
+
+    if (building?.isResidential) {
+        // Hovering over residential: highlight sources
+        for (let i = 0; i < cityGrid.length; i++) {
+            for (let j = 0; j < cityGrid[i].length; j++) {
+                const sourceBuilding = buildingDataMap.get(cityGrid[i][j]);
+                if (!sourceBuilding) continue;
+
+                const distance = Math.abs(i - y) + Math.abs(j - x);
+                if (sourceBuilding.ratingBonus && sourceBuilding.ratingRange && distance <= sourceBuilding.ratingRange) {
+                    highlights.push({ y: i, x: j, type: 'positive' });
+                }
+                if (sourceBuilding.ratingPenalty && sourceBuilding.ratingRange && distance <= sourceBuilding.ratingRange) {
+                    highlights.push({ y: i, x: j, type: 'negative' });
+                }
+            }
+        }
+    } else if (building?.ratingBonus || building?.ratingPenalty) {
+        // Hovering over amenity/nuisance: highlight affected area
+        const range = building.ratingRange || 0;
+        const type = building.ratingBonus ? 'area-positive' : 'area-negative';
+        for (let i = y - range; i <= y + range; i++) {
+            for (let j = x - range; j <= x + range; j++) {
+                if (i >= 0 && i < cityGrid.length && j >= 0 && j < cityGrid[0].length) {
+                    const distance = Math.abs(i - y) + Math.abs(j - x);
+                    if (distance <= range) {
+                        highlights.push({ y: i, x: j, type });
+                    }
+                }
+            }
+        }
+    }
+    setHighlightedCells(highlights);
   };
+  
+  const handleMouseLeaveGrid = () => {
+    if (isDragging) return; // Don't clear highlights while dragging
+    setHighlightedCells([]);
+  };
+
 
   const handleMouseUp = () => {
     if (isDragging && dragStart && dragOver && cityGrid) {
@@ -689,7 +736,7 @@ export default function DashboardPage() {
              <div 
               className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto"
               onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
+              onMouseLeave={handleMouseLeaveGrid}
               >
                 {cityLoading ? (
                     <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
@@ -710,16 +757,25 @@ export default function DashboardPage() {
                                     const xMax = dragStart && dragOver ? Math.max(dragStart.x, dragOver.x) : -1;
 
                                     const isSelected = selectedTiles.some(t => t.y === y && t.x === x) || (isDragging && y >= yMin && y <= yMax && x >= xMin && x <= xMax);
+                                    const highlight = highlightedCells.find(h => h.y === y && h.x === x);
                                     
                                     const tileButton = (
                                         <button 
                                             key={x} 
                                             onClick={(e) => handleTileClick(e, y, x)}
                                             onMouseDown={(e) => handleMouseDown(e, y, x)}
-                                            onMouseEnter={() => handleMouseEnter(y,x)}
-                                            className={cn('flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', isSelected && 'bg-primary/30 ring-2 ring-primary')}
+                                            onMouseEnter={() => handleMouseEnterTile(y,x)}
+                                            className={cn(
+                                                'relative flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', 
+                                                isSelected && 'bg-primary/30 ring-2 ring-primary',
+                                                highlight?.type === 'positive' && 'ring-2 ring-blue-500 bg-blue-500/20',
+                                                highlight?.type === 'negative' && 'ring-2 ring-red-500 bg-red-500/20'
+                                            )}
                                             >
-                                            <span>{cell}</span>
+                                            <span className={cn(
+                                                highlight?.type === 'area-positive' && 'outline outline-2 outline-blue-500 outline-offset-[-2px] rounded-sm',
+                                                highlight?.type === 'area-negative' && 'outline outline-2 outline-red-500 outline-offset-[-2px] rounded-sm'
+                                            )}>{cell}</span>
                                         </button>
                                     );
 
