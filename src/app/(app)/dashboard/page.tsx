@@ -340,7 +340,7 @@ export default function DashboardPage() {
     }
   }
 
-  const handleTileClick = (y: number, x: number) => {
+  const handleTileClick = (e: React.MouseEvent, y: number, x: number) => {
     if (!cityGrid) return;
     
     const tile = cityGrid[y][x];
@@ -349,14 +349,19 @@ export default function DashboardPage() {
         return;
     }
 
+    const tileCoord = {y, x};
     const tileIndex = selectedTiles.findIndex(t => t.y === y && t.x === x);
-
-    if (tileIndex > -1) {
-        // Deselect tile
-        setSelectedTiles(current => current.filter((_, index) => index !== tileIndex));
+    
+    if(e.shiftKey) {
+        // Shift is pressed, so toggle this tile in the selection
+        if (tileIndex > -1) {
+            setSelectedTiles(current => current.filter((_, index) => index !== tileIndex));
+        } else {
+            setSelectedTiles(current => [...current, tileCoord]);
+        }
     } else {
-        // Select tile
-        setSelectedTiles(current => [...current, {y, x}]);
+        // Shift is not pressed, so set this tile as the only selection
+        setSelectedTiles([tileCoord]);
     }
   }
   
@@ -428,10 +433,10 @@ export default function DashboardPage() {
         const existingEmoji = cityGrid[tile.y][tile.x];
         const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
 
-        if (isPlacingRefundableTile && replacedBuilding && replacedBuilding.cost > 0) {
-            if (replacedBuilding.emoji === TILES.ROAD.emoji) {
-                tokensToRefund = replacedBuilding.cost / 2; // Refund half for roads
-            } else {
+        if (replacedBuilding) {
+            if (replacedBuilding.emoji === TILES.ROAD.emoji && (building.name === 'Remove' || building.name === 'Tree')) {
+                 tokensToRefund = replacedBuilding.cost / 2; // Refund half for roads when removing
+            } else if (building.name === 'Remove' || building.name === 'Tree') {
                 tokensToRefund = replacedBuilding.cost; // Full refund for other buildings
             }
         }
@@ -489,7 +494,8 @@ export default function DashboardPage() {
     setSelectedTiles([]);
   };
 
-  const handleMouseDown = (y: number, x: number) => {
+  const handleMouseDown = (e: React.MouseEvent, y: number, x: number) => {
+    if(e.shiftKey) return; // Don't start drag if shift is held
     setIsDragging(true);
     setDragStart({y, x});
     setDragOver({y,x});
@@ -647,8 +653,8 @@ export default function DashboardPage() {
                                     const tileButton = (
                                         <button 
                                             key={x} 
-                                            onClick={() => handleTileClick(y,x)}
-                                            onMouseDown={() => handleMouseDown(y, x)}
+                                            onClick={(e) => handleTileClick(e, y, x)}
+                                            onMouseDown={(e) => handleMouseDown(e, y, x)}
                                             onMouseEnter={() => handleMouseEnter(y,x)}
                                             className={cn('flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', isSelected && 'bg-primary/30 ring-2 ring-primary')}
                                             >
@@ -1025,6 +1031,8 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
 
     
 
