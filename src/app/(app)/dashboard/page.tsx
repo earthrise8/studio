@@ -91,7 +91,7 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
 }
 
 const TILES = {
-  EMPTY: { emoji: '🗑️', name: 'Remove', cost: 0, population: 0 },
+  EMPTY: { emoji: ' ', name: 'Remove', cost: 0, population: 0 },
   ROAD: { emoji: '➖', name: 'Road', cost: 0, population: 0 },
   GRASS: { emoji: '🌲', name: 'Tree', cost: 5, population: 0 },
   POND: { emoji: '💧', name: 'Pond', cost: 15, population: 0 },
