@@ -66,7 +66,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isGoalDialogOpen, setGoalDialogOpen] = useState(false);
-  const [daysToSkip, setDaysToSkip] = useState(1);
+  const [daysToSkip, setDaysToSkip] = useState<number | ''>(1);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -228,7 +228,7 @@ export default function SettingsPage() {
   }
 
   const handleSkipDays = () => {
-    if (!user || daysToSkip <= 0) return;
+    if (!user || !daysToSkip || daysToSkip <= 0) return;
 
     const gameStartDateKey = `game-start-date-${user.id}`;
     let gameStartDate = localStorage.getItem(gameStartDateKey);
@@ -243,7 +243,7 @@ export default function SettingsPage() {
     }
 
     const currentStartDate = new Date(gameStartDate);
-    const hoursToSubtract = daysToSkip; // 1 day = 1 hour
+    const hoursToSubtract = Number(daysToSkip); // 1 day = 1 hour
     currentStartDate.setHours(currentStartDate.getHours() - hoursToSubtract);
     localStorage.setItem(gameStartDateKey, currentStartDate.toISOString());
 
@@ -537,7 +537,10 @@ export default function SettingsPage() {
                             <Input 
                                 type="number" 
                                 value={daysToSkip}
-                                onChange={(e) => setDaysToSkip(parseInt(e.target.value))}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setDaysToSkip(value === '' ? '' : parseInt(value, 10));
+                                }}
                                 min="1"
                                 placeholder="Days to skip"
                                 className="w-32"
