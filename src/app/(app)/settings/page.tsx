@@ -38,6 +38,7 @@ import { updateUserProfile, getGoals, addGoal, deleteGoal, updateGoal, resetUser
 import type { Goal } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { getCityInfo } from '@/lib/city-data';
 
 
 const profileFormSchema = z.object({
@@ -61,7 +62,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type GoalFormValues = z.infer<typeof goalFormSchema>;
 
 export default function SettingsPage() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, setUser } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -230,16 +231,26 @@ export default function SettingsPage() {
   const handleSkipDays = () => {
     if (!user || !daysToSkip || daysToSkip <= 0) return;
 
+    // 1. Calculate revenue gain
+    const cachedGrid = localStorage.getItem(`city-grid-${user.id}`);
+    const cityGrid = cachedGrid ? JSON.parse(cachedGrid) : null;
+    const { cityInfo } = getCityInfo(user.profile.totalPoints || 0, cityGrid);
+    const dailyRevenue = Math.floor(cityInfo.netRevenue);
+    const totalRevenueGain = dailyRevenue * Number(daysToSkip);
+
+    // 2. Update user money
+    const newTotalMoney = (user.profile.money || 0) + totalRevenueGain;
+    const updatedProfile = { money: newTotalMoney };
+
+    updateUserProfile(user.id, { profile: updatedProfile });
+    setUser(prevUser => prevUser ? ({...prevUser, profile: {...prevUser.profile, ...updatedProfile}}) : null);
+
+    // 3. Update game clock
     const gameStartDateKey = `game-start-date-${user.id}`;
     let gameStartDate = localStorage.getItem(gameStartDateKey);
-
     if (!gameStartDate) {
-      toast({
-        variant: 'destructive',
-        title: 'Game not started',
-        description: 'Please visit the dashboard once to start the game clock.',
-      });
-      return;
+      // If the game hasn't "started" (i.e. dashboard not visited), initialize it now.
+      gameStartDate = new Date().toISOString();
     }
 
     const currentStartDate = new Date(gameStartDate);
@@ -247,9 +258,13 @@ export default function SettingsPage() {
     currentStartDate.setHours(currentStartDate.getHours() - hoursToSubtract);
     localStorage.setItem(gameStartDateKey, currentStartDate.toISOString());
 
+    // Also update the 'last revenue' key to prevent double-dipping on next dashboard load
+    const lastUpdateKey = `last-revenue-update-${user.id}`;
+    localStorage.setItem(lastUpdateKey, new Date().getTime().toString());
+
     toast({
-      title: 'Time Skipped!',
-      description: `You have fast-forwarded by ${daysToSkip} day(s). Visit the dashboard to see the effects.`,
+      title: 'Time Skipped & Revenue Collected!',
+      description: `You fast-forwarded ${daysToSkip} day(s) and collected $${totalRevenueGain.toLocaleString()}.`,
     });
   };
 
