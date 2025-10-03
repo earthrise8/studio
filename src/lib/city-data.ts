@@ -51,6 +51,7 @@ export const TILES = {
   BIG_CITY: [
       { emoji: '🏥', name: 'Hospital', cost: 45000, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 20, ratingRange: 15, serviceType: 'health' },
       { emoji: '🚓', name: 'Police Department', cost: 30000, ratingBonus: 25, ratingRange: 15, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'police' },
+      { emoji: '🪦', name: 'Graveyard', cost: 10000, isPublicService: true, maintenanceCostPerCitizen: 0.02, ratingPenalty: -5, ratingRange: 4, serviceType: 'cemetery' },
   ],
   LARGE_CITY: [
       { emoji: '🚒', name: 'Fire Department', cost: 30000, ratingBonus: 25, ratingRange: 15, isPublicService: true, maintenanceCostPerCitizen: 0.25, serviceType: 'fire' },
@@ -58,24 +59,23 @@ export const TILES = {
   ],
   HUGE_CITY: [
       { emoji: '🏦', name: 'Bank', cost: 50000, ratingBonus: 10, ratingRange: 4, revenueMultiplier: 2.2 },
+      { emoji: '🏟️', name: 'Stadium', cost: 90000, ratingBonus: 30, ratingRange: 10, revenueMultiplier: 4 },
   ],
   GRAND_CITY: [
     { emoji: '🏙️', name: 'Skyscraper', cost: 50000, defaultPopulation: 80, maxPopulation: 250, isResidential: true },
     { emoji: '⛽', name: 'Gas Station', cost: 22000, ratingPenalty: -5, ratingRange: 3, revenueMultiplier: 1.8 },
+    { emoji: '⛳', name: 'Golf Course', cost: 70000, ratingBonus: 25, ratingRange: 8, revenueMultiplier: 3 },
   ],
   METROPOLIS: [
     { emoji: '🎢', name: 'Roller Coaster', cost: 60000, ratingBonus: 20, ratingRange: 6, revenueMultiplier: 2.5 },
     { emoji: '🎪', name: 'Circus', cost: 30000, ratingBonus: 15, ratingRange: 5, revenueMultiplier: 1.5 },
+    { emoji: '🗼', name: 'Tokyo Tower', cost: 150000, ratingBonus: 50, ratingRange: 12, revenueMultiplier: 5 },
   ],
   MEGALOPOLIS: [
     { emoji: '🌃', name: 'City at Night', cost: 100000, defaultPopulation: 200, maxPopulation: 600, isResidential: true },
     { emoji: '🚀', name: 'Rocket', cost: 200000, ratingPenalty: -30, ratingRange: 10, revenueMultiplier: 20 },
-    { emoji: '⛳', name: 'Golf Course', cost: 70000, ratingBonus: 25, ratingRange: 8, revenueMultiplier: 3 },
-    { emoji: '🏟️', name: 'Stadium', cost: 90000, ratingBonus: 30, ratingRange: 10, revenueMultiplier: 4 },
     { emoji: '🏇', name: 'Horse Racing', cost: 120000, ratingBonus: 15, ratingRange: 7, revenueMultiplier: 6 },
-    { emoji: '🗼', name: 'Tokyo Tower', cost: 150000, ratingBonus: 50, ratingRange: 12, revenueMultiplier: 5 },
     { emoji: '🎰', name: 'Casino', cost: 180000, ratingPenalty: -10, ratingRange: 5, revenueMultiplier: 15 },
-    { emoji: '🪦', name: 'Graveyard', cost: 10000, isPublicService: true, maintenanceCostPerCitizen: 0.02, ratingPenalty: -5, ratingRange: 4, serviceType: 'cemetery' },
     { emoji: '🌋', name: 'Volcano', cost: 500000, ratingPenalty: -100, ratingRange: 20, revenueMultiplier: 50 },
     { emoji: '🏞️', name: 'National Park', cost: 100000, ratingBonus: 40, ratingRange: 15 },
   ],
