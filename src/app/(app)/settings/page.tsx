@@ -66,6 +66,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isGoalDialogOpen, setGoalDialogOpen] = useState(false);
+  const [daysToSkip, setDaysToSkip] = useState(1);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -225,6 +226,32 @@ export default function SettingsPage() {
         });
     }
   }
+
+  const handleSkipDays = () => {
+    if (!user || daysToSkip <= 0) return;
+
+    const gameStartDateKey = `game-start-date-${user.id}`;
+    let gameStartDate = localStorage.getItem(gameStartDateKey);
+
+    if (!gameStartDate) {
+      toast({
+        variant: 'destructive',
+        title: 'Game not started',
+        description: 'Please visit the dashboard once to start the game clock.',
+      });
+      return;
+    }
+
+    const currentStartDate = new Date(gameStartDate);
+    const hoursToSubtract = daysToSkip; // 1 day = 1 hour
+    currentStartDate.setHours(currentStartDate.getHours() - hoursToSubtract);
+    localStorage.setItem(gameStartDateKey, currentStartDate.toISOString());
+
+    toast({
+      title: 'Time Skipped!',
+      description: `You have fast-forwarded by ${daysToSkip} day(s). Visit the dashboard to see the effects.`,
+    });
+  };
 
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -503,7 +530,23 @@ export default function SettingsPage() {
                     <CardTitle>Admin Actions</CardTitle>
                     <CardDescription>These are destructive actions. Use with caution.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className='space-y-4'>
+                    <div className="space-y-2">
+                        <Label>Time Skip</Label>
+                        <div className="flex gap-2">
+                            <Input 
+                                type="number" 
+                                value={daysToSkip}
+                                onChange={(e) => setDaysToSkip(parseInt(e.target.value))}
+                                min="1"
+                                placeholder="Days to skip"
+                                className="w-32"
+                            />
+                            <Button onClick={handleSkipDays}>Skip Days</Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Fast forward the game clock to collect revenue.</p>
+                    </div>
+
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive">Reset All Data</Button>
@@ -529,8 +572,3 @@ export default function SettingsPage() {
     </main>
   );
 }
-
-    
-
-    
-
