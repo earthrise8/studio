@@ -22,41 +22,28 @@ const TILES = {
   EMPTY: ' ',
   ROAD: '⬛',
   GRASS: '🌲',
-  SETTLEMENT: ['🏡', '🌳'],
-  VILLAGE: ['🏡', '🏠', '🌳'],
-  TOWN: ['🏠', '🏡', '🏬', '🌳'],
-  SMALL_CITY: ['🏢', '🏠', '🏬', '🏫', '🏭'],
-  LARGE_CITY: ['🏢', '🏬', '🏙️', '🏫', '🚉'],
-  METROPOLIS: ['🏙️', '🌃', '🏢', '🚀', '✈️'],
-  FACTORY: '🏭',
-  STATION: '🚉',
-  AIRPORT: '✈️',
-  FARMLAND: '🌾',
-  MOUNTAIN: '⛰️',
   POND: '💧',
-};
-
-const getBuildingSet = (points: number) => {
-  if (points < 200) return TILES.SETTLEMENT;
-  if (points < 400) return TILES.VILLAGE;
-  if (points < 600) return TILES.TOWN;
-  if (points < 800) return TILES.SMALL_CITY;
-  if (points < 1000) return TILES.LARGE_CITY;
-  return TILES.METROPOLIS;
+  MOUNTAIN: '⛰️',
+  FARMLAND: '🌾',
+  BIG_TREE: '🌳',
+  SUNFLOWER: '🌻',
 };
 
 const GRID_WIDTH = 20;
 const GRID_HEIGHT = 20;
 
 // Helper to create clusters
-const generateClusters = (grid: string[][], tile: string, clusterCount: number, clusterSize: number) => {
+const generateClusters = (grid: string[][], tile: string, clusterCount: number, minSize: number, maxSize: number) => {
     for (let i = 0; i < clusterCount; i++) {
         const startX = Math.floor(Math.random() * GRID_WIDTH);
         const startY = Math.floor(Math.random() * GRID_HEIGHT);
+        const clusterSize = Math.floor(Math.random() * (maxSize - minSize + 1)) + minSize;
 
         for (let j = 0; j < clusterSize; j++) {
-            const x = startX + Math.floor(Math.random() * 5) - 2;
-            const y = startY + Math.floor(Math.random() * 5) - 2;
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = Math.random() * (clusterSize / 4);
+            const x = Math.round(startX + Math.cos(angle) * radius);
+            const y = Math.round(startY + Math.sin(angle) * radius);
 
             if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT && grid[y][x] === TILES.EMPTY) {
                 grid[y][x] = tile;
@@ -65,14 +52,56 @@ const generateClusters = (grid: string[][], tile: string, clusterCount: number, 
     }
 }
 
+const generateRiver = (grid: string[][]) => {
+    let x = Math.random() > 0.5 ? 0 : Math.floor(Math.random() * (GRID_WIDTH - 4)) + 2;
+    let y = x === 0 ? Math.floor(Math.random() * (GRID_HEIGHT - 4)) + 2 : 0;
+    
+    const isHorizontal = y !== 0;
+    
+    let direction = isHorizontal ? (Math.random() > 0.5 ? 1 : -1) : (Math.random() > 0.5 ? 1 : -1);
+    
+    const maxLength = isHorizontal ? GRID_WIDTH : GRID_HEIGHT;
+
+    for(let i = 0; i < maxLength * 2; i++) {
+        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) break;
+
+        if (grid[y][x] === TILES.EMPTY) {
+             grid[y][x] = TILES.POND;
+        }
+        
+        // Add river thickness
+        if (isHorizontal) {
+            if (y > 0 && grid[y-1][x] === TILES.EMPTY) grid[y-1][x] = TILES.POND;
+        } else {
+             if (x > 0 && grid[y][x-1] === TILES.EMPTY) grid[y][x-1] = TILES.POND;
+        }
+
+        // Move
+        if (isHorizontal) {
+            x++;
+            if (Math.random() < 0.3) {
+                 y += direction;
+                 if (Math.random() < 0.2) direction *= -1; // Chance to reverse bend
+            }
+        } else {
+            y++;
+             if (Math.random() < 0.3) {
+                 x += direction;
+                 if (Math.random() < 0.2) direction *= -1; // Chance to reverse bend
+            }
+        }
+    }
+}
+
+
 export async function generateCityScape(input: GenerateCityScapeInput): Promise<GenerateCityScapeOutput> {
   const grid: string[][] = Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(TILES.EMPTY));
   
   // Generate natural features first
-  generateClusters(grid, TILES.GRASS, 5, 20); // Forests
-  generateClusters(grid, TILES.MOUNTAIN, 2, 8); // Mountains
-  generateClusters(grid, TILES.POND, 3, 5); // Ponds
-  generateClusters(grid, TILES.FARMLAND, 3, 15); // Farmland
+  generateClusters(grid, TILES.MOUNTAIN, 2, 8, 12); // Mountains
+  generateClusters(grid, TILES.FARMLAND, 3, 10, 20); // Farmland
+  generateRiver(grid);
+  generateClusters(grid, TILES.GRASS, 5, 15, 30); // Forests
 
   // Then add the road
   const isHorizontal = Math.random() > 0.5;
@@ -88,11 +117,20 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
     }
   }
   
-  // Fill remaining empty space with grass
+  // Fill remaining empty space with decorative grass and trees
   for (let y = 0; y < GRID_HEIGHT; y++) {
     for (let x = 0; x < GRID_WIDTH; x++) {
       if (grid[y][x] === TILES.EMPTY) {
-          grid[y][x] = TILES.GRASS;
+          const rand = Math.random();
+          if (rand < 0.7) {
+            grid[y][x] = TILES.GRASS;
+          } else if (rand < 0.85) {
+            grid[y][x] = TILES.BIG_TREE;
+          } else if (rand < 0.95) {
+             grid[y][x] = TILES.SUNFLOWER;
+          } else {
+             grid[y][x] = ' '; // Leave some truly empty
+          }
       }
     }
   }
