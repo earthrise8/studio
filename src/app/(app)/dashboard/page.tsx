@@ -45,6 +45,8 @@ import {
   DollarSign,
   ShieldCheck,
   CalendarDays,
+  Globe,
+  Leaf,
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -680,6 +682,23 @@ export default function DashboardPage() {
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Card>
+            <CardContent className='pt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-center'>
+              <div>
+                <CardTitle className='text-xl flex items-center justify-center gap-2'><Building className='h-5 w-5' /> City Size</CardTitle>
+                <p className='text-lg font-bold text-primary'>{cityInfo.name}</p>
+              </div>
+              <div>
+                <CardTitle className='text-xl flex items-center justify-center gap-2'><Globe className='h-5 w-5' /> Population</CardTitle>
+                <p className='text-lg font-bold text-primary'>{cityInfo.population.toLocaleString()}</p>
+              </div>
+              <div>
+                <CardTitle className='text-xl flex items-center justify-center gap-2'><CalendarDays className='h-5 w-5' /> In-Game Time</CardTitle>
+                <p className='text-lg font-bold text-primary'>Day {inGameDay}</p>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid gap-4 lg:grid-cols-3">
              <div 
               className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto"
@@ -797,15 +816,11 @@ export default function DashboardPage() {
                   <CardTitle className='font-headline'>City Info</CardTitle>
                 </CardHeader>
                 <CardContent className='space-y-2'>
+                    <div className="flex justify-between text-sm">
+                      <span className='font-medium text-muted-foreground flex items-center gap-2'><Leaf className='h-4 w-4' /> Eco Score:</span>
+                      <span className='font-bold'>{cityInfo.ecoScore}</span>
+                    </div>
                    <div className="flex justify-between text-sm">
-                      <span className='font-medium text-muted-foreground'>City Size:</span>
-                      <span className='font-bold'>{cityInfo.name}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className='font-medium text-muted-foreground'>Population:</span>
-                      <span className='font-bold'>{cityInfo.population.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
                       <span className='font-medium text-muted-foreground'>Revenue:</span>
                       <span className='font-bold'>${Math.floor(cityInfo.netRevenue).toLocaleString()}/day</span>
                     </div>
@@ -820,10 +835,6 @@ export default function DashboardPage() {
                         ) : (
                             <span className="font-bold text-primary">Max Level</span>
                         )}
-                    </div>
-                    <div className="flex items-center justify-between text-sm border-t pt-2 mt-2">
-                        <span className="font-medium text-muted-foreground flex items-center gap-2"><CalendarDays className="h-4 w-4" /> In-Game Time:</span>
-                        <span className="font-bold">Day {inGameDay}</span>
                     </div>
                 </CardContent>
               </Card>

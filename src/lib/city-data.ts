@@ -1,100 +1,98 @@
 
+
 export const TILES = {
   EMPTY: { emoji: ' ', name: 'Remove', cost: 0 },
   ROAD: { emoji: '⬛', name: 'Road', cost: 100 },
-  GRASS: { emoji: '🌲', name: 'Tree', cost: 25 },
-  POND: { emoji: '💧', name: 'Pond', cost: 150, ratingBonus: 5, ratingRange: 3 },
-  MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0 },
-  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 200, isFarmland: true },
-  FACTORY: { emoji: '🏭', name: 'Factory', cost: 25000, ratingPenalty: -15, ratingRange: 5, revenueMultiplier: 5 },
-  STATION: { emoji: '🚉', name: 'Train Station', cost: 3000, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 20, ratingRange: 15, serviceType: 'transport' },
-  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 80000, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10 },
+  GRASS: { emoji: '🌲', name: 'Tree', cost: 25, ecoBonus: 1 },
+  POND: { emoji: '💧', name: 'Pond', cost: 150, ratingBonus: 5, ratingRange: 3, ecoBonus: 5 },
+  MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0, ecoBonus: 2 },
+  FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 200, isFarmland: true, ecoBonus: 0.5 },
+  FACTORY: { emoji: '🏭', name: 'Factory', cost: 25000, ratingPenalty: -15, ratingRange: 5, revenueMultiplier: 5, ecoPenalty: 20 },
+  STATION: { emoji: '🚉', name: 'Train Station', cost: 1500, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 20, ratingRange: 15, serviceType: 'transport', ecoPenalty: 3 },
+  AIRPORT: { emoji: '✈️', name: 'Airport', cost: 80000, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10, ecoPenalty: 50 },
+  GRAVEYARD: { emoji: '🪦', name: 'Graveyard', cost: 1000, isPublicService: true, maintenanceCostPerCitizen: 0.02, ratingPenalty: -5, ratingRange: 4, serviceType: 'cemetery' },
+  POLICE: { emoji: '🚓', name: 'Police Department', cost: 1500, isPublicService: true, maintenanceCostPerCitizen: 0.25, ratingBonus: 25, ratingRange: 15, serviceType: 'police', ecoPenalty: 2 },
+  FIRE: { emoji: '🚒', name: 'Fire Department', cost: 1500, isPublicService: true, maintenanceCostPerCitizen: 0.25, ratingBonus: 25, ratingRange: 15, serviceType: 'fire', ecoPenalty: 2 },
+  SCHOOL: { emoji: '🏫', name: 'School', cost: 2000, isPublicService: true, maintenanceCostPerCitizen: 0.2, ratingBonus: 20, ratingRange: 15, serviceType: 'education', ecoPenalty: 1 },
+  HOSPITAL: { emoji: '🏥', name: 'Hospital', cost: 2500, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 20, ratingRange: 15, serviceType: 'health', ecoPenalty: 2 },
+
   SETTLEMENT: [
     { emoji: '⛺', name: 'Tent', cost: 100, defaultPopulation: 1, maxPopulation: 2, isResidential: true },
-    { emoji: '🌳', name: 'Big Tree', cost: 50 },
+    { emoji: '🌳', name: 'Big Tree', cost: 50, ecoBonus: 2 },
     { emoji: '🛖', name: 'Hut', cost: 250, defaultPopulation: 2, maxPopulation: 3, isResidential: true },
-    { emoji: '🌻', name: 'Sunflower Field', cost: 75, ratingBonus: 1, ratingRange: 1},
-    { emoji: '🌴', name: 'Palm Tree', cost: 60, ratingBonus: 1, ratingRange: 1},
-    { emoji: '🌵', name: 'Cactus', cost: 60 },
-    { emoji: '🍂', name: 'Leafless Tree', cost: 40 },
-    { emoji: '🍃', name: 'Leaf', cost: 10 },
+    { emoji: '🌻', name: 'Sunflower Field', cost: 75, ratingBonus: 1, ratingRange: 1, ecoBonus: 3 },
+    { emoji: '🌴', name: 'Palm Tree', cost: 60, ratingBonus: 1, ratingRange: 1, ecoBonus: 1 },
+    { emoji: '🌵', name: 'Cactus', cost: 60, ecoBonus: 0.5 },
+    { emoji: '🍂', name: 'Leafless Tree', cost: 40, ecoBonus: 0.5 },
+    { emoji: '🍃', name: 'Leaf', cost: 10, ecoBonus: 0.2 },
   ],
   VILLAGE: [
-    { emoji: '🏪', name: 'Convenience Store', cost: 1000, ratingBonus: 5, ratingRange: 2, revenueMultiplier: 0.5 },
-  ],
-  LARGE_VILLAGE: [
-    { emoji: '⛪', name: 'Church', cost: 2500, ratingBonus: 10, ratingRange: 4 },
-    { emoji: '🚓', name: 'Police Department', cost: 3000, isPublicService: true, maintenanceCostPerCitizen: 0.25, ratingBonus: 25, ratingRange: 15, serviceType: 'police' },
-    { emoji: '🚒', name: 'Fire Department', cost: 3000, isPublicService: true, maintenanceCostPerCitizen: 0.25, ratingBonus: 25, ratingRange: 15, serviceType: 'fire' },
-    { emoji: '🏣', name: 'Post Office', cost: 1500, isPublicService: true, maintenanceCostPerCitizen: 0.05, ratingBonus: 5, ratingRange: 8, serviceType: 'communication' },
-
+    { emoji: '🏪', name: 'Convenience Store', cost: 1000, ratingBonus: 5, ratingRange: 2, revenueMultiplier: 0.5, ecoPenalty: 1 },
+    { emoji: '🏣', name: 'Post Office', cost: 1000, isPublicService: true, maintenanceCostPerCitizen: 0.05, ratingBonus: 5, ratingRange: 8, serviceType: 'communication', ecoPenalty: 1 },
   ],
   GRAND_VILLAGE: [
-    { emoji: '🏡', name: 'House', cost: 5000, defaultPopulation: 2, maxPopulation: 5, isResidential: true },
-    { emoji: '🏫', name: 'School', cost: 4000, isPublicService: true, maintenanceCostPerCitizen: 0.2, ratingBonus: 20, ratingRange: 15, serviceType: 'education' },
-    { emoji: '🏥', name: 'Hospital', cost: 5000, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 20, ratingRange: 15, serviceType: 'health' },
+    { emoji: '🏡', name: 'House', cost: 5000, defaultPopulation: 2, maxPopulation: 5, isResidential: true, ecoPenalty: 0.5 },
   ],
   TOWN: [
-    { emoji: '🏠', name: 'Family Home', cost: 7500, defaultPopulation: 4, maxPopulation: 8, isResidential: true },
-    { emoji: '🍔', name: 'Restaurant', cost: 4000, ratingBonus: 10, ratingRange: 3, revenueMultiplier: 0.8 },
+    { emoji: '🏠', name: 'Family Home', cost: 7500, defaultPopulation: 4, maxPopulation: 8, isResidential: true, ecoPenalty: 0.5 },
+    { emoji: '🍔', name: 'Restaurant', cost: 4000, ratingBonus: 10, ratingRange: 3, revenueMultiplier: 0.8, ecoPenalty: 2 },
   ],
   BOOM_TOWN: [
-      { emoji: '🏬', name: 'Store', cost: 8000, ratingBonus: 15, ratingRange: 3, revenueMultiplier: 1 },
+      { emoji: '🏬', name: 'Store', cost: 8000, ratingBonus: 15, ratingRange: 3, revenueMultiplier: 1, ecoPenalty: 1 },
   ],
   BUSY_TOWN: [
-      { emoji: '🏋️', name: 'Gym', cost: 6000, ratingBonus: 15, ratingRange: 4, revenueMultiplier: 0.7 },
+      { emoji: '🏋️', name: 'Gym', cost: 6000, ratingBonus: 15, ratingRange: 4, revenueMultiplier: 0.7, ecoPenalty: 1 },
   ],
   BIG_TOWN: [
-      { emoji: '🏨', name: 'Hotel', cost: 12000, revenueMultiplier: 2 },
+      { emoji: '🏨', name: 'Hotel', cost: 12000, revenueMultiplier: 2, ecoPenalty: 2 },
   ],
   GREAT_TOWN: [
-      { emoji: '🎬', name: 'Movie Theater', cost: 10000, ratingBonus: 18, ratingRange: 5, revenueMultiplier: 1.2 },
+      { emoji: '🎬', name: 'Movie Theater', cost: 10000, ratingBonus: 18, ratingRange: 5, revenueMultiplier: 1.2, ecoPenalty: 2 },
   ],
   SMALL_CITY: [
-    { emoji: '🏢', name: 'Apartment', cost: 30000, defaultPopulation: 20, maxPopulation: 60, isResidential: true },
+    { emoji: '🏢', name: 'Apartment', cost: 30000, defaultPopulation: 20, maxPopulation: 60, isResidential: true, ecoPenalty: 1 },
   ],
   BIG_CITY: [
-      { emoji: '🏦', name: 'Bank', cost: 20000, ratingBonus: 10, ratingRange: 4, revenueMultiplier: 2.2 },
-      { emoji: '🪦', name: 'Graveyard', cost: 1000, isPublicService: true, maintenanceCostPerCitizen: 0.02, ratingPenalty: -5, ratingRange: 4, serviceType: 'cemetery' },
+      { emoji: '🏦', name: 'Bank', cost: 20000, ratingBonus: 10, ratingRange: 4, revenueMultiplier: 2.2, ecoPenalty: 2 },
   ],
   LARGE_CITY: [
-      { emoji: '⛽', name: 'Gas Station', cost: 15000, ratingPenalty: -5, ratingRange: 3, revenueMultiplier: 1.8 },
+      { emoji: '⛽', name: 'Gas Station', cost: 15000, ratingPenalty: -5, ratingRange: 3, revenueMultiplier: 1.8, ecoPenalty: 10 },
   ],
   HUGE_CITY: [
-      { emoji: '🏟️', name: 'Stadium', cost: 50000, ratingBonus: 30, ratingRange: 10, revenueMultiplier: 4 },
+      { emoji: '🏟️', name: 'Stadium', cost: 50000, ratingBonus: 30, ratingRange: 10, revenueMultiplier: 4, ecoPenalty: 15 },
   ],
   GRAND_CITY: [
-    { emoji: '🏙️', name: 'Skyscraper', cost: 50000, defaultPopulation: 80, maxPopulation: 250, isResidential: true },
-    { emoji: '⛳', name: 'Golf Course', cost: 40000, ratingBonus: 25, ratingRange: 8, revenueMultiplier: 3 },
+    { emoji: '🏙️', name: 'Skyscraper', cost: 50000, defaultPopulation: 80, maxPopulation: 250, isResidential: true, ecoPenalty: 5 },
+    { emoji: '⛳', name: 'Golf Course', cost: 40000, ratingBonus: 25, ratingRange: 8, revenueMultiplier: 3, ecoBonus: 10 },
   ],
   METROPOLIS: [
-    { emoji: '🎢', name: 'Roller Coaster', cost: 60000, ratingBonus: 20, ratingRange: 6, revenueMultiplier: 2.5 },
-    { emoji: '🎪', name: 'Circus', cost: 30000, ratingBonus: 15, ratingRange: 5, revenueMultiplier: 1.5 },
-    { emoji: '🗼', name: 'Tokyo Tower', cost: 150000, ratingBonus: 50, ratingRange: 12, revenueMultiplier: 5 },
+    { emoji: '🎢', name: 'Roller Coaster', cost: 60000, ratingBonus: 20, ratingRange: 6, revenueMultiplier: 2.5, ecoPenalty: 5 },
+    { emoji: '🎪', name: 'Circus', cost: 30000, ratingBonus: 15, ratingRange: 5, revenueMultiplier: 1.5, ecoPenalty: 5 },
+    { emoji: '🗼', name: 'Tokyo Tower', cost: 150000, ratingBonus: 50, ratingRange: 12, revenueMultiplier: 5, ecoPenalty: 10 },
   ],
   MEGALOPOLIS: [
-    { emoji: '🌃', name: 'City at Night', cost: 100000, defaultPopulation: 200, maxPopulation: 600, isResidential: true },
-    { emoji: '🚀', name: 'Rocket', cost: 200000, ratingPenalty: -30, ratingRange: 10, revenueMultiplier: 20 },
-    { emoji: '🏇', name: 'Horse Racing', cost: 120000, ratingBonus: 15, ratingRange: 7, revenueMultiplier: 6 },
-    { emoji: '🎰', name: 'Casino', cost: 180000, ratingPenalty: -10, ratingRange: 5, revenueMultiplier: 15 },
-    { emoji: '🌋', name: 'Volcano', cost: 500000, ratingPenalty: -100, ratingRange: 20, revenueMultiplier: 50 },
-    { emoji: '🏞️', name: 'National Park', cost: 100000, ratingBonus: 40, ratingRange: 15 },
+    { emoji: '🌃', name: 'City at Night', cost: 100000, defaultPopulation: 200, maxPopulation: 600, isResidential: true, ecoPenalty: 8 },
+    { emoji: '🚀', name: 'Rocket', cost: 200000, ratingPenalty: -30, ratingRange: 10, revenueMultiplier: 20, ecoPenalty: 100 },
+    { emoji: '🏇', name: 'Horse Racing', cost: 120000, ratingBonus: 15, ratingRange: 7, revenueMultiplier: 6, ecoPenalty: 10 },
+    { emoji: '🎰', name: 'Casino', cost: 180000, ratingPenalty: -10, ratingRange: 5, revenueMultiplier: 15, ecoPenalty: 8 },
+    { emoji: '🌋', name: 'Volcano', cost: 500000, ratingPenalty: -100, ratingRange: 20, revenueMultiplier: 50, ecoPenalty: 200 },
+    { emoji: '🏞️', name: 'National Park', cost: 100000, ratingBonus: 40, ratingRange: 15, ecoBonus: 100 },
   ],
 };
 
 export const getBuildingSet = (points: number) => {
   let available = [TILES.ROAD, TILES.GRASS, TILES.EMPTY, TILES.POND, ...TILES.SETTLEMENT];
   if (points >= 0) available.push(TILES.FARMLAND)
-  if (points >= 100) available.push(...TILES.VILLAGE);
-  if (points >= 200) available.push(...TILES.LARGE_VILLAGE);
-  if (points >= 300) available.push(...TILES.GRAND_VILLAGE, TILES.STATION);
+  if (points >= 100) available.push(...TILES.VILLAGE, TILES.POLICE, TILES.FIRE);
+  if (points >= 200) available.push(TILES.HOSPITAL);
+  if (points >= 300) available.push(...TILES.GRAND_VILLAGE, TILES.STATION, TILES.SCHOOL);
   if (points >= 400) available.push(...TILES.TOWN);
   if (points >= 500) available.push(...TILES.BOOM_TOWN);
   if (points >= 600) available.push(...TILES.BUSY_TOWN);
   if (points >= 700) available.push(...TILES.BIG_TOWN);
   if (points >= 800) available.push(...TILES.GREAT_TOWN);
   if (points >= 900) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
-  if (points >= 1000) available.push(...TILES.BIG_CITY);
+  if (points >= 1000) available.push(...TILES.BIG_CITY, TILES.GRAVEYARD);
   if (points >= 1100) available.push(...TILES.LARGE_CITY);
   if (points >= 1200) available.push(...TILES.HUGE_CITY);
   if (points >= 1300) available.push(...TILES.GRAND_CITY);
@@ -131,7 +129,7 @@ export const getCityLevel = (points: number) => {
 }
 
 export const getAllBuildings = () => {
-    return Object.values(TILES).flat().filter(b => typeof b === 'object');
+    return Object.values(TILES).flat().filter(b => typeof b === 'object' && b.name !== 'Mountain');
 };
 
 export const allBuildings = getAllBuildings() as {
@@ -149,6 +147,8 @@ export const allBuildings = getAllBuildings() as {
     isPublicService?: boolean;
     maintenanceCostPerCitizen?: number;
     serviceType?: string;
+    ecoBonus?: number;
+    ecoPenalty?: number;
 }[];
 
 export const buildingDataMap = new Map(allBuildings.map(b => [b.emoji, b]));
@@ -226,6 +226,7 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
     let commercialRevenue = 0;
     let publicServiceCost = 0;
     let farmlandRevenue = 0;
+    let ecoScore = 0;
     const farmlandPlots: { size: number; revenue: number; tiles: {y: number, x: number}[] }[] = [];
     const buildingCounts = new Map<string, { count: number; totalRevenue: number; totalCost: number; }>();
 
@@ -270,15 +271,19 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
             farmlandPlots.push({ size, revenue: totalPlotRevenue, tiles: plot });
         }
         
-        // --- First pass: calculate population ---
+        // --- First pass: calculate population and eco score ---
         for (let y = 0; y < cityGrid.length; y++) {
             for (let x = 0; x < cityGrid[y].length; x++) {
-                const building = buildingDataMap.get(cityGrid[y][x]);
-                if (building && building.isResidential) {
-                    const rating = calculateTileRating(y, x, cityGrid);
-                    const occupancy = calculateOccupancy(rating, building.defaultPopulation!, building.maxPopulation!);
-                    totalPopulation += occupancy;
-                }
+                 const building = buildingDataMap.get(cityGrid[y][x]);
+                 if (building) {
+                    if (building.isResidential) {
+                        const rating = calculateTileRating(y, x, cityGrid);
+                        const occupancy = calculateOccupancy(rating, building.defaultPopulation!, building.maxPopulation!);
+                        totalPopulation += occupancy;
+                    }
+                    ecoScore += building.ecoBonus || 0;
+                    ecoScore -= building.ecoPenalty || 0;
+                 }
             }
         }
 
@@ -290,6 +295,9 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
 
                 if (building && (building.revenueMultiplier || building.isFarmland)) {
                     const entry = buildingCounts.get(cell) || { count: 0, totalRevenue: 0, totalCost: 0 };
+                    if (!buildingCounts.has(cell)) {
+                        entry.count = 0; // Initialize if not present
+                    }
                     entry.count += 1;
 
                     if (building.revenueMultiplier) {
@@ -346,10 +354,9 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
             netRevenue: totalRevenue - publicServiceCost,
             nextUpgrade: tier.next,
             farmlandPlots,
+            ecoScore,
         },
         buildingCounts: sortedCounts,
         tileInfo,
     };
 };
-
-    
