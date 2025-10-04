@@ -683,18 +683,38 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <Card>
-            <CardContent className='pt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-center'>
+            <CardContent className='pt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 text-center'>
               <div>
-                <CardTitle className='text-xl flex items-center justify-center gap-2'><Building className='h-5 w-5' /> City Size</CardTitle>
-                <p className='text-lg font-bold text-primary'>{cityInfo.name}</p>
+                <CardTitle className='text-lg font-headline flex items-center justify-center gap-2'><Building className='h-5 w-5' /> City Size</CardTitle>
+                <p className='text-md font-bold text-primary'>{cityInfo.name}</p>
               </div>
               <div>
-                <CardTitle className='text-xl flex items-center justify-center gap-2'><Globe className='h-5 w-5' /> Population</CardTitle>
-                <p className='text-lg font-bold text-primary'>{cityInfo.population.toLocaleString()}</p>
+                <CardTitle className='text-lg font-headline flex items-center justify-center gap-2'><Globe className='h-5 w-5' /> Population</CardTitle>
+                <p className='text-md font-bold text-primary'>{cityInfo.population.toLocaleString()}</p>
               </div>
               <div>
-                <CardTitle className='text-xl flex items-center justify-center gap-2'><CalendarDays className='h-5 w-5' /> In-Game Time</CardTitle>
-                <p className='text-lg font-bold text-primary'>Day {inGameDay}</p>
+                <CardTitle className='text-lg font-headline flex items-center justify-center gap-2'><CalendarDays className='h-5 w-5' /> In-Game Time</CardTitle>
+                <p className='text-md font-bold text-primary'>Day {inGameDay}</p>
+              </div>
+              <div className="flex flex-col justify-center">
+                <div className="flex items-center justify-center gap-2 text-lg font-headline"><Leaf className='h-5 w-5' /> Eco Score</div>
+                <p className='text-md font-bold'>{cityInfo.ecoScore}</p>
+              </div>
+               <div className="flex flex-col justify-center">
+                <div className="flex items-center justify-center gap-2 text-lg font-headline"><DollarSign className='h-5 w-5' /> Revenue</div>
+                <p className='text-md font-bold'>${Math.floor(cityInfo.netRevenue).toLocaleString()}/day</p>
+              </div>
+               <div className="flex flex-col justify-center">
+                  <div className="flex items-center justify-center gap-2 text-lg font-headline"><DollarSign className='h-5 w-5' /> Money</div>
+                  <p className="text-md font-bold">${(user.profile.money || 0).toLocaleString()}</p>
+              </div>
+              <div className="flex flex-col justify-center">
+                  <div className="flex items-center justify-center gap-2 text-lg font-headline"><Trophy className='h-5 w-5' /> Next Upgrade</div>
+                  {cityInfo.nextUpgrade ? (
+                      <p className="text-md font-bold">{pointsToUpgrade > 0 ? `${pointsToUpgrade.toLocaleString()} pts` : 'Ready!'}</p>
+                  ) : (
+                      <p className="text-md font-bold text-primary">Max Level</p>
+                  )}
               </div>
             </CardContent>
           </Card>
@@ -811,35 +831,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="lg:col-span-1 space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className='font-headline'>City Info</CardTitle>
-                </CardHeader>
-                <CardContent className='space-y-2'>
-                    <div className="flex justify-between text-sm">
-                      <span className='font-medium text-muted-foreground flex items-center gap-2'><Leaf className='h-4 w-4' /> Eco Score:</span>
-                      <span className='font-bold'>{cityInfo.ecoScore}</span>
-                    </div>
-                   <div className="flex justify-between text-sm">
-                      <span className='font-medium text-muted-foreground'>Revenue:</span>
-                      <span className='font-bold'>${Math.floor(cityInfo.netRevenue).toLocaleString()}/day</span>
-                    </div>
-                     <div className="flex justify-between text-sm">
-                        <span className="font-medium text-muted-foreground">Money:</span>
-                        <span className="font-bold">${(user.profile.money || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="font-medium text-muted-foreground">Points to Upgrade:</span>
-                        {cityInfo.nextUpgrade ? (
-                            <span className="font-bold">{pointsToUpgrade > 0 ? pointsToUpgrade.toLocaleString() : 'Ready!'}</span>
-                        ) : (
-                            <span className="font-bold text-primary">Max Level</span>
-                        )}
-                    </div>
-                </CardContent>
-              </Card>
-
-                <Card className={cn("transition-opacity", selectedTiles.length === 0 && 'opacity-50 pointer-events-none')}>
+              <Card className={cn("transition-opacity", selectedTiles.length === 0 && 'opacity-50 pointer-events-none')}>
                   <CardHeader>
                       <CardTitle className='font-headline'>Customize Tile</CardTitle>
                       <CardDescription>
@@ -1217,3 +1209,4 @@ export default function DashboardPage() {
 }
 
     
+
