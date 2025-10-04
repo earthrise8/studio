@@ -53,42 +53,60 @@ const generateClusters = (grid: string[][], tile: string, clusterCount: number, 
 }
 
 const generateRiver = (grid: string[][]) => {
-    let x = Math.random() > 0.5 ? 0 : Math.floor(Math.random() * (GRID_WIDTH - 4)) + 2;
-    let y = x === 0 ? Math.floor(Math.random() * (GRID_HEIGHT - 4)) + 2 : 0;
-    
-    const isHorizontal = y !== 0;
-    
-    let direction = isHorizontal ? (Math.random() > 0.5 ? 1 : -1) : (Math.random() > 0.5 ? 1 : -1);
-    
-    const maxLength = isHorizontal ? GRID_WIDTH : GRID_HEIGHT;
+    const isHorizontal = Math.random() > 0.5;
+    let x, y, dx, dy;
+    let turnChance = 0.3;
+    let turnDirection = (Math.random() > 0.5) ? 1 : -1;
 
-    for(let i = 0; i < maxLength * 2; i++) {
-        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) break;
+    if (isHorizontal) {
+        x = 0;
+        y = Math.floor(Math.random() * (GRID_HEIGHT / 2)) + Math.floor(GRID_HEIGHT / 4);
+        dx = 1;
+        dy = 0;
+    } else {
+        x = Math.floor(Math.random() * (GRID_WIDTH / 2)) + Math.floor(GRID_WIDTH / 4);
+        y = 0;
+        dx = 0;
+        dy = 1;
+    }
 
-        if (grid[y][x] === TILES.EMPTY) {
-             grid[y][x] = TILES.POND;
-        }
+    while (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+        // Main path
+        if (grid[y] && grid[y][x] === TILES.EMPTY) grid[y][x] = TILES.POND;
         
-        // Add river thickness
+        // Second path for width
         if (isHorizontal) {
-            if (y > 0 && grid[y-1][x] === TILES.EMPTY) grid[y-1][x] = TILES.POND;
+            if (y + 1 < GRID_HEIGHT && grid[y+1] && grid[y+1][x] === TILES.EMPTY) grid[y+1][x] = TILES.POND;
         } else {
-             if (x > 0 && grid[y][x-1] === TILES.EMPTY) grid[y][x-1] = TILES.POND;
+            if (x + 1 < GRID_WIDTH && grid[y] && grid[y][x+1] === TILES.EMPTY) grid[y][x+1] = TILES.POND;
         }
 
         // Move
-        if (isHorizontal) {
-            x++;
-            if (Math.random() < 0.3) {
-                 y += direction;
-                 if (Math.random() < 0.2) direction *= -1; // Chance to reverse bend
-            }
+        x += dx;
+        y += dy;
+
+        // Winding logic
+        if (Math.random() < turnChance) {
+             if (isHorizontal) {
+                dy = turnDirection;
+                dx = 0;
+             } else {
+                dx = turnDirection;
+                dy = 0;
+             }
         } else {
-            y++;
-             if (Math.random() < 0.3) {
-                 x += direction;
-                 if (Math.random() < 0.2) direction *= -1; // Chance to reverse bend
-            }
+             if (isHorizontal) {
+                 dx = 1;
+                 dy = 0;
+             } else {
+                 dx = 0;
+                 dy = 1;
+             }
+        }
+        
+        // Chance to change turning direction
+        if (Math.random() < 0.1) {
+            turnDirection *= -1;
         }
     }
 }
