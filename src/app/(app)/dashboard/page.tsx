@@ -421,7 +421,7 @@ export default function DashboardPage() {
     const exemptFromRoadRule = [
       'Tree', 'Big Tree', 'Pond', 'Farmland', 'Tent', 'Remove',
       'Sunflower Field', 'Palm Tree', 'Cactus', 'Leafless Tree', 'Leaf',
-      'Volcano', 'National Park'
+      'Volcano', 'National Park', 'Mountain'
     ];
 
     if (building.emoji === TILES.ROAD.emoji) {
@@ -970,40 +970,39 @@ export default function DashboardPage() {
                           </ScrollArea>
                       )}
                   </CardContent>
+                  
+                {buildingCounts && buildingCounts.length > 0 && (
+                <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="item-1" className='border-t'>
+                        <AccordionTrigger className='p-6 font-headline text-lg'>
+                            City Census
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <div className='space-y-2 max-h-48 overflow-y-auto px-6'>
+                                {buildingCounts.map(b => (
+                                    <div key={b.emoji} className='flex justify-between items-center text-sm'>
+                                        <span className='flex items-center gap-2'>
+                                            <span className='text-lg'>{b.emoji}</span>
+                                            <span>{b.name}</span>
+                                        </span>
+                                        <div className="text-right">
+                                            <span className='font-bold'>{b.count}</span>
+                                            {b.totalRevenue > 0 && (
+                                                <p className="text-xs text-green-500">${Math.floor(b.totalRevenue).toLocaleString()}</p>
+                                            )}
+                                            {b.totalCost > 0 && (
+                                                <p className="text-xs text-red-500">-${Math.floor(b.totalCost).toLocaleString()}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+              )}
               </Card>
 
-              {buildingCounts && buildingCounts.length > 0 && (
-                <Card>
-                    <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="item-1" className='border-none'>
-                            <AccordionTrigger className='p-6'>
-                                <CardTitle className='font-headline'>City Census</CardTitle>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                <CardContent className='space-y-2 max-h-48 overflow-y-auto pt-0'>
-                                    {buildingCounts.map(b => (
-                                        <div key={b.emoji} className='flex justify-between items-center text-sm'>
-                                            <span className='flex items-center gap-2'>
-                                                <span className='text-lg'>{b.emoji}</span>
-                                                <span>{b.name}</span>
-                                            </span>
-                                            <div className="text-right">
-                                                <span className='font-bold'>{b.count}</span>
-                                                {b.totalRevenue > 0 && (
-                                                    <p className="text-xs text-green-500">${Math.floor(b.totalRevenue).toLocaleString()}</p>
-                                                )}
-                                                {b.totalCost > 0 && (
-                                                    <p className="text-xs text-red-500">-${Math.floor(b.totalCost).toLocaleString()}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </CardContent>
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                </Card>
-              )}
             </div>
           </div>
         </CardContent>
@@ -1209,4 +1208,5 @@ export default function DashboardPage() {
 }
 
     
+
 
