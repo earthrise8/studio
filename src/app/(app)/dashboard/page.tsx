@@ -107,6 +107,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [cityGrid, setCityGrid] = useState<string[][] | null>(null);
   const [cityLoading, setCityLoading] = useState(true);
+  const [permanentRoads, setPermanentRoads] = useState<{y: number, x:number}[]>([]);
   const [selectedTiles, setSelectedTiles] = useState<{y: number, x: number}[]>([]);
   const [tileView, setTileView] = useState<'grid' | 'list'>('grid');
   const [tileSearchTerm, setTileSearchTerm] = useState('');
@@ -142,6 +143,45 @@ export default function DashboardPage() {
      }
   }, [user]);
 
+  const findPermanentRoads = (grid: string[][]): {y: number, x:number}[] => {
+    const roads: {y: number, x: number}[] = [];
+    const height = grid.length;
+    const width = grid[0].length;
+
+    // Check for horizontal road
+    for (let y = 0; y < height; y++) {
+        if (grid[y][0] === TILES.ROAD.emoji && grid[y][width - 1] === TILES.ROAD.emoji) {
+            let isFullRoad = true;
+            for (let x = 1; x < width -1; x++) {
+                if(grid[y][x] !== TILES.ROAD.emoji) {
+                    isFullRoad = false;
+                    break;
+                }
+            }
+            if(isFullRoad) {
+                return [{y, x: 0}, {y, x: width-1}];
+            }
+        }
+    }
+    // Check for vertical road
+    for (let x = 0; x < width; x++) {
+        if (grid[0][x] === TILES.ROAD.emoji && grid[height - 1][x] === TILES.ROAD.emoji) {
+            let isFullRoad = true;
+            for(let y = 1; y < height - 1; y++) {
+                if(grid[y][x] !== TILES.ROAD.emoji) {
+                    isFullRoad = false;
+                    break;
+                }
+            }
+            if(isFullRoad) {
+                return [{y: 0, x}, {y: height - 1, x}];
+            }
+        }
+    }
+
+    return [];
+  };
+
   const handleGenerateCity = useCallback(async (forceRefresh = false) => {
     if (!user) return;
 
@@ -149,6 +189,7 @@ export default function DashboardPage() {
         const cachedGrid = getCachedGrid();
         if (cachedGrid) {
             setCityGrid(cachedGrid);
+            setPermanentRoads(findPermanentRoads(cachedGrid));
             setCityLoading(false);
             return;
         }
@@ -158,6 +199,7 @@ export default function DashboardPage() {
     try {
       const result = await generateCityScape({ points: user.profile.totalPoints || 0 });
       setCityGrid(result.grid);
+      setPermanentRoads(findPermanentRoads(result.grid));
       saveGridToCache(result.grid);
     } catch (error) {
       console.error(error);
@@ -359,6 +401,17 @@ export default function DashboardPage() {
 
   const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
     if (selectedTiles.length === 0 || !cityGrid || !user) return;
+
+    for (const tile of selectedTiles) {
+        if(permanentRoads.some(pr => pr.x === tile.x && pr.y === tile.y)) {
+            toast({
+                variant: 'destructive',
+                title: 'Cannot Build Here',
+                description: 'This part of the main road cannot be changed.',
+            });
+            return;
+        }
+    }
 
     // --- Validation Logic ---
     const exemptFromRoadRule = ['Tree', 'Big Tree', 'Pond', 'Farmland', 'Tent', 'Remove'];
@@ -647,6 +700,7 @@ export default function DashboardPage() {
 
                                     const isSelected = selectedTiles.some(t => t.y === y && t.x === x) || (isDragging && y >= yMin && y <= yMax && x >= xMin && x <= xMax);
                                     const highlight = highlightedCells.find(h => h.y === y && h.x === x);
+                                    const isPermanentRoad = permanentRoads.some(pr => pr.x === x && pr.y === y);
                                     
                                     const tileButton = (
                                         <button 
@@ -658,19 +712,23 @@ export default function DashboardPage() {
                                                 'relative flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', 
                                                 isSelected && 'bg-primary/30 ring-2 ring-primary',
                                                 highlight?.type === 'positive' && 'ring-2 ring-blue-500 bg-blue-500/20',
-                                                highlight?.type === 'negative' && 'ring-2 ring-red-500 bg-red-500/20'
+                                                highlight?.type === 'negative' && 'ring-2 ring-red-500 bg-red-500/20',
+                                                isPermanentRoad && 'cursor-not-allowed'
                                             )}
                                             >
                                             <span className={cn(
                                                 highlight?.type === 'area-positive' && 'outline outline-2 outline-blue-500 outline-offset-[-2px] rounded-sm',
                                                 highlight?.type === 'area-negative' && 'outline outline-2 outline-red-500 outline-offset-[-2px] rounded-sm'
                                             )}>{cell}</span>
+                                            {isPermanentRoad && <div className="absolute inset-0 bg-black/30" />}
                                         </button>
                                     );
 
                                     let tooltipContent: React.ReactNode = null;
                                     
-                                    if(cityGrid && cityInfo && building?.isResidential) {
+                                    if (isPermanentRoad) {
+                                        tooltipContent = <p className="font-semibold">Main Road (Permanent)</p>;
+                                    } else if (cityGrid && cityInfo && building?.isResidential) {
                                         const { rating, grade, occupancy } = getCityInfo(user.profile.totalPoints || 0, cityGrid, y, x).tileInfo!;
 
                                         tooltipContent = <>

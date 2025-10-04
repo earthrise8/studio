@@ -67,8 +67,7 @@ const generateClusters = (grid: string[][], tile: string, clusterCount: number, 
 
 export async function generateCityScape(input: GenerateCityScapeInput): Promise<GenerateCityScapeOutput> {
   const grid: string[][] = Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(TILES.EMPTY));
-  const roadY = Math.floor(GRID_HEIGHT / 2);
-
+  
   // Generate natural features first
   generateClusters(grid, TILES.GRASS, 5, 20); // Forests
   generateClusters(grid, TILES.MOUNTAIN, 2, 8); // Mountains
@@ -76,8 +75,17 @@ export async function generateCityScape(input: GenerateCityScapeInput): Promise<
   generateClusters(grid, TILES.FARMLAND, 3, 15); // Farmland
 
   // Then add the road
-  for (let x = 0; x < GRID_WIDTH; x++) {
-    grid[roadY][x] = TILES.ROAD;
+  const isHorizontal = Math.random() > 0.5;
+  if (isHorizontal) {
+    const roadY = Math.floor(Math.random() * (GRID_HEIGHT - 4)) + 2; // Avoid edges
+    for (let x = 0; x < GRID_WIDTH; x++) {
+      grid[roadY][x] = TILES.ROAD;
+    }
+  } else {
+    const roadX = Math.floor(Math.random() * (GRID_WIDTH - 4)) + 2; // Avoid edges
+    for (let y = 0; y < GRID_HEIGHT; y++) {
+      grid[y][roadX] = TILES.ROAD;
+    }
   }
   
   // Fill remaining empty space with grass
