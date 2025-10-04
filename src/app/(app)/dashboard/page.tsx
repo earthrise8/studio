@@ -144,38 +144,40 @@ export default function DashboardPage() {
   }, [user]);
 
   const findPermanentRoads = (grid: string[][]): {y: number, x:number}[] => {
-    const roads: {y: number, x: number}[] = [];
     const height = grid.length;
+    if (height === 0) return [];
     const width = grid[0].length;
+    if(width === 0) return [];
 
-    // Check for horizontal road
+    let roadEnds: {y: number, x:number}[] = [];
+
+    // Check for a horizontal road spanning the whole width
     for (let y = 0; y < height; y++) {
-        if (grid[y][0] === TILES.ROAD.emoji && grid[y][width - 1] === TILES.ROAD.emoji) {
-            let isFullRoad = true;
-            for (let x = 1; x < width -1; x++) {
-                if(grid[y][x] !== TILES.ROAD.emoji) {
-                    isFullRoad = false;
-                    break;
-                }
-            }
-            if(isFullRoad) {
-                return [{y, x: 0}, {y, x: width-1}];
+        let isFullRoad = true;
+        for (let x = 0; x < width; x++) {
+            if (grid[y][x] !== TILES.ROAD.emoji) {
+                isFullRoad = false;
+                break;
             }
         }
+        if (isFullRoad) {
+            roadEnds.push({y, x: 0}, {y, x: width - 1});
+            return roadEnds;
+        }
     }
-    // Check for vertical road
+
+    // Check for a vertical road spanning the whole height
     for (let x = 0; x < width; x++) {
-        if (grid[0][x] === TILES.ROAD.emoji && grid[height - 1][x] === TILES.ROAD.emoji) {
-            let isFullRoad = true;
-            for(let y = 1; y < height - 1; y++) {
-                if(grid[y][x] !== TILES.ROAD.emoji) {
-                    isFullRoad = false;
-                    break;
-                }
+       let isFullRoad = true;
+        for (let y = 0; y < height; y++) {
+            if (grid[y][x] !== TILES.ROAD.emoji) {
+                isFullRoad = false;
+                break;
             }
-            if(isFullRoad) {
-                return [{y: 0, x}, {y: height - 1, x}];
-            }
+        }
+        if (isFullRoad) {
+            roadEnds.push({y: 0, x}, {y: height - 1, x});
+            return roadEnds;
         }
     }
 
@@ -414,7 +416,11 @@ export default function DashboardPage() {
     }
 
     // --- Validation Logic ---
-    const exemptFromRoadRule = ['Tree', 'Big Tree', 'Pond', 'Farmland', 'Tent', 'Remove'];
+    const exemptFromRoadRule = [
+      'Tree', 'Big Tree', 'Pond', 'Farmland', 'Tent', 'Remove',
+      'Sunflower Field', 'Palm Tree', 'Cactus', 'Leafless Tree', 'Leaf',
+      'Volcano', 'National Park'
+    ];
 
     if (building.emoji === TILES.ROAD.emoji) {
         const isAnyTileAdjacentToRoad = selectedTiles.some(tile => isAdjacentToRoad(tile.y, tile.x, cityGrid));
