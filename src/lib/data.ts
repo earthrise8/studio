@@ -190,9 +190,9 @@ export const resetUserData = (userId: string) => {
     saveToStorage('MOCK_GOALS', goals);
     saveToStorage('MOCK_AWARDS', awards);
 
-    // Also clear any cached city grids
+    // Also clear any cached city grids and game state
     Object.keys(localStorage).forEach(key => {
-        if(key.startsWith(`city-grid-${userId}`)) {
+        if(key.startsWith(`city-grid-${userId}`) || key.startsWith(`game-start-date-${userId}`) || key.startsWith(`last-revenue-update-${userId}`)) {
             localStorage.removeItem(key);
         }
     })
@@ -510,3 +510,4 @@ export const getFriends = async (userId: string): Promise<Friend[]> => {
     
 
     
+
