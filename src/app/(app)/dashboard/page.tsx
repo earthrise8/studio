@@ -48,7 +48,7 @@ import {
   Globe,
   Leaf,
 } from 'lucide-react';
-import { formatISO, differenceInDays } from 'date-fns';
+import { formatISO, differenceInDays, isSameDay } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth-provider';
@@ -249,21 +249,66 @@ export default function DashboardPage() {
     return { cityInfo: info, buildingCounts: counts };
   }, [cityGrid, user]);
   
+    const isAdjacentToWater = (y: number, x: number, grid: string[][], distance: number): boolean => {
+      for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[i].length; j++) {
+          const tile = buildingDataMap.get(grid[i][j]);
+          if (tile && tile.name === 'Pond') { // Pond or River
+            const dist = Math.abs(i - y) + Math.abs(j - x); // Manhattan distance
+            if (dist <= distance) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    };
+
   useEffect(() => {
     if (user && cityInfo) {
       const lastUpdateKey = `last-revenue-update-${user.id}`;
       const lastUpdate = localStorage.getItem(lastUpdateKey);
       const now = new Date().getTime();
       let moneyToCollect = 0;
+      let gridToUpdate: string[][] | null = null;
+      let decayedCount = 0;
 
       if (lastUpdate) {
         const lastUpdateTime = parseInt(lastUpdate, 10);
         const hoursPassed = (now - lastUpdateTime) / (1000 * 60 * 60);
-        // We only collect for full days passed
         const daysPassed = Math.floor(hoursPassed / 24);
 
         if (daysPassed > 0) {
           moneyToCollect = daysPassed * Math.floor(cityInfo.netRevenue);
+
+          // Farmland decay logic
+          const currentGrid = getCachedGrid();
+          if (currentGrid) {
+            gridToUpdate = JSON.parse(JSON.stringify(currentGrid));
+            for (let y = 0; y < gridToUpdate.length; y++) {
+                for (let x = 0; x < gridToUpdate[y].length; x++) {
+                    const tile = buildingDataMap.get(gridToUpdate[y][x]);
+                    if (tile?.isFarmland) {
+                        if (!isAdjacentToWater(y, x, gridToUpdate, 3)) {
+                            const leaflessTree = allBuildings.find(b => b.name === 'Leafless Tree');
+                            if(leaflessTree) {
+                                gridToUpdate[y][x] = leaflessTree.emoji;
+                                decayedCount++;
+                            }
+                        }
+                    }
+                }
+            }
+            if (decayedCount > 0) {
+              setCityGrid(gridToUpdate);
+              saveGridToCache(gridToUpdate);
+              toast({
+                  variant: 'destructive',
+                  title: 'Farmland Withered',
+                  description: `${decayedCount} farmland plot(s) withered due to lack of water.`
+              });
+            }
+          }
         }
       }
 
@@ -284,11 +329,10 @@ export default function DashboardPage() {
           description: `Your city earned $${moneyToCollect.toLocaleString()} while you were away.`,
         });
       } else if (!lastUpdate) {
-        // First time running, set the initial timestamp
         localStorage.setItem(lastUpdateKey, now.toString());
       }
     }
-  }, [user, cityInfo, setUser, toast]);
+  }, [user, cityInfo, setUser, toast, getCachedGrid, saveGridToCache]);
 
   useEffect(() => {
     if (user) {
@@ -403,7 +447,7 @@ export default function DashboardPage() {
       return false;
   };
 
-  const handleTileSelect = async (building: { emoji: string; name: string; cost: number }) => {
+  const handleTileSelect = async (building: { emoji: string; name: string; cost: number, isFarmland?: boolean; }) => {
     if (selectedTiles.length === 0 || !cityGrid || !user) return;
 
     for (const tile of selectedTiles) {
@@ -434,6 +478,17 @@ export default function DashboardPage() {
             });
             return;
         }
+    } else if (building.isFarmland) {
+      for (const tile of selectedTiles) {
+        if (!isAdjacentToWater(tile.y, tile.x, cityGrid, 3)) {
+          toast({
+            variant: 'destructive',
+            title: 'Invalid Farmland Placement',
+            description: `Farmland at (${tile.x}, ${tile.y}) must be within 3 tiles of water.`,
+          });
+          return;
+        }
+      }
     } else if (!exemptFromRoadRule.includes(building.name)) {
         for (const tile of selectedTiles) {
             if (!isWithinDistanceOfRoad(tile.y, tile.x, cityGrid, 3)) {
@@ -1208,5 +1263,6 @@ export default function DashboardPage() {
 }
 
     
+
 
 
