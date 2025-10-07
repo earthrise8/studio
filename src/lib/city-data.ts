@@ -82,17 +82,17 @@ export const TILES = {
 
 export const getBuildingSet = (points: number) => {
   let available = [TILES.ROAD, TILES.GRASS, TILES.EMPTY, TILES.POND, ...TILES.SETTLEMENT];
-  if (points >= 0) available.push(TILES.FARMLAND)
-  if (points >= 100) available.push(...TILES.VILLAGE, TILES.POLICE, TILES.FIRE);
-  if (points >= 200) available.push(TILES.HOSPITAL);
-  if (points >= 300) available.push(...TILES.GRAND_VILLAGE, TILES.STATION, TILES.SCHOOL);
+  if (points >= 0) available.push(TILES.FARMLAND, TILES.POLICE, TILES.FIRE, TILES.HOSPITAL, TILES.SCHOOL, TILES.GRAVEYARD)
+  if (points >= 100) available.push(...TILES.VILLAGE, TILES.STATION);
+  if (points >= 200) available.push();
+  if (points >= 300) available.push(...TILES.GRAND_VILLAGE);
   if (points >= 400) available.push(...TILES.TOWN);
   if (points >= 500) available.push(...TILES.BOOM_TOWN);
   if (points >= 600) available.push(...TILES.BUSY_TOWN);
   if (points >= 700) available.push(...TILES.BIG_TOWN);
   if (points >= 800) available.push(...TILES.GREAT_TOWN);
   if (points >= 900) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
-  if (points >= 1000) available.push(...TILES.BIG_CITY, TILES.GRAVEYARD);
+  if (points >= 1000) available.push(...TILES.BIG_CITY);
   if (points >= 1100) available.push(...TILES.LARGE_CITY);
   if (points >= 1200) available.push(...TILES.HUGE_CITY);
   if (points >= 1300) available.push(...TILES.GRAND_CITY);
@@ -264,7 +264,7 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
             const size = plot.length;
             let totalPlotRevenue = 0;
             if (size >= 4) {
-                const revenuePerTile = 200 + (size - 4) * 50; // Increased bonus
+                const revenuePerTile = 100 + (size - 4) * 20; // Rebalanced bonus
                 totalPlotRevenue = size * revenuePerTile;
                 farmlandRevenue += totalPlotRevenue;
             }
@@ -294,9 +294,9 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
                 const building = buildingDataMap.get(cell);
 
                 if (building && (building.revenueMultiplier || building.isFarmland)) {
-                    const entry = buildingCounts.get(cell) || { count: 0, totalRevenue: 0, totalCost: 0 };
-                    if (!buildingCounts.has(cell)) {
-                        entry.count = 0; // Initialize if not present
+                    let entry = buildingCounts.get(cell);
+                    if (!entry) {
+                         entry = { count: 0, totalRevenue: 0, totalCost: 0 };
                     }
                     entry.count += 1;
 
@@ -319,6 +319,13 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
 
                 if (building && building.isPublicService && building.maintenanceCostPerCitizen) {
                      publicServiceCost += building.maintenanceCostPerCitizen * totalPopulation;
+                     let entry = buildingCounts.get(cell);
+                      if (!entry) {
+                         entry = { count: 0, totalRevenue: 0, totalCost: 0 };
+                      }
+                     entry.count += 1;
+                     entry.totalCost += building.maintenanceCostPerCitizen * totalPopulation;
+                     buildingCounts.set(cell, entry);
                 }
             }
         }
@@ -327,6 +334,10 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
     const totalRevenue = residentialRevenue + commercialRevenue + farmlandRevenue;
 
     const sortedCounts = Array.from(buildingCounts.entries())
+      .filter(([emoji, data]) => {
+          const building = buildingDataMap.get(emoji);
+          return building?.revenueMultiplier || building?.isFarmland
+      })
       .map(([emoji, data]) => ({
           emoji,
           name: buildingDataMap.get(emoji)?.name || 'Unknown',
