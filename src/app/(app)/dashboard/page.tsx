@@ -110,6 +110,7 @@ export default function DashboardPage() {
   const [cityGrid, setCityGrid] = useState<string[][] | null>(null);
   const [cityLoading, setCityLoading] = useState(true);
   const [permanentRoads, setPermanentRoads] = useState<{y: number, x:number}[]>([]);
+  const [permanentRiverEnds, setPermanentRiverEnds] = useState<{y: number, x:number}[]>([]);
   const [selectedTiles, setSelectedTiles] = useState<{y: number, x: number}[]>([]);
   const [tileView, setTileView] = useState<'grid' | 'list'>('grid');
   const [tileSearchTerm, setTileSearchTerm] = useState('');
@@ -186,6 +187,26 @@ export default function DashboardPage() {
     return [];
   };
 
+  const findPermanentRiverEnds = (grid: string[][]): { y: number, x: number }[] => {
+    const height = grid.length;
+    if (height === 0) return [];
+    const width = grid[0].length;
+    if (width === 0) return [];
+    
+    let riverEnds: { y: number, x: number }[] = [];
+
+    // Scan edges for river tiles
+    for (let y = 0; y < height; y++) {
+        if (grid[y][0] === TILES.POND.emoji) riverEnds.push({ y, x: 0 });
+        if (grid[y][width - 1] === TILES.POND.emoji) riverEnds.push({ y, x: width - 1 });
+    }
+    for (let x = 1; x < width - 1; x++) {
+        if (grid[0][x] === TILES.POND.emoji) riverEnds.push({ y: 0, x });
+        if (grid[height - 1][x] === TILES.POND.emoji) riverEnds.push({ y: height - 1, x });
+    }
+    return riverEnds;
+};
+
   const handleGenerateCity = useCallback(async (forceRefresh = false) => {
     if (!user) return;
 
@@ -194,6 +215,7 @@ export default function DashboardPage() {
         if (cachedGrid) {
             setCityGrid(cachedGrid);
             setPermanentRoads(findPermanentRoads(cachedGrid));
+            setPermanentRiverEnds(findPermanentRiverEnds(cachedGrid));
             setCityLoading(false);
             return;
         }
@@ -204,6 +226,7 @@ export default function DashboardPage() {
       const result = await generateCityScape({ points: user.profile.totalPoints || 0 });
       setCityGrid(result.grid);
       setPermanentRoads(findPermanentRoads(result.grid));
+      setPermanentRiverEnds(findPermanentRiverEnds(result.grid));
       saveGridToCache(result.grid);
     } catch (error) {
       console.error(error);
@@ -416,7 +439,7 @@ export default function DashboardPage() {
     }
   }
   
-  const isAdjacentToRoad = (y: number, x: number, grid: string[][]): boolean => {
+  const isAdjacentToTile = (y: number, x: number, grid: string[][], tileEmoji: string): boolean => {
     const neighbors = [
         {dy: -1, dx: 0}, // up
         {dy: 1, dx: 0},  // down
@@ -426,7 +449,7 @@ export default function DashboardPage() {
     for (const {dy, dx} of neighbors) {
         const ny = y + dy;
         const nx = x + dx;
-        if (ny >= 0 && ny < grid.length && nx >= 0 && nx < grid[0].length && grid[ny][nx] === TILES.ROAD.emoji) {
+        if (ny >= 0 && ny < grid.length && nx >= 0 && nx < grid[0].length && grid[ny][nx] === tileEmoji) {
             return true;
         }
     }
@@ -459,6 +482,14 @@ export default function DashboardPage() {
             });
             return;
         }
+        if(permanentRiverEnds.some(pr => pr.x === tile.x && pr.y === tile.y)) {
+            toast({
+                variant: 'destructive',
+                title: 'Cannot Build Here',
+                description: 'The start and end points of a river cannot be removed.',
+            });
+            return;
+        }
     }
 
     // --- Validation Logic ---
@@ -469,12 +500,22 @@ export default function DashboardPage() {
     ];
 
     if (building.emoji === TILES.ROAD.emoji) {
-        const isAnyTileAdjacentToRoad = selectedTiles.some(tile => isAdjacentToRoad(tile.y, tile.x, cityGrid));
+        const isAnyTileAdjacentToRoad = selectedTiles.some(tile => isAdjacentToTile(tile.y, tile.x, cityGrid, TILES.ROAD.emoji));
         if (!isAnyTileAdjacentToRoad) {
             toast({
                 variant: 'destructive',
                 title: 'Invalid Road Placement',
                 description: 'At least one road tile must be connected to an existing road.',
+            });
+            return;
+        }
+    } else if (building.emoji === TILES.POND.emoji) {
+        const isAnyTileAdjacentToWater = selectedTiles.some(tile => isAdjacentToTile(tile.y, tile.x, cityGrid, TILES.POND.emoji));
+        if (!isAnyTileAdjacentToWater) {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid River Placement',
+                description: 'At least one river tile must be connected to an existing river.',
             });
             return;
         }
@@ -511,14 +552,22 @@ export default function DashboardPage() {
         const existingEmoji = cityGrid[tile.y][tile.x];
         const replacedBuilding = allBuildings.find(b => b.emoji === existingEmoji);
 
-        if (replacedBuilding) {
-            if (replacedBuilding.emoji === TILES.ROAD.emoji && (building.name === 'Remove' || building.name === 'Tree')) {
-                 moneyToRefund = replacedBuilding.cost / 2; // Refund half for roads when removing
-            } else if (building.name === 'Remove' || building.name === 'Tree') {
-                moneyToRefund = replacedBuilding.cost; // Full refund for other buildings
+        if (replacedBuilding && (building.name === 'Remove' || building.name === 'Tree')) {
+            if (replacedBuilding.emoji === TILES.ROAD.emoji) {
+                 moneyToRefund = replacedBuilding.cost / 2; // Refund half for roads
+            } else if (replacedBuilding.emoji !== TILES.POND.emoji) {
+                moneyToRefund = replacedBuilding.cost; // Full refund for most buildings
             }
+            // No refund for removing a Pond
         }
-        totalNetCost += (building.cost - moneyToRefund);
+        
+        let placementCost = building.cost;
+        if(existingEmoji === TILES.POND.emoji && building.name === 'Remove') {
+            // Cost to remove a river tile is the same as placing it
+            placementCost = TILES.POND.cost;
+        }
+
+        totalNetCost += (placementCost - moneyToRefund);
     }
     
     if (currentMoney < totalNetCost) {
@@ -801,6 +850,7 @@ export default function DashboardPage() {
                                     const isSelected = selectedTiles.some(t => t.y === y && t.x === x) || (isDragging && y >= yMin && y <= yMax && x >= xMin && x <= xMax);
                                     const highlight = highlightedCells.find(h => h.y === y && h.x === x);
                                     const isPermanentRoad = permanentRoads.some(pr => pr.x === x && pr.y === y);
+                                    const isPermanentRiver = permanentRiverEnds.some(pr => pr.x === x && pr.y === y);
                                     
                                     const tileButton = (
                                         <button 
@@ -813,14 +863,14 @@ export default function DashboardPage() {
                                                 isSelected && 'bg-primary/30 ring-2 ring-primary',
                                                 highlight?.type === 'positive' && 'ring-2 ring-blue-500 bg-blue-500/20',
                                                 highlight?.type === 'negative' && 'ring-2 ring-red-500 bg-red-500/20',
-                                                isPermanentRoad && 'cursor-not-allowed'
+                                                (isPermanentRoad || isPermanentRiver) && 'cursor-not-allowed'
                                             )}
                                             >
                                             <span className={cn(
                                                 highlight?.type === 'area-positive' && 'outline outline-2 outline-blue-500 outline-offset-[-2px] rounded-sm',
                                                 highlight?.type === 'area-negative' && 'outline outline-2 outline-red-500 outline-offset-[-2px] rounded-sm'
                                             )}>{cell}</span>
-                                            {isPermanentRoad && <div className="absolute inset-0 bg-black/30" />}
+                                            {(isPermanentRoad || isPermanentRiver) && <div className="absolute inset-0 bg-black/30" />}
                                         </button>
                                     );
 
@@ -828,6 +878,8 @@ export default function DashboardPage() {
                                     
                                     if (isPermanentRoad) {
                                         tooltipContent = <p className="font-semibold">Main Road (Permanent)</p>;
+                                    } else if(isPermanentRiver) {
+                                        tooltipContent = <p className="font-semibold">River End (Permanent)</p>;
                                     } else if (cityGrid && cityInfo && building?.isResidential) {
                                         const { rating, grade, occupancy } = getCityInfo(user.profile.totalPoints || 0, cityGrid, y, x).tileInfo!;
 
@@ -1263,6 +1315,7 @@ export default function DashboardPage() {
 }
 
     
+
 
 
 
