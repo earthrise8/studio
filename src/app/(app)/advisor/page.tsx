@@ -20,8 +20,8 @@ import { Check, Lightbulb, Loader2, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
-type GoalSuggestion = { description: string, target: number };
-type HealthAdvice = { advice: string, goals: GoalSuggestion[] };
+type GoalSuggestion = { description: string; target: number; points: number; };
+type HealthAdvice = { advice: string; goals: GoalSuggestion[] };
 
 export default function AdvisorPage() {
   const { user } = useAuth();
@@ -139,7 +139,7 @@ export default function AdvisorPage() {
                                     <li key={i} className="flex items-center justify-between gap-2 p-2 rounded-md border">
                                         <div className="flex items-start gap-2">
                                             <Check className="mt-1 h-4 w-4 text-primary" />
-                                            <span>{goal.description} (Target: {goal.target})</span>
+                                            <span>{goal.description} (Target: {goal.target}) - {goal.points} pts</span>
                                         </div>
                                         <Button
                                             size="sm"
