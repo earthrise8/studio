@@ -295,11 +295,13 @@ export default function DashboardPage() {
       let moneyToCollect = 0;
       let gridToUpdate: string[][] | null = null;
       let decayedCount = 0;
+      let daysPassed = 0;
 
       if (lastUpdate) {
         const lastUpdateTime = parseInt(lastUpdate, 10);
-        const hoursPassed = (now - lastUpdateTime) / (1000 * 60 * 60);
-        const daysPassed = Math.floor(hoursPassed / 24);
+        // 1 hour in real time is 1 day in game time
+        const hoursPassed = (now - lastUpdateTime) / (1000 * 60 * 60); 
+        daysPassed = Math.floor(hoursPassed);
 
         if (daysPassed > 0) {
           moneyToCollect = daysPassed * Math.floor(cityInfo.netRevenue);
@@ -308,23 +310,30 @@ export default function DashboardPage() {
           const currentGrid = getCachedGrid();
           if (currentGrid) {
             gridToUpdate = JSON.parse(JSON.stringify(currentGrid));
-            for (let y = 0; y < gridToUpdate.length; y++) {
-                for (let x = 0; x < gridToUpdate[y].length; x++) {
-                    const tile = buildingDataMap.get(gridToUpdate[y][x]);
-                    if (tile?.isFarmland) {
-                        if (!isAdjacentToWater(y, x, gridToUpdate, 3)) {
-                            const leaflessTree = allBuildings.find(b => b.name === 'Leafless Tree');
-                            if(leaflessTree) {
-                                gridToUpdate[y][x] = leaflessTree.emoji;
-                                decayedCount++;
+            // Apply decay for each day that passed
+            for (let day = 0; day < daysPassed; day++) {
+                let dailyDecay = 0;
+                let tempGrid = JSON.parse(JSON.stringify(gridToUpdate)); // Work on a copy for this day's check
+                for (let y = 0; y < tempGrid.length; y++) {
+                    for (let x = 0; x < tempGrid[y].length; x++) {
+                        const tile = buildingDataMap.get(tempGrid[y][x]);
+                        if (tile?.isFarmland) {
+                            if (!isAdjacentToWater(y, x, tempGrid, 3)) {
+                                const leaflessTree = allBuildings.find(b => b.name === 'Leafless Tree');
+                                if(leaflessTree) {
+                                    gridToUpdate![y][x] = leaflessTree.emoji; // Apply decay to the main grid for this loop
+                                    dailyDecay++;
+                                }
                             }
                         }
                     }
                 }
+                decayedCount += dailyDecay;
             }
+
             if (decayedCount > 0) {
               setCityGrid(gridToUpdate);
-              saveGridToCache(gridToUpdate);
+              saveGridToCache(gridToUpdate!);
               toast({
                   variant: 'destructive',
                   title: 'Farmland Withered',
@@ -349,7 +358,7 @@ export default function DashboardPage() {
         localStorage.setItem(lastUpdateKey, now.toString());
         toast({
           title: 'Offline Revenue Collected!',
-          description: `Your city earned $${moneyToCollect.toLocaleString()} while you were away.`,
+          description: `Your city earned $${moneyToCollect.toLocaleString()} while you were away for ${daysPassed} day(s).`,
         });
       } else if (!lastUpdate) {
         localStorage.setItem(lastUpdateKey, now.toString());
@@ -1315,6 +1324,7 @@ export default function DashboardPage() {
 }
 
     
+
 
 
 
