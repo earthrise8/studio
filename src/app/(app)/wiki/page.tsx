@@ -17,6 +17,7 @@ import {
   DollarSign,
   Home,
   Info,
+  Leaf,
   ShieldCheck,
   TrendingDown,
   TrendingUp,
@@ -60,7 +61,7 @@ export default function WikiPage() {
             </CardHeader>
             <CardContent>
               {tier.unlocks.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {tier.unlocks.map((building) => (
                     <Card
                       key={building.name}
@@ -106,8 +107,8 @@ export default function WikiPage() {
                           </div>
                         )}
                         {building.isPublicService && (
-                          <div className="flex items-center gap-2 text-yellow-500">
-                            <ShieldCheck className="h-3 w-3" />
+                          <div className="flex items-start gap-2 text-yellow-600">
+                            <ShieldCheck className="h-3 w-3 mt-0.5" />
                             <span>
                               Public Service: Costs $
                               {building.maintenanceCostPerCitizen} per citizen. Increases rating by +{building.ratingBonus} in a {building.ratingRange}-tile radius.
@@ -115,8 +116,8 @@ export default function WikiPage() {
                           </div>
                         )}
                         {building.ratingBonus && !building.isPublicService && (
-                          <div className="flex items-center gap-2 text-green-500">
-                            <TrendingUp className="h-3 w-3" />
+                          <div className="flex items-start gap-2 text-green-500">
+                            <TrendingUp className="h-3 w-3 mt-0.5" />
                             <span>
                               Amenity: Increases rating by +{building.ratingBonus}{' '}
                               in a {building.ratingRange}-tile radius.
@@ -124,8 +125,8 @@ export default function WikiPage() {
                           </div>
                         )}
                         {building.ratingPenalty && (
-                          <div className="flex items-center gap-2 text-red-500">
-                            <TrendingDown className="h-3 w-3" />
+                          <div className="flex items-start gap-2 text-red-500">
+                            <TrendingDown className="h-3 w-3 mt-0.5" />
                             <span>
                               Nuisance: Decreases rating by{' '}
                               {building.ratingPenalty} in a {building.ratingRange}
@@ -133,14 +134,22 @@ export default function WikiPage() {
                             </span>
                           </div>
                         )}
+                        {(building.ecoBonus || building.ecoPenalty) && (
+                            <div className={`flex items-center gap-2 ${building.ecoBonus ? 'text-green-500' : 'text-red-500'}`}>
+                                <Leaf className="h-3 w-3" />
+                                <span>Eco Score: {building.ecoBonus ? `+${building.ecoBonus}` : `-${building.ecoPenalty}`}</span>
+                            </div>
+                        )}
                         {!building.isResidential &&
                           !building.revenueMultiplier &&
                           !building.isPublicService &&
                           !building.ratingBonus &&
                           !building.ratingPenalty &&
                           !building.isFarmland &&
-                          building.name !== 'Road' &&
-                          building.name !== 'Remove' && (
+                           building.name !== 'Road' &&
+                          building.name !== 'Remove' &&
+                          !building.ecoBonus &&
+                          !building.ecoPenalty && (
                             <div className="flex items-center gap-2">
                               <Info className="h-3 w-3" />
                               <span>Decorative or special-purpose tile.</span>
