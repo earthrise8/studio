@@ -8,14 +8,15 @@ export const TILES = {
   MOUNTAIN: { emoji: '⛰️', name: 'Mountain', cost: 0, ecoBonus: 2 },
   FARMLAND: { emoji: '🌾', name: 'Farmland', cost: 200, isFarmland: true, ecoBonus: 0.5 },
   FACTORY: { emoji: '🏭', name: 'Factory', cost: 25000, ratingPenalty: -15, ratingRange: 5, revenueMultiplier: 5, ecoPenalty: 20 },
-  STATION: { emoji: '🚉', name: 'Train Station', cost: 1500, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 20, ratingRange: 15, serviceType: 'transport', ecoPenalty: 3 },
+  STATION: { emoji: '🚉', name: 'Train Station', cost: 1000, isPublicService: true, maintenanceCostPerCitizen: 0.1, ratingBonus: 20, ratingRange: 15, serviceType: 'transport', ecoPenalty: 3 },
   AIRPORT: { emoji: '✈️', name: 'Airport', cost: 80000, ratingPenalty: -20, ratingRange: 7, revenueMultiplier: 10, ecoPenalty: 50 },
-  GRAVEYARD: { emoji: '🪦', name: 'Graveyard', cost: 1000, isPublicService: true, maintenanceCostPerCitizen: 0.02, ratingPenalty: -5, ratingRange: 4, serviceType: 'cemetery' },
-  POLICE: { emoji: '🚓', name: 'Police Department', cost: 1500, isPublicService: true, maintenanceCostPerCitizen: 0.25, ratingBonus: 25, ratingRange: 15, serviceType: 'police', ecoPenalty: 2 },
-  FIRE: { emoji: '🚒', name: 'Fire Department', cost: 1500, isPublicService: true, maintenanceCostPerCitizen: 0.25, ratingBonus: 25, ratingRange: 15, serviceType: 'fire', ecoPenalty: 2 },
-  SCHOOL: { emoji: '🏫', name: 'School', cost: 2000, isPublicService: true, maintenanceCostPerCitizen: 0.2, ratingBonus: 20, ratingRange: 15, serviceType: 'education', ecoPenalty: 1 },
-  HOSPITAL: { emoji: '🏥', name: 'Hospital', cost: 2500, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 20, ratingRange: 15, serviceType: 'health', ecoPenalty: 2 },
-
+  GRAVEYARD: { emoji: '🪦', name: 'Graveyard', cost: 500, isPublicService: true, maintenanceCostPerCitizen: 0.02, ratingPenalty: -5, ratingRange: 4, serviceType: 'cemetery' },
+  POLICE: { emoji: '🚓', name: 'Police Department', cost: 750, isPublicService: true, maintenanceCostPerCitizen: 0.25, ratingBonus: 25, ratingRange: 15, serviceType: 'police', ecoPenalty: 2 },
+  FIRE: { emoji: '🚒', name: 'Fire Department', cost: 750, isPublicService: true, maintenanceCostPerCitizen: 0.25, ratingBonus: 25, ratingRange: 15, serviceType: 'fire', ecoPenalty: 2 },
+  SCHOOL: { emoji: '🏫', name: 'School', cost: 1000, isPublicService: true, maintenanceCostPerCitizen: 0.2, ratingBonus: 20, ratingRange: 15, serviceType: 'education', ecoPenalty: 1 },
+  HOSPITAL: { emoji: '🏥', name: 'Hospital', cost: 1250, isPublicService: true, maintenanceCostPerCitizen: 0.3, ratingBonus: 20, ratingRange: 15, serviceType: 'health', ecoPenalty: 2 },
+  'POST OFFICE': { emoji: '🏣', name: 'Post Office', cost: 500, isPublicService: true, maintenanceCostPerCitizen: 0.05, ratingBonus: 5, ratingRange: 8, serviceType: 'communication', ecoPenalty: 1 },
+  
   SETTLEMENT: [
     { emoji: '⛺', name: 'Tent', cost: 100, defaultPopulation: 1, maxPopulation: 2, isResidential: true },
     { emoji: '🌳', name: 'Big Tree', cost: 50, ecoBonus: 2 },
@@ -28,7 +29,6 @@ export const TILES = {
   ],
   VILLAGE: [
     { emoji: '🏪', name: 'Convenience Store', cost: 1000, ratingBonus: 5, ratingRange: 2, revenueMultiplier: 0.5, ecoPenalty: 1 },
-    { emoji: '🏣', name: 'Post Office', cost: 1000, isPublicService: true, maintenanceCostPerCitizen: 0.05, ratingBonus: 5, ratingRange: 8, serviceType: 'communication', ecoPenalty: 1 },
   ],
   GRAND_VILLAGE: [
     { emoji: '🏡', name: 'House', cost: 5000, defaultPopulation: 2, maxPopulation: 5, isResidential: true, ecoPenalty: 0.5 },
@@ -82,8 +82,8 @@ export const TILES = {
 
 export const getBuildingSet = (points: number) => {
   let available = [TILES.ROAD, TILES.GRASS, TILES.EMPTY, TILES.POND, ...TILES.SETTLEMENT];
-  if (points >= 0) available.push(TILES.FARMLAND, TILES.POLICE, TILES.FIRE, TILES.HOSPITAL, TILES.SCHOOL, TILES.GRAVEYARD)
-  if (points >= 100) available.push(...TILES.VILLAGE, TILES.STATION);
+  if (points >= 0) available.push(TILES.FARMLAND, TILES.POLICE, TILES.FIRE, TILES.HOSPITAL, TILES.SCHOOL, TILES.GRAVEYARD, TILES['POST OFFICE'], TILES.STATION)
+  if (points >= 100) available.push(...TILES.VILLAGE);
   if (points >= 200) available.push();
   if (points >= 300) available.push(...TILES.GRAND_VILLAGE);
   if (points >= 400) available.push(...TILES.TOWN);
@@ -264,7 +264,7 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
             const size = plot.length;
             let totalPlotRevenue = 0;
             if (size >= 4) {
-                const revenuePerTile = 100 + (size - 4) * 20; // Rebalanced bonus
+                const revenuePerTile = 50 + (size - 4) * 10;
                 totalPlotRevenue = size * revenuePerTile;
                 farmlandRevenue += totalPlotRevenue;
             }
@@ -293,10 +293,10 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
                 const cell = cityGrid[y][x];
                 const building = buildingDataMap.get(cell);
 
-                if (building && (building.revenueMultiplier || building.isFarmland)) {
-                    let entry = buildingCounts.get(cell);
+                let entry = buildingCounts.get(cell);
+                if (building) {
                     if (!entry) {
-                         entry = { count: 0, totalRevenue: 0, totalCost: 0 };
+                        entry = { count: 0, totalRevenue: 0, totalCost: 0 };
                     }
                     entry.count += 1;
 
@@ -314,17 +314,11 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
                         }
                     }
                     
-                    buildingCounts.set(cell, entry);
-                }
+                    if (building.isPublicService && building.maintenanceCostPerCitizen) {
+                        publicServiceCost += building.maintenanceCostPerCitizen * totalPopulation;
+                        entry.totalCost += building.maintenanceCostPerCitizen * totalPopulation;
+                    }
 
-                if (building && building.isPublicService && building.maintenanceCostPerCitizen) {
-                     publicServiceCost += building.maintenanceCostPerCitizen * totalPopulation;
-                     let entry = buildingCounts.get(cell);
-                      if (!entry) {
-                         entry = { count: 0, totalRevenue: 0, totalCost: 0 };
-                      }
-                     entry.count += 1;
-                     entry.totalCost += building.maintenanceCostPerCitizen * totalPopulation;
                      buildingCounts.set(cell, entry);
                 }
             }
@@ -333,17 +327,18 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
     const residentialRevenue = totalPopulation * 10;
     const totalRevenue = residentialRevenue + commercialRevenue + farmlandRevenue;
 
+    const ecoBonusMultiplier = ecoScore / 500; // e.g., 50 eco score = 10% bonus
+    const ecoBonus = totalRevenue * ecoBonusMultiplier;
+
+    const netRevenue = totalRevenue + ecoBonus - publicServiceCost;
+
     const sortedCounts = Array.from(buildingCounts.entries())
-      .filter(([emoji, data]) => {
-          const building = buildingDataMap.get(emoji);
-          return building?.revenueMultiplier || building?.isFarmland
-      })
       .map(([emoji, data]) => ({
           emoji,
           name: buildingDataMap.get(emoji)?.name || 'Unknown',
           ...data
       }))
-      .sort((a,b) => b.count - a.count);
+      .sort((a,b) => (b.totalRevenue - b.totalCost) - (a.totalRevenue - a.totalCost));
 
     let tileInfo = null;
     if (tileY !== undefined && tileX !== undefined && cityGrid) {
@@ -362,10 +357,11 @@ export const getCityInfo = (points: number, cityGrid: string[][] | null, tileY?:
             population: totalPopulation,
             totalRevenue: totalRevenue,
             totalCost: publicServiceCost,
-            netRevenue: totalRevenue - publicServiceCost,
+            netRevenue: netRevenue,
             nextUpgrade: tier.next,
             farmlandPlots,
             ecoScore,
+            ecoBonus,
         },
         buildingCounts: sortedCounts,
         tileInfo,

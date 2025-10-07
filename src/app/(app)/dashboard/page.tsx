@@ -1087,7 +1087,7 @@ export default function DashboardPage() {
                       )}
                   </CardContent>
                   
-                {buildingCounts && buildingCounts.length > 0 && (
+                {buildingCounts && cityInfo && (
                 <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="item-1" className='border-t'>
                         <AccordionTrigger className='p-6 font-headline text-lg'>
@@ -1112,6 +1112,17 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
                                 ))}
+                                <div className='flex justify-between items-center text-sm pt-2 border-t'>
+                                    <span className='flex items-center gap-2'>
+                                      <Leaf className='h-4 w-4' />
+                                      <span>Eco Bonus/Penalty</span>
+                                    </span>
+                                     <div className="text-right">
+                                        <p className={cn("text-sm font-bold", cityInfo.ecoBonus >= 0 ? "text-green-500" : "text-red-500")}>
+                                            ${Math.floor(cityInfo.ecoBonus).toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </AccordionContent>
                     </AccordionItem>
@@ -1324,6 +1335,7 @@ export default function DashboardPage() {
 }
 
     
+
 
 
 
