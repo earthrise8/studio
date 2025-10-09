@@ -254,8 +254,11 @@ export default function AiRecipesPage() {
                 <DialogContent className="max-w-4xl">
                     {previewLoading ? (
                          <div className="flex flex-col items-center justify-center h-96">
-                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                            <p className="mt-4 text-muted-foreground">Generating full recipe...</p>
+                            <DialogHeader>
+                                <DialogTitle>Generating Full Recipe...</DialogTitle>
+                            </DialogHeader>
+                            <Loader2 className="h-12 w-12 animate-spin text-primary mt-8" />
+                            <p className="mt-4 text-muted-foreground">Please wait a moment.</p>
                         </div>
                     ) : previewRecipe ? (
                         <>
@@ -308,7 +311,10 @@ export default function AiRecipesPage() {
                         </>
                     ) : (
                         <div className="flex flex-col items-center justify-center h-96">
-                            <p className="text-muted-foreground">Could not load recipe preview.</p>
+                            <DialogHeader>
+                                <DialogTitle>Error</DialogTitle>
+                                <DialogDescription>Could not load recipe preview.</DialogDescription>
+                            </DialogHeader>
                         </div>
                     )}
                 </DialogContent>
