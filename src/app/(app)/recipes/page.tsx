@@ -411,11 +411,11 @@ export default function RecipesPage() {
                   </div>
                   <div>
                     <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
-                    <div className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: recipe.ingredients }}></div>
+                    <div className="text-sm whitespace-pre-wrap">{recipe.ingredients}</div>
                   </div>
                   <div>
                     <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
-                    <div className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: recipe.instructions }}></div>
+                    <div className="text-sm whitespace-pre-wrap">{recipe.instructions}</div>
                   </div>
                 </div>
                 <DialogFooter>
@@ -446,5 +446,3 @@ export default function RecipesPage() {
     </main>
   );
 }
-
-    
