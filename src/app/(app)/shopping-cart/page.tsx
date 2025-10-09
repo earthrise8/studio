@@ -55,7 +55,7 @@ import {
 } from '@/lib/data';
 import type { ShoppingCartItem, Store } from '@/lib/types';
 import { PlusCircle, Trash2, Edit, Loader2, Star, ShoppingCart } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -212,6 +212,7 @@ export default function ShoppingCartPage() {
   const { toast } = useToast();
   const [items, setItems] = useState<ShoppingCartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [storeFilter, setStoreFilter] = useState<Store | 'All'>('All');
 
   const fetchItems = useCallback(() => {
     if (user) {
@@ -248,7 +249,13 @@ export default function ShoppingCartPage() {
     }
   };
 
-  const totalCost = items.reduce((acc, item) => acc + item.price, 0);
+  const filteredItems = useMemo(() => {
+    if (storeFilter === 'All') return items;
+    return items.filter(item => item.store === storeFilter);
+  }, [items, storeFilter]);
+
+  const totalCost = filteredItems.reduce((acc, item) => acc + item.price, 0);
+  const allStores: (Store | 'All')[] = ['All', ...STORES];
 
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -267,17 +274,33 @@ export default function ShoppingCartPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Grocery List</CardTitle>
-          <CardDescription>
-            Manage items you plan to buy. Total estimated cost: ${totalCost.toFixed(2)}
-          </CardDescription>
+          <div className="flex flex-col md:flex-row gap-4 justify-between">
+            <div>
+              <CardTitle>Your Grocery List</CardTitle>
+              <CardDescription>
+                Manage items you plan to buy. Total estimated cost: ${totalCost.toFixed(2)}
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-2">
+                {allStores.map(store => (
+                    <Button 
+                        key={store} 
+                        variant={storeFilter === store ? 'default' : 'outline'}
+                        onClick={() => setStoreFilter(store)}
+                        size="sm"
+                    >
+                        {store}
+                    </Button>
+                ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="space-y-2">
               {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
-          ) : items.length > 0 ? (
+          ) : filteredItems.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -290,7 +313,7 @@ export default function ShoppingCartPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item) => (
+                {filteredItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{item.store}</TableCell>
@@ -347,7 +370,7 @@ export default function ShoppingCartPage() {
               <ShoppingCart className="h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 font-semibold">Your shopping cart is empty</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Click "Add Item" to start building your grocery list.
+                {storeFilter === 'All' ? 'Click "Add Item" to start building your grocery list.' : `No items found for "${storeFilter}".`}
               </p>
             </div>
           )}
@@ -356,3 +379,5 @@ export default function ShoppingCartPage() {
     </main>
   );
 }
+
+    
