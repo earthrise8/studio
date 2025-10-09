@@ -396,7 +396,7 @@ export default function RecipesPage() {
                   </CardContent>
                 </Card>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-4xl">
                 <DialogHeader>
                   <DialogTitle className="font-headline text-2xl flex items-center gap-4">
                     <span>{recipe.emoji}</span>
@@ -409,13 +409,15 @@ export default function RecipesPage() {
                     {recipe.cookTime && <span>Cook: {recipe.cookTime}</span>}
                     {recipe.totalTime && <span>Total: {recipe.totalTime}</span>}
                   </div>
-                  <div>
-                    <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
-                    <div className="text-sm whitespace-pre-wrap">{recipe.ingredients}</div>
-                  </div>
-                  <div>
-                    <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
-                    <div className="text-sm whitespace-pre-wrap">{recipe.instructions}</div>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div>
+                      <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
+                      <div className="text-sm whitespace-pre-wrap">{recipe.ingredients}</div>
+                    </div>
+                    <div>
+                      <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
+                      <div className="text-sm whitespace-pre-wrap">{recipe.instructions}</div>
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>
