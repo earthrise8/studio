@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -44,7 +45,9 @@ const prompt = ai.definePrompt({
 
 Request: {{{prompt}}}
 
-Generate a recipe with a name, a single emoji, a short description, a markdown list of ingredients, and step-by-step instructions formatted as a numbered markdown list.
+Generate a recipe with a name, a single emoji, and a short description.
+Format the ingredients as a markdown list, with each ingredient on its own line.
+Format the step-by-step instructions as a numbered markdown list, with each step on its own line.
 Also provide the prep time, cook time, and total time if applicable.
 Finally, provide an estimation for the nutritional information per serving: calories, protein, carbs, and fat.
 Ensure the output is well-formatted and easy to read.

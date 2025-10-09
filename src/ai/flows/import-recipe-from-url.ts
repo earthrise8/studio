@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -43,11 +44,13 @@ const prompt = ai.definePrompt({
 
 URL: {{{url}}}
 
-Extract the name, ingredients as a markdown list, and instructions as a numbered markdown list.
-Also include prep time, cook time, total time, a short description, and an estimation for the nutritional information per serving (calories, protein, carbs, and fat) if available.
+Extract the name, a short description, and nutritional information if available.
+Format the ingredients as a markdown list, with each ingredient on its own line.
+Format the instructions as a numbered markdown list, with each step on its own line.
+Also include prep time, cook time, and total time if available.
 
 Ensure the output is well-formatted and easy to read.
-If prep time, cook time, total time, or nutritional information are not found, leave them blank.
+If any fields are not found, leave them blank.
 `,
 });
 
