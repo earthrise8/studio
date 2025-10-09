@@ -29,6 +29,7 @@ import {
   Loader2,
   Building,
   Library,
+  ShoppingCart,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-provider';
 import { usePathname, useRouter } from 'next/navigation';
@@ -46,6 +47,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/pantry', label: 'Pantry', icon: Warehouse },
+    { href: '/shopping-cart', label: 'Shopping Cart', icon: ShoppingCart },
     { href: '/logs', label: 'Daily Logs', icon: BookOpenCheck },
     { href: '/recipes', label: 'My Recipes', icon: ChefHat },
     { href: '/ai-recipes', label: 'AI Recipes', icon: Sparkles },

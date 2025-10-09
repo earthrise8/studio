@@ -11,6 +11,8 @@ import type {
   User,
   UserProfile,
   Friend,
+  ShoppingCartItem,
+  Store,
 } from '@/lib/types';
 import { addDays, formatISO, subDays } from 'date-fns';
 
@@ -162,6 +164,14 @@ const initialFriends: Record<string, Friend[]> = {
     ]
 }
 
+const initialShoppingCart: Record<string, ShoppingCartItem[]> = {
+    'user123': [
+        { id: 'sc1', name: 'Organic Apples', dateAdded: subDays(today, 1).toISOString(), store: 'Whole Foods', price: 3.99, healthRating: 5 },
+        { id: 'sc2', name: 'Almond Milk', dateAdded: subDays(today, 2).toISOString(), store: 'Trader Joe\'s', price: 2.99, healthRating: 4 },
+        { id: 'sc3', name: 'Whole Wheat Bread', dateAdded: subDays(today, 1).toISOString(), store: 'Walmart', price: 2.50, healthRating: 3 },
+    ]
+};
+
 
 // --- Data Access Functions using localStorage ---
 
@@ -173,6 +183,8 @@ export const resetUserData = (userId: string) => {
     let recipes = getFromStorage('MOCK_RECIPES', initialRecipes);
     let goals = getFromStorage('MOCK_GOALS', initialGoals);
     let awards = getFromStorage('MOCK_AWARDS', initialAwards);
+    let shoppingCart = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
+
 
     users[userId] = JSON.parse(JSON.stringify(initialUsers[userId]));
     pantry[userId] = JSON.parse(JSON.stringify(initialPantry[userId]));
@@ -181,6 +193,7 @@ export const resetUserData = (userId: string) => {
     recipes[userId] = JSON.parse(JSON.stringify(initialRecipes[userId]));
     goals[userId] = JSON.parse(JSON.stringify(initialGoals[userId]));
     awards[userId] = JSON.parse(JSON.stringify(initialAwards[userId]));
+    shoppingCart[userId] = JSON.parse(JSON.stringify(initialShoppingCart[userId]));
 
     saveToStorage('MOCK_USERS', users);
     saveToStorage('MOCK_PANTRY', pantry);
@@ -189,6 +202,7 @@ export const resetUserData = (userId: string) => {
     saveToStorage('MOCK_RECIPES', recipes);
     saveToStorage('MOCK_GOALS', goals);
     saveToStorage('MOCK_AWARDS', awards);
+    saveToStorage('MOCK_SHOPPING_CART', shoppingCart);
 
     // Also clear any cached city grids and game state
     Object.keys(localStorage).forEach(key => {
@@ -507,7 +521,45 @@ export const getFriends = async (userId: string): Promise<Friend[]> => {
     return (MOCK_FRIENDS[userId] || []).sort((a,b) => b.weeklyPoints - a.weeklyPoints);
 }
 
-    
+// Shopping Cart Functions
+export const getShoppingCartItems = async (userId: string): Promise<ShoppingCartItem[]> => {
+    const MOCK_SHOPPING_CART = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
+    return MOCK_SHOPPING_CART[userId] || [];
+};
 
+export const addShoppingCartItem = async (userId: string, itemData: Omit<ShoppingCartItem, 'id' | 'dateAdded'>): Promise<ShoppingCartItem> => {
+    let MOCK_SHOPPING_CART = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
+    if (!MOCK_SHOPPING_CART[userId]) MOCK_SHOPPING_CART[userId] = [];
     
+    const newItem: ShoppingCartItem = {
+        ...itemData,
+        id: `sc${Date.now()}`,
+        dateAdded: new Date().toISOString(),
+    };
+    MOCK_SHOPPING_CART[userId].unshift(newItem);
+    saveToStorage('MOCK_SHOPPING_CART', MOCK_SHOPPING_CART);
+    return newItem;
+};
 
+export const updateShoppingCartItem = async (userId: string, itemId: string, updatedData: Partial<ShoppingCartItem>): Promise<ShoppingCartItem> => {
+    let MOCK_SHOPPING_CART = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
+    const userItems = MOCK_SHOPPING_CART[userId];
+    if (!userItems) throw new Error("User shopping cart not found");
+
+    const itemIndex = userItems.findIndex(item => item.id === itemId);
+    if (itemIndex !== -1) {
+        userItems[itemIndex] = { ...userItems[itemIndex], ...updatedData };
+        saveToStorage('MOCK_SHOPPING_CART', MOCK_SHOPPING_CART);
+        return userItems[itemIndex];
+    }
+    throw new Error("Shopping cart item not found");
+};
+
+export const deleteShoppingCartItem = async (userId: string, itemId: string): Promise<void> => {
+    let MOCK_SHOPPING_CART = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
+    if (MOCK_SHOPPING_CART[userId]) {
+        MOCK_SHOPPING_CART[userId] = MOCK_SHOPPING_CART[userId].filter(item => item.id !== itemId);
+        saveToStorage('MOCK_SHOPPING_CART', MOCK_SHOPPING_CART);
+    }
+};
+    
