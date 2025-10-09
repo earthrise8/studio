@@ -11,19 +11,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { PantryItem, Recipe } from '@/lib/types';
-import { Flame, CookingPot, ChefHat, Sparkles, Loader2, Bookmark } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Flame, CookingPot, ChefHat, Sparkles, Loader2, Bookmark, Info } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 
 type RecipeIdea = {
     name: string;
     description: string;
     emoji: string;
 }
+
+type FullRecipe = Recipe & { id?: string };
 
 export default function AiRecipesPage() {
     const { user } = useAuth();
@@ -35,6 +38,10 @@ export default function AiRecipesPage() {
     const [loading, setLoading] = useState(false);
     const [savingRecipe, setSavingRecipe] = useState<string | null>(null);
     const [userPrompt, setUserPrompt] = useState('');
+
+    const [selectedIdea, setSelectedIdea] = useState<RecipeIdea | null>(null);
+    const [previewRecipe, setPreviewRecipe] = useState<FullRecipe | null>(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
 
     useEffect(() => {
         if(user) {
@@ -69,18 +76,38 @@ export default function AiRecipesPage() {
             setLoading(false);
         }
     }
-
-    const handleSaveRecipe = async (idea: RecipeIdea) => {
-        if(!user) return;
-        setSavingRecipe(idea.name);
+    
+    const handlePreviewRecipe = async (idea: RecipeIdea) => {
+        setSelectedIdea(idea);
+        setPreviewLoading(true);
         try {
             const fullRecipe = await generateRecipe({ prompt: `a detailed recipe for "${idea.name}" that is easy to follow` });
-            await addRecipe(user.id, fullRecipe);
+            setPreviewRecipe(fullRecipe);
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Preview Failed',
+                description: 'Could not generate the full recipe preview.',
+            });
+            setSelectedIdea(null);
+        } finally {
+            setPreviewLoading(false);
+        }
+    }
+
+    const handleSaveRecipe = async () => {
+        if(!user || !previewRecipe) return;
+        setSavingRecipe(previewRecipe.name);
+        try {
+            await addRecipe(user.id, previewRecipe);
             toast({
                 title: 'Recipe Saved!',
-                description: `"${fullRecipe.name}" has been added to your recipes.`,
+                description: `"${previewRecipe.name}" has been added to your recipes.`,
                 action: <Button asChild variant="secondary"><Link href="/recipes">View Recipes</Link></Button>
             });
+            // Close dialog after saving
+            setSelectedIdea(null); 
+            setPreviewRecipe(null);
         } catch (error) {
             toast({
                 variant: 'destructive',
@@ -93,6 +120,27 @@ export default function AiRecipesPage() {
     }
     
     const expiringItems = pantryItems.filter(item => item.daysUntilExpiry <= 7);
+    
+    const ingredientsNeeded = useMemo(() => {
+        if (!previewRecipe) return { needed: 0, newIngredients: [] };
+        
+        const pantryItemNames = new Set(pantryItems.map(i => i.name.toLowerCase()));
+        
+        const requiredIngredients = previewRecipe.ingredients
+            .split('\n')
+            .map(line => line.replace(/^-/,'').trim().toLowerCase())
+            .filter(Boolean);
+
+        const newIngredients = requiredIngredients.filter(req => {
+            return !Array.from(pantryItemNames).some(pantryItem => req.includes(pantryItem));
+        });
+
+        return {
+            needed: newIngredients.length,
+            newIngredients,
+        };
+    }, [previewRecipe, pantryItems]);
+
 
     return (
         <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -175,7 +223,7 @@ export default function AiRecipesPage() {
                                 {recipeIdeas.length > 0 && (
                                     <div className="grid gap-4 md:grid-cols-2">
                                         {recipeIdeas.map((idea) => (
-                                            <Card key={idea.name}>
+                                            <Card key={idea.name} onClick={() => handlePreviewRecipe(idea)} className="cursor-pointer hover:shadow-lg transition-shadow">
                                                 <CardHeader>
                                                     <CardTitle className="flex items-start gap-3">
                                                         <span className="text-2xl pt-1">{idea.emoji}</span>
@@ -185,20 +233,6 @@ export default function AiRecipesPage() {
                                                 <CardContent>
                                                     <p className="text-sm text-muted-foreground">{idea.description}</p>
                                                 </CardContent>
-                                                <CardFooter>
-                                                    <Button 
-                                                        size="sm" 
-                                                        onClick={() => handleSaveRecipe(idea)}
-                                                        disabled={savingRecipe === idea.name}
-                                                    >
-                                                        {savingRecipe === idea.name ? (
-                                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                        ) : (
-                                                            <Bookmark className="mr-2 h-4 w-4" />
-                                                        )}
-                                                        Save Full Recipe
-                                                    </Button>
-                                                </CardFooter>
                                             </Card>
                                         ))}
                                     </div>
@@ -215,6 +249,70 @@ export default function AiRecipesPage() {
                     </Card>
                 </div>
             </div>
+
+             <Dialog open={!!selectedIdea} onOpenChange={(isOpen) => { if (!isOpen) { setSelectedIdea(null); setPreviewRecipe(null); } }}>
+                <DialogContent className="max-w-4xl">
+                    {previewLoading ? (
+                         <div className="flex flex-col items-center justify-center h-96">
+                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                            <p className="mt-4 text-muted-foreground">Generating full recipe...</p>
+                        </div>
+                    ) : previewRecipe ? (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle className="font-headline text-2xl flex items-center gap-4">
+                                <span>{previewRecipe.emoji}</span>
+                                <span>{previewRecipe.name}</span>
+                                </DialogTitle>
+                                <DialogDescription>{previewRecipe.description}</DialogDescription>
+                            </DialogHeader>
+                            <div className="max-h-[60vh] overflow-y-auto pr-4 space-y-4">
+                                <Alert>
+                                    <Info className="h-4 w-4" />
+                                    <AlertTitle>New Ingredients Needed: {ingredientsNeeded.needed}</AlertTitle>
+                                    <AlertDescription>
+                                        {ingredientsNeeded.needed > 0
+                                        ? `You may need to buy these: ${ingredientsNeeded.newIngredients.join(', ')}`
+                                        : "You have all the core ingredients in your pantry!"}
+                                    </AlertDescription>
+                                </Alert>
+                                <div className="flex gap-4 text-sm text-muted-foreground">
+                                    {previewRecipe.prepTime && <span>Prep: {previewRecipe.prepTime}</span>}
+                                    {previewRecipe.cookTime && <span>Cook: {previewRecipe.cookTime}</span>}
+                                    {previewRecipe.totalTime && <span>Total: {previewRecipe.totalTime}</span>}
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div>
+                                    <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
+                                    <div className="text-sm whitespace-pre-wrap">{previewRecipe.ingredients}</div>
+                                    </div>
+                                    <div>
+                                    <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
+                                    <div className="text-sm whitespace-pre-wrap">{previewRecipe.instructions}</div>
+                                    </div>
+                                </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button 
+                                        onClick={handleSaveRecipe}
+                                        disabled={savingRecipe === previewRecipe.name}
+                                    >
+                                        {savingRecipe === previewRecipe.name ? (
+                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Bookmark className="mr-2 h-4 w-4" />
+                                        )}
+                                        Save Full Recipe
+                                    </Button>
+                                </DialogFooter>
+                        </>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-96">
+                            <p className="text-muted-foreground">Could not load recipe preview.</p>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </main>
     )
 }
