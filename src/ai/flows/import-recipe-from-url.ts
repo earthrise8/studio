@@ -45,8 +45,8 @@ const prompt = ai.definePrompt({
 URL: {{{url}}}
 
 Extract the name, a short description, and nutritional information if available.
-Format the ingredients as a markdown list, with each ingredient on its own line.
-Format the instructions as a numbered markdown list, with each step on its own line.
+Format the ingredients as a markdown list, with each ingredient on its own line (e.g., "- 1 cup flour\n- 2 eggs").
+Format the instructions as a numbered markdown list, with each step on its own line (e.g., "1. Preheat oven.\n2. Mix ingredients.").
 Also include prep time, cook time, and total time if available.
 
 Ensure the output is well-formatted and easy to read.
@@ -65,3 +65,5 @@ const importRecipeFromUrlFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

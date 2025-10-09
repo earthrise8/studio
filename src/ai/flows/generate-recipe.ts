@@ -46,8 +46,8 @@ const prompt = ai.definePrompt({
 Request: {{{prompt}}}
 
 Generate a recipe with a name, a single emoji, and a short description.
-Format the ingredients as a markdown list, with each ingredient on its own line.
-Format the step-by-step instructions as a numbered markdown list, with each step on its own line.
+Format the ingredients as a markdown list, with each ingredient on its own line (e.g., "- 1 cup flour\n- 2 eggs").
+Format the step-by-step instructions as a numbered markdown list, with each step on its own line (e.g., "1. Preheat oven.\n2. Mix ingredients.").
 Also provide the prep time, cook time, and total time if applicable.
 Finally, provide an estimation for the nutritional information per serving: calories, protein, carbs, and fat.
 Ensure the output is well-formatted and easy to read.
@@ -65,3 +65,5 @@ const generateRecipeFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    
