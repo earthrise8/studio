@@ -25,6 +25,7 @@ const ImportRecipeFromUrlOutputSchema = z.object({
   cookTime: z.string().optional().describe('The cooking time for the recipe.'),
   totalTime: z.string().optional().describe('The total time for the recipe.'),
   description: z.string().optional().describe('A short description of the recipe.'),
+  servings: z.coerce.number().optional().describe('The number of servings this recipe makes.'),
   calories: z.coerce.number().optional().describe('Estimated calories per serving.'),
   protein: z.coerce.number().optional().describe('Estimated protein (grams) per serving.'),
   carbs: z.coerce.number().optional().describe('Estimated carbohydrates (grams) per serving.'),
@@ -44,7 +45,8 @@ const prompt = ai.definePrompt({
 
 URL: {{{url}}}
 
-Extract the name, a short description, and nutritional information if available.
+Extract the name, a short description, and nutritional information per serving if available.
+Also extract the number of servings the recipe makes.
 Format the ingredients as a markdown list, with each ingredient on its own line (e.g., "- 1 cup flour\n- 2 eggs").
 Format the instructions as a numbered markdown list, with each step on its own line (e.g., "1. Preheat oven.\n2. Mix ingredients.").
 Also include prep time, cook time, and total time if available.

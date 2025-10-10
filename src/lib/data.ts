@@ -132,6 +132,7 @@ const initialRecipes: Record<string, Recipe[]> = {
       prepTime: '15 min',
       cookTime: '45 min',
       totalTime: '1 hour',
+      servings: 4,
       emoji: '🍲',
       calories: 350,
       protein: 30,

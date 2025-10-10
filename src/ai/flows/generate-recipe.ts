@@ -19,13 +19,14 @@ export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;
 
 const GenerateRecipeOutputSchema = z.object({
   name: z.string().describe('The name of the recipe.'),
-  ingredients: z.string().describe('The ingredients required for the recipe, formatted as a markdown list.'),
-  instructions: z.string().describe('The step-by-step instructions for preparing the recipe, formatted as a numbered list.'),
+  ingredients: z.string().describe('The ingredients required for the recipe, formatted as a markdown list, with each ingredient on a new line starting with "-".'),
+  instructions: z.string().describe('The step-by-step instructions for preparing the recipe, formatted as a numbered list, with each step on its own line starting with a number and a period (e.g., "1. ...").'),
   prepTime: z.string().optional().describe('The preparation time for the recipe (e.g., "15 min").'),
   cookTime: z.string().optional().describe('The cooking time for the recipe (e.g., "30 min").'),
   totalTime: z.string().optional().describe('The total time for the recipe (e.g., "45 min").'),
   description: z.string().optional().describe('A short, appetizing description of the recipe.'),
   emoji: z.string().describe('A single emoji that represents the recipe.'),
+  servings: z.coerce.number().optional().describe('The number of servings this recipe makes.'),
   calories: z.coerce.number().optional().describe('Estimated calories per serving.'),
   protein: z.coerce.number().optional().describe('Estimated protein (grams) per serving.'),
   carbs: z.coerce.number().optional().describe('Estimated carbohydrates (grams) per serving.'),
@@ -49,7 +50,7 @@ Generate a recipe with a name, a single emoji, and a short description.
 Format the ingredients as a markdown list, with each ingredient on its own line (e.g., "- 1 cup flour\n- 2 eggs").
 Format the step-by-step instructions as a numbered markdown list, with each step on its own line (e.g., "1. Preheat oven.\n2. Mix ingredients.").
 Also provide the prep time, cook time, and total time if applicable.
-Finally, provide an estimation for the nutritional information per serving: calories, protein, carbs, and fat.
+Finally, provide the number of servings this recipe makes, and an estimation for the nutritional information per serving: calories, protein, carbs, and fat.
 Ensure the output is well-formatted and easy to read.
 `,
 });

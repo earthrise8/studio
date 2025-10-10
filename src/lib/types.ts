@@ -64,6 +64,7 @@ export type Recipe = {
   prepTime?: string;
   cookTime?: string;
   totalTime?: string;
+  servings?: number;
   emoji: string;
   calories?: number;
   protein?: number;

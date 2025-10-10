@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { getRecipes, deleteRecipe, addRecipe, getPantryItems, updateRecipe } from '@/lib/data';
 import type { Recipe, PantryItem } from '@/lib/types';
-import { ChefHat, Trash2, Search, PlusCircle, Loader2, Sparkles, CookingPot, Flame, Bookmark, Info, Star } from 'lucide-react';
+import { ChefHat, Trash2, Search, PlusCircle, Loader2, Sparkles, CookingPot, Flame, Bookmark, Info, Star, Clock, Users } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import Link from 'next/link';
@@ -49,6 +49,7 @@ import { differenceInDays } from 'date-fns';
 import { generatePantryRecipes } from '@/ai/flows/generate-pantry-recipes';
 import { generateRecipe } from '@/ai/flows/generate-recipe';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 const recipeSchema = z.object({
   name: z.string().min(2, 'Recipe name is required.'),
@@ -59,6 +60,7 @@ const recipeSchema = z.object({
   prepTime: z.string().optional(),
   cookTime: z.string().optional(),
   totalTime: z.string().optional(),
+  servings: z.coerce.number().optional(),
   calories: z.coerce.number().optional(),
   protein: z.coerce.number().optional(),
   carbs: z.coerce.number().optional(),
@@ -97,6 +99,7 @@ function AddRecipeDialog({
       prepTime: '',
       cookTime: '',
       totalTime: '',
+      servings: 4,
       calories: 0,
       protein: 0,
       carbs: 0,
@@ -181,7 +184,7 @@ function AddRecipeDialog({
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <FormField
                 control={form.control}
                 name="prepTime"
@@ -215,6 +218,17 @@ function AddRecipeDialog({
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="servings"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Servings</FormLabel>
+                    <FormControl><Input type="number" {...field} placeholder="4" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
              <FormField
               control={form.control}
@@ -242,8 +256,8 @@ function AddRecipeDialog({
                 </FormItem>
               )}
             />
-             <h3 className="font-medium text-lg pt-2">Nutrition (Optional)</h3>
-             <div className="grid grid-cols-4 gap-4">
+             <h3 className="font-medium text-lg pt-2">Nutrition (per serving, optional)</h3>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                <FormField
                 control={form.control}
                 name="calories"
@@ -308,21 +322,26 @@ function AddRecipeDialog({
 function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>['user']> }) {
   const { toast } = useToast();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [pantry, setPantry] = useState<PantryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchRecipes = () => {
+  const fetchCookbookData = () => {
     if (user) {
         setLoading(true);
-        getRecipes(user.id).then((data) => {
-          setRecipes(data);
+        Promise.all([
+            getRecipes(user.id),
+            getPantryItems(user.id)
+        ]).then(([recipeData, pantryData]) => {
+          setRecipes(recipeData);
+          setPantry(pantryData);
           setLoading(false);
         });
       }
   }
 
   useEffect(() => {
-    fetchRecipes();
+    fetchCookbookData();
   }, [user]);
 
   const handleDelete = async (recipeId: string, recipeName: string) => {
@@ -333,7 +352,7 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
         title: 'Recipe Deleted',
         description: `"${recipeName}" has been removed.`,
       });
-      fetchRecipes();
+      fetchCookbookData();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -347,7 +366,7 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
     if(!user) return;
     try {
         await updateRecipe(user.id, recipe.id, { isFavorite: !recipe.isFavorite });
-        fetchRecipes();
+        fetchCookbookData();
     } catch (error) {
         toast({
             variant: 'destructive',
@@ -374,6 +393,23 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
       });
   }, [recipes, searchTerm]);
 
+  const getPantryInfoForIngredient = (ingredientLine: string) => {
+    const lowerIngredientLine = ingredientLine.toLowerCase();
+    for (const pantryItem of pantry) {
+        if (lowerIngredientLine.includes(pantryItem.name.toLowerCase())) {
+            const daysUntilExpiry = differenceInDays(new Date(pantryItem.expirationDate), new Date());
+            let color = 'text-green-500';
+            if (daysUntilExpiry < 1) color = 'text-red-500';
+            else if (daysUntilExpiry <= 7) color = 'text-yellow-500';
+            return {
+                text: `(In Pantry: ${pantryItem.quantity} ${pantryItem.unit})`,
+                color: color,
+            };
+        }
+    }
+    return null;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -387,7 +423,7 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
             />
         </div>
         <div className="flex gap-2">
-            {user && <AddRecipeDialog userId={user.id} onRecipeAdded={fetchRecipes} />}
+            {user && <AddRecipeDialog userId={user.id} onRecipeAdded={fetchCookbookData} />}
         </div>
       </div>
 
@@ -426,28 +462,63 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
                         <DialogContent className="max-w-4xl">
                             <DialogHeader>
                             <DialogTitle className="font-headline text-2xl flex items-center gap-4">
-                                <span>{recipe.emoji}</span>
+                                <span className='text-4xl'>{recipe.emoji}</span>
                                 <span>{recipe.name}</span>
                             </DialogTitle>
                              <DialogDescription>{recipe.description}</DialogDescription>
                             </DialogHeader>
                             <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
-                                <div className="flex gap-4 text-sm text-muted-foreground">
-                                    {recipe.prepTime && <span>Prep: {recipe.prepTime}</span>}
-                                    {recipe.cookTime && <span>Cook: {recipe.cookTime}</span>}
-                                    {recipe.totalTime && <span>Total: {recipe.totalTime}</span>}
+                                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                                    {recipe.totalTime && <span className='flex items-center gap-1.5'><Clock className='h-4 w-4'/> {recipe.totalTime}</span>}
+                                    {recipe.servings && <span className='flex items-center gap-1.5'><Users className='h-4 w-4'/> {recipe.servings} Servings</span>}
                                 </div>
+                                {(recipe.calories || recipe.protein || recipe.carbs || recipe.fat) && (
+                                    <>
+                                        <Separator />
+                                        <div>
+                                            <h3 className="font-headline font-bold mb-2 text-lg">Nutrition per Serving</h3>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                                                <div className='p-2 rounded-md bg-muted/50'>
+                                                    <p className='text-xs text-muted-foreground'>Calories</p>
+                                                    <p className='font-bold text-lg'>{recipe.calories || 0}</p>
+                                                </div>
+                                                <div className='p-2 rounded-md bg-muted/50'>
+                                                    <p className='text-xs text-muted-foreground'>Protein</p>
+                                                    <p className='font-bold text-lg'>{recipe.protein || 0}g</p>
+                                                </div>
+                                                <div className='p-2 rounded-md bg-muted/50'>
+                                                    <p className='text-xs text-muted-foreground'>Carbs</p>
+                                                    <p className='font-bold text-lg'>{recipe.carbs || 0}g</p>
+                                                </div>
+                                                <div className='p-2 rounded-md bg-muted/50'>
+                                                    <p className='text-xs text-muted-foreground'>Fat</p>
+                                                    <p className='font-bold text-lg'>{recipe.fat || 0}g</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                    </>
+                                )}
                                 <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
                                     <div>
                                         <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
-                                        <div className="text-sm whitespace-pre-line">{recipe.ingredients}</div>
+                                        <ul className="text-sm space-y-2">
+                                            {recipe.ingredients.split('\n').map((line, i) => {
+                                                const pantryInfo = getPantryInfoForIngredient(line);
+                                                return (
+                                                    <li key={i} className="flex items-center gap-2">
+                                                        <span>{line.replace(/^- /, '')}</span>
+                                                        {pantryInfo && <span className={cn('text-xs', pantryInfo.color)}>{pantryInfo.text}</span>}
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
                                     </div>
                                     <div>
                                         <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
-                                        <div className="text-sm whitespace-pre-line">{recipe.instructions}</div>
+                                        <div className="text-sm whitespace-pre-line space-y-2">{recipe.instructions}</div>
                                     </div>
                                 </div>
-                                
                             </div>
                         </DialogContent>
                     </Dialog>
@@ -522,6 +593,7 @@ function AiGeneratorTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>
     const handlePreviewRecipe = async (idea: RecipeIdea) => {
         setSelectedIdea(idea);
         setPreviewLoading(true);
+        setPreviewRecipe(null);
         try {
             const fullRecipe = await generateRecipe({ prompt: `a detailed recipe for "${idea.name}" that is easy to follow` });
             setPreviewRecipe(fullRecipe);
@@ -577,7 +649,7 @@ function AiGeneratorTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>
 
         return {
             needed: newIngredients.length,
-            newIngredients,
+            newIngredients: newIngredients.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
         };
     }, [previewRecipe, pantryItems]);
 
@@ -593,7 +665,7 @@ function AiGeneratorTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>
                         </CardHeader>
                         <CardContent>
                             {pantryItems.length > 0 ? (
-                                <ul className="space-y-2">
+                                <ul className="space-y-2 max-h-60 overflow-y-auto">
                                     {pantryItems.map(item => (
                                         <li key={item.id} className="flex justify-between items-center">
                                             <span>{item.name}</span>
@@ -606,7 +678,7 @@ function AiGeneratorTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="text-sm text-muted-foreground">Your pantry is fresh!</p>
+                                <p className="text-sm text-muted-foreground text-center py-4">Your pantry is empty. Add items in the Pantry tab.</p>
                             )}
                         </CardContent>
                     </Card>
@@ -703,7 +775,7 @@ function AiGeneratorTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>
                         <>
                             <DialogHeader>
                                 <DialogTitle className="font-headline text-2xl flex items-center gap-4">
-                                <span>{previewRecipe.emoji}</span>
+                                <span className='text-4xl'>{previewRecipe.emoji}</span>
                                 <span>{previewRecipe.name}</span>
                                 </DialogTitle>
                                 <DialogDescription>{previewRecipe.description}</DialogDescription>
@@ -718,19 +790,18 @@ function AiGeneratorTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>
                                         : "You have all the core ingredients in your pantry!"}
                                     </AlertDescription>
                                 </Alert>
-                                <div className="flex gap-4 text-sm text-muted-foreground">
-                                    {previewRecipe.prepTime && <span>Prep: {previewRecipe.prepTime}</span>}
-                                    {previewRecipe.cookTime && <span>Cook: {previewRecipe.cookTime}</span>}
-                                    {previewRecipe.totalTime && <span>Total: {previewRecipe.totalTime}</span>}
+                                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                                    {previewRecipe.totalTime && <span className='flex items-center gap-1.5'><Clock className='h-4 w-4'/> {previewRecipe.totalTime}</span>}
+                                    {previewRecipe.servings && <span className='flex items-center gap-1.5'><Users className='h-4 w-4'/> {previewRecipe.servings} Servings</span>}
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
                                     <div>
-                                    <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
-                                    <div className="text-sm whitespace-pre-line">{previewRecipe.ingredients}</div>
+                                        <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
+                                        <div className="text-sm whitespace-pre-line space-y-1">{previewRecipe.ingredients}</div>
                                     </div>
                                     <div>
-                                    <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
-                                    <div className="text-sm whitespace-pre-line">{previewRecipe.instructions}</div>
+                                        <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
+                                        <div className="text-sm whitespace-pre-line space-y-2">{previewRecipe.instructions}</div>
                                     </div>
                                 </div>
                                 </div>
@@ -797,3 +868,4 @@ export default function RecipesPage() {
     </main>
   );
 }
+
