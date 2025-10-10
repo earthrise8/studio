@@ -50,6 +50,8 @@ import { generatePantryRecipes } from '@/ai/flows/generate-pantry-recipes';
 import { generateRecipe } from '@/ai/flows/generate-recipe';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+
 
 const recipeSchema = z.object({
   name: z.string().min(2, 'Recipe name is required.'),
@@ -319,6 +321,105 @@ function AddRecipeDialog({
   );
 }
 
+function RecipeDialog({ recipe, pantry, children, onToggleFavorite, onDelete }: { recipe: Recipe, pantry: PantryItem[], children: React.ReactNode, onToggleFavorite: (recipe: Recipe) => void, onDelete: (id: string, name: string) => void }) {
+    const getPantryInfoForIngredient = (ingredientLine: string) => {
+        const lowerIngredientLine = ingredientLine.toLowerCase();
+        for (const pantryItem of pantry) {
+            if (lowerIngredientLine.includes(pantryItem.name.toLowerCase())) {
+                const daysUntilExpiry = differenceInDays(new Date(pantryItem.expirationDate), new Date());
+                let color = 'text-green-500';
+                if (daysUntilExpiry < 1) color = 'text-red-500';
+                else if (daysUntilExpiry <= 7) color = 'text-yellow-500';
+                return {
+                    text: `(In Pantry: ${pantryItem.quantity} ${pantryItem.unit})`,
+                    color: color,
+                };
+            }
+        }
+        return null;
+    }
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                    <div className="flex justify-between items-start">
+                        <DialogTitle className="font-headline text-2xl flex items-center gap-4">
+                            <span className='text-4xl'>{recipe.emoji}</span>
+                            <span>{recipe.name}</span>
+                        </DialogTitle>
+                        <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => onToggleFavorite(recipe)}>
+                                <Star className={cn("h-5 w-5", recipe.isFavorite ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground group-hover:text-yellow-400')} />
+                            </Button>
+                             <DialogClose asChild>
+                                <Button size="icon" variant="ghost" onClick={() => onDelete(recipe.id, recipe.name)} className="text-destructive">
+                                    <Trash2 className="h-5 w-5" />
+                                </Button>
+                            </DialogClose>
+                        </div>
+                    </div>
+                    <DialogDescription>{recipe.description}</DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
+                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                        {recipe.totalTime && <span className='flex items-center gap-1.5'><Clock className='h-4 w-4'/> {recipe.totalTime}</span>}
+                        {recipe.servings && <span className='flex items-center gap-1.5'><Users className='h-4 w-4'/> {recipe.servings} Servings</span>}
+                    </div>
+                    {(recipe.calories || recipe.protein || recipe.carbs || recipe.fat) && (
+                        <>
+                            <Separator />
+                            <div>
+                                <h3 className="font-headline font-bold mb-2 text-lg">Nutrition per Serving</h3>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                                    <div className='p-2 rounded-md bg-muted/50'>
+                                        <p className='text-xs text-muted-foreground'>Calories</p>
+                                        <p className='font-bold text-lg'>{recipe.calories || 0}</p>
+                                    </div>
+                                    <div className='p-2 rounded-md bg-muted/50'>
+                                        <p className='text-xs text-muted-foreground'>Protein</p>
+                                        <p className='font-bold text-lg'>{recipe.protein || 0}g</p>
+                                    </div>
+                                    <div className='p-2 rounded-md bg-muted/50'>
+                                        <p className='text-xs text-muted-foreground'>Carbs</p>
+                                        <p className='font-bold text-lg'>{recipe.carbs || 0}g</p>
+                                    </div>
+                                    <div className='p-2 rounded-md bg-muted/50'>
+                                        <p className='text-xs text-muted-foreground'>Fat</p>
+                                        <p className='font-bold text-lg'>{recipe.fat || 0}g</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <Separator />
+                        </>
+                    )}
+                    <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
+                        <div>
+                            <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
+                            <ul className="text-sm space-y-2">
+                                {recipe.ingredients.split('\n').map((line, i) => {
+                                    const pantryInfo = getPantryInfoForIngredient(line);
+                                    return (
+                                        <li key={i} className="flex items-center gap-2">
+                                            <span>{line.replace(/^- /, '')}</span>
+                                            {pantryInfo && <span className={cn('text-xs', pantryInfo.color)}>{pantryInfo.text}</span>}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
+                            <div className="text-sm whitespace-pre-line space-y-2">{recipe.instructions}</div>
+                        </div>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>['user']> }) {
   const { toast } = useToast();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -376,8 +477,8 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
     }
   }
 
-  const filteredRecipes = useMemo(() => {
-    const filtered = searchTerm
+  const { featuredRecipes, filteredRecipes } = useMemo(() => {
+    const searchFiltered = searchTerm
       ? recipes.filter(
           (recipe) =>
             recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -386,158 +487,140 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
         )
       : recipes;
 
-      return filtered.sort((a, b) => {
+    const sorted = [...searchFiltered].sort((a, b) => {
         if (a.isFavorite && !b.isFavorite) return -1;
         if (!a.isFavorite && b.isFavorite) return 1;
         return a.name.localeCompare(b.name);
       });
-  }, [recipes, searchTerm]);
+    
+    // Featured Recipe Logic
+    if (recipes.length === 0) return { featuredRecipes: [], filteredRecipes: sorted };
 
-  const getPantryInfoForIngredient = (ingredientLine: string) => {
-    const lowerIngredientLine = ingredientLine.toLowerCase();
-    for (const pantryItem of pantry) {
-        if (lowerIngredientLine.includes(pantryItem.name.toLowerCase())) {
-            const daysUntilExpiry = differenceInDays(new Date(pantryItem.expirationDate), new Date());
-            let color = 'text-green-500';
-            if (daysUntilExpiry < 1) color = 'text-red-500';
-            else if (daysUntilExpiry <= 7) color = 'text-yellow-500';
-            return {
-                text: `(In Pantry: ${pantryItem.quantity} ${pantryItem.unit})`,
-                color: color,
-            };
+    const pantryItemNames = new Set(pantry.map(i => i.name.toLowerCase()));
+    const expiringSoonNames = new Set(pantry.filter(p => differenceInDays(new Date(p.expirationDate), new Date()) <= 3).map(i => i.name.toLowerCase()));
+    const healthGoal = user.profile?.healthGoal?.toLowerCase() || '';
+
+    const scoredRecipes = recipes.map(recipe => {
+        let score = 0;
+        const recipeIngredients = recipe.ingredients.toLowerCase().split('\n').map(l => l.replace(/^- /, '').trim()).filter(Boolean);
+        
+        // Pantry Match Score
+        const pantryMatches = recipeIngredients.filter(ing => 
+            Array.from(pantryItemNames).some(pantryItem => ing.includes(pantryItem))
+        ).length;
+        score += (pantryMatches / recipeIngredients.length) * 50; // Max 50 points
+
+        // Expiring Soon Score
+        const expiringMatches = recipeIngredients.filter(ing =>
+            Array.from(expiringSoonNames).some(expiringItem => ing.includes(expiringItem))
+        ).length;
+        score += expiringMatches * 25; // 25 points for each expiring ingredient used
+
+        // Health Goal Score
+        if (healthGoal && (recipe.name.toLowerCase().includes(healthGoal) || recipe.description?.toLowerCase().includes(healthGoal))) {
+            score += 40;
         }
-    }
-    return null;
-  }
+
+        return { ...recipe, score };
+    });
+
+    const topFeatured = scoredRecipes.sort((a,b) => b.score - a.score).slice(0, 3);
+    
+    return { featuredRecipes: topFeatured, filteredRecipes: sorted };
+
+  }, [recipes, pantry, searchTerm, user.profile?.healthGoal]);
+
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input 
-                placeholder="Search your cookbook..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-            />
-        </div>
-        <div className="flex gap-2">
-            {user && <AddRecipeDialog userId={user.id} onRecipeAdded={fetchCookbookData} />}
-        </div>
-      </div>
+    <div className="space-y-6">
+       {loading ? <Skeleton className="h-48 w-full" /> : featuredRecipes.length > 0 && (
+         <div>
+            <h3 className="text-2xl font-headline font-bold mb-4">Featured Recipes</h3>
+            <Carousel opts={{ align: "start" }} className="w-full">
+                <CarouselContent>
+                    {featuredRecipes.map((recipe) => (
+                        <CarouselItem key={recipe.id} className="md:basis-1/2 lg:basis-1/3">
+                            <div className="p-1">
+                                 <RecipeDialog recipe={recipe} pantry={pantry} onToggleFavorite={handleToggleFavorite} onDelete={handleDelete}>
+                                    <Card className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer">
+                                        <CardHeader>
+                                            <CardTitle className="flex items-start gap-3">
+                                                <span className="text-2xl pt-1">{recipe.emoji}</span>
+                                                <span className="font-headline">{recipe.name}</span>
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="flex-1">
+                                            <p className="text-sm text-muted-foreground line-clamp-2">{recipe.description}</p>
+                                        </CardContent>
+                                    </Card>
+                                </RecipeDialog>
+                            </div>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+            </Carousel>
+         </div>
+       )}
 
-      {loading ? (
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+      <div>
+        <h3 className="text-2xl font-headline font-bold mb-4">Full Cookbook</h3>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                    placeholder="Search your cookbook..."
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                />
+            </div>
+            <div className="flex gap-2">
+                {user && <AddRecipeDialog userId={user.id} onRecipeAdded={fetchCookbookData} />}
+            </div>
         </div>
-      ) : filteredRecipes.length > 0 ? (
-        <div className="border rounded-md">
-           <ul className='divide-y'>
-                {filteredRecipes.map((recipe) => (
-                    <Dialog key={recipe.id}>
-                        <li className="flex items-center justify-between p-4 group">
-                             <DialogTrigger asChild>
-                                <div className='flex-1 cursor-pointer'>
-                                    <div className='flex items-start gap-4'>
-                                        <span className="text-3xl mt-1">{recipe.emoji}</span>
-                                        <div>
-                                            <p className="font-semibold font-headline">{recipe.name}</p>
-                                            <p className="text-sm text-muted-foreground line-clamp-1">{recipe.description}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </DialogTrigger>
-                            <div className='flex items-center gap-2'>
-                                <Button variant="ghost" size="icon" onClick={() => handleToggleFavorite(recipe)}>
-                                    <Star className={cn("h-5 w-5", recipe.isFavorite ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground group-hover:text-yellow-400')} />
-                                </Button>
-                                <DialogClose asChild>
-                                    <Button size="icon" variant="ghost" onClick={() => handleDelete(recipe.id, recipe.name)} className="text-destructive">
-                                        <Trash2 className="h-5 w-5" />
-                                    </Button>
-                                </DialogClose>
-                             </div>
-                        </li>
-                        <DialogContent className="max-w-4xl">
-                            <DialogHeader>
-                            <DialogTitle className="font-headline text-2xl flex items-center gap-4">
-                                <span className='text-4xl'>{recipe.emoji}</span>
-                                <span>{recipe.name}</span>
-                            </DialogTitle>
-                             <DialogDescription>{recipe.description}</DialogDescription>
-                            </DialogHeader>
-                            <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
-                                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                                    {recipe.totalTime && <span className='flex items-center gap-1.5'><Clock className='h-4 w-4'/> {recipe.totalTime}</span>}
-                                    {recipe.servings && <span className='flex items-center gap-1.5'><Users className='h-4 w-4'/> {recipe.servings} Servings</span>}
-                                </div>
-                                {(recipe.calories || recipe.protein || recipe.carbs || recipe.fat) && (
-                                    <>
-                                        <Separator />
-                                        <div>
-                                            <h3 className="font-headline font-bold mb-2 text-lg">Nutrition per Serving</h3>
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                                                <div className='p-2 rounded-md bg-muted/50'>
-                                                    <p className='text-xs text-muted-foreground'>Calories</p>
-                                                    <p className='font-bold text-lg'>{recipe.calories || 0}</p>
-                                                </div>
-                                                <div className='p-2 rounded-md bg-muted/50'>
-                                                    <p className='text-xs text-muted-foreground'>Protein</p>
-                                                    <p className='font-bold text-lg'>{recipe.protein || 0}g</p>
-                                                </div>
-                                                <div className='p-2 rounded-md bg-muted/50'>
-                                                    <p className='text-xs text-muted-foreground'>Carbs</p>
-                                                    <p className='font-bold text-lg'>{recipe.carbs || 0}g</p>
-                                                </div>
-                                                <div className='p-2 rounded-md bg-muted/50'>
-                                                    <p className='text-xs text-muted-foreground'>Fat</p>
-                                                    <p className='font-bold text-lg'>{recipe.fat || 0}g</p>
-                                                </div>
+
+        <div className="mt-4">
+            {loading ? (
+                <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+                </div>
+            ) : filteredRecipes.length > 0 ? (
+                <div className="border rounded-md">
+                <ul className='divide-y'>
+                        {filteredRecipes.map((recipe) => (
+                             <li key={recipe.id} className="flex items-center p-4 group">
+                                <RecipeDialog recipe={recipe} pantry={pantry} onToggleFavorite={handleToggleFavorite} onDelete={handleDelete}>
+                                     <div className='flex-1 cursor-pointer'>
+                                        <div className='flex items-start gap-4'>
+                                            <span className="text-3xl mt-1">{recipe.emoji}</span>
+                                            <div>
+                                                <p className="font-semibold font-headline">{recipe.name}</p>
+                                                <p className="text-sm text-muted-foreground line-clamp-1">{recipe.description}</p>
                                             </div>
                                         </div>
-                                        <Separator />
-                                    </>
-                                )}
-                                <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
-                                    <div>
-                                        <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
-                                        <ul className="text-sm space-y-2">
-                                            {recipe.ingredients.split('\n').map((line, i) => {
-                                                const pantryInfo = getPantryInfoForIngredient(line);
-                                                return (
-                                                    <li key={i} className="flex items-center gap-2">
-                                                        <span>{line.replace(/^- /, '')}</span>
-                                                        {pantryInfo && <span className={cn('text-xs', pantryInfo.color)}>{pantryInfo.text}</span>}
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
                                     </div>
-                                    <div>
-                                        <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
-                                        <div className="text-sm whitespace-pre-line space-y-2">{recipe.instructions}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                ))}
-            </ul>
+                                </RecipeDialog>
+                            </li>
+                        ))}
+                </ul>
+                </div>
+            ) : (
+                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm mt-10">
+                <div className="flex flex-col items-center gap-1 text-center py-20">
+                    <ChefHat className="h-16 w-16 text-muted-foreground" />
+                    <h3 className="mt-4 text-2xl font-semibold font-headline">
+                    Your Cookbook is Empty
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                    {searchTerm ? `No recipes match "${searchTerm}".` : "Add a recipe manually or use the AI Recipe Generator."}
+                    </p>
+                </div>
+                </div>
+            )}
         </div>
-      ) : (
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm mt-10">
-          <div className="flex flex-col items-center gap-1 text-center py-20">
-            <ChefHat className="h-16 w-16 text-muted-foreground" />
-            <h3 className="mt-4 text-2xl font-semibold font-headline">
-              Your Cookbook is Empty
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {searchTerm ? `No recipes match "${searchTerm}".` : "Add a recipe manually or use the AI Recipe Generator."}
-            </p>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
