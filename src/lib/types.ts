@@ -69,6 +69,7 @@ export type Recipe = {
   protein?: number;
   carbs?: number;
   fat?: number;
+  isFavorite?: boolean;
 };
 
 export type Goal = {

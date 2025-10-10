@@ -127,8 +127,8 @@ const initialRecipes: Record<string, Recipe[]> = {
       id: 'r1',
       name: 'Classic Chicken Soup',
       description: 'A comforting and easy-to-make chicken soup.',
-      ingredients: '1 lb chicken, 8 cups broth, 2 carrots, 2 celery stalks, 1 onion, noodles',
-      instructions: '1. Cook chicken. 2. Sauté vegetables. 3. Add broth and chicken. 4. Simmer. 5. Add noodles and cook until tender.',
+      ingredients: '- 1 lb chicken\n- 8 cups broth\n- 2 carrots\n- 2 celery stalks\n- 1 onion\n- noodles',
+      instructions: '1. Cook chicken.\n2. Sauté vegetables.\n3. Add broth and chicken.\n4. Simmer.\n5. Add noodles and cook until tender.',
       prepTime: '15 min',
       cookTime: '45 min',
       totalTime: '1 hour',
@@ -137,6 +137,7 @@ const initialRecipes: Record<string, Recipe[]> = {
       protein: 30,
       carbs: 25,
       fat: 10,
+      isFavorite: true,
     },
   ],
 };
@@ -434,6 +435,20 @@ export const addRecipe = async (userId: string, recipe: Omit<Recipe, 'id'>): Pro
     saveToStorage('MOCK_RECIPES', MOCK_RECIPES);
     return newRecipe;
 }
+
+export const updateRecipe = async (userId: string, recipeId: string, updatedData: Partial<Recipe>): Promise<Recipe> => {
+    let MOCK_RECIPES = getFromStorage('MOCK_RECIPES', initialRecipes);
+    const userRecipes = MOCK_RECIPES[userId];
+    if (!userRecipes) throw new Error("User recipes not found");
+
+    const recipeIndex = userRecipes.findIndex(r => r.id === recipeId);
+    if (recipeIndex !== -1) {
+        userRecipes[recipeIndex] = { ...userRecipes[recipeIndex], ...updatedData };
+        saveToStorage('MOCK_RECIPES', MOCK_RECIPES);
+        return userRecipes[recipeIndex];
+    }
+    throw new Error("Recipe not found");
+};
 
 export const deleteRecipe = async (userId: string, recipeId: string): Promise<void> => {
   let MOCK_RECIPES = getFromStorage('MOCK_RECIPES', initialRecipes);

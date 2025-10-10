@@ -20,9 +20,9 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { getRecipes, deleteRecipe, addRecipe, getPantryItems } from '@/lib/data';
+import { getRecipes, deleteRecipe, addRecipe, getPantryItems, updateRecipe } from '@/lib/data';
 import type { Recipe, PantryItem } from '@/lib/types';
-import { ChefHat, Trash2, Search, PlusCircle, Loader2, Sparkles, CookingPot, Flame, Bookmark, Info } from 'lucide-react';
+import { ChefHat, Trash2, Search, PlusCircle, Loader2, Sparkles, CookingPot, Flame, Bookmark, Info, Star } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import Link from 'next/link';
@@ -48,6 +48,7 @@ import { Badge } from '@/components/ui/badge';
 import { differenceInDays } from 'date-fns';
 import { generatePantryRecipes } from '@/ai/flows/generate-pantry-recipes';
 import { generateRecipe } from '@/ai/flows/generate-recipe';
+import { cn } from '@/lib/utils';
 
 const recipeSchema = z.object({
   name: z.string().min(2, 'Recipe name is required.'),
@@ -341,13 +342,36 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
       });
     }
   };
+  
+  const handleToggleFavorite = async (recipe: Recipe) => {
+    if(!user) return;
+    try {
+        await updateRecipe(user.id, recipe.id, { isFavorite: !recipe.isFavorite });
+        fetchRecipes();
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: 'Could not update favorite status.',
+        });
+    }
+  }
 
   const filteredRecipes = useMemo(() => {
-    if (!searchTerm) return recipes;
-    return recipes.filter(recipe => 
-        recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (recipe.description && recipe.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filtered = searchTerm
+      ? recipes.filter(
+          (recipe) =>
+            recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (recipe.description &&
+              recipe.description.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+      : recipes;
+
+      return filtered.sort((a, b) => {
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+        return a.name.localeCompare(b.name);
+      });
   }, [recipes, searchTerm]);
 
   return (
@@ -368,73 +392,67 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
       </div>
 
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i}>
-                <CardHeader>
-                    <div className="flex justify-center items-center h-48">
-                        <Skeleton className="h-20 w-20" />
-                    </div>
-                    <Skeleton className="h-6 w-3/4" />
-                </CardHeader>
-                <CardContent><Skeleton className="h-10 w-full" /></CardContent>
-            </Card>
-          ))}
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
         </div>
       ) : filteredRecipes.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredRecipes.map((recipe) => (
-            <Dialog key={recipe.id}>
-              <DialogTrigger asChild>
-                <Card className="cursor-pointer hover:shadow-lg transition-shadow flex flex-col">
-                  <CardHeader className="flex-1">
-                    <div className="flex justify-center items-center text-6xl h-48">
-                        {recipe.emoji}
-                    </div>
-                    <CardTitle className="font-headline">{recipe.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="line-clamp-2">
-                      {recipe.description}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl">
-                <DialogHeader>
-                  <DialogTitle className="font-headline text-2xl flex items-center gap-4">
-                    <span>{recipe.emoji}</span>
-                    <span>{recipe.name}</span>
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-4">
-                  <div className="flex gap-4 text-sm text-muted-foreground">
-                    {recipe.prepTime && <span>Prep: {recipe.prepTime}</span>}
-                    {recipe.cookTime && <span>Cook: {recipe.cookTime}</span>}
-                    {recipe.totalTime && <span>Total: {recipe.totalTime}</span>}
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-8">
-                    <div>
-                      <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
-                      <div className="text-sm whitespace-pre-wrap">{recipe.ingredients}</div>
-                    </div>
-                    <div>
-                      <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
-                      <div className="text-sm whitespace-pre-wrap">{recipe.instructions}</div>
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button onClick={() => handleDelete(recipe.id, recipe.name)} variant="destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Recipe
-                        </Button>
-                    </DialogClose>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          ))}
+        <div className="border rounded-md">
+           <ul className='divide-y'>
+                {filteredRecipes.map((recipe) => (
+                    <Dialog key={recipe.id}>
+                        <li className="flex items-center justify-between p-4 group">
+                             <DialogTrigger asChild>
+                                <div className='flex-1 cursor-pointer'>
+                                    <div className='flex items-start gap-4'>
+                                        <span className="text-3xl mt-1">{recipe.emoji}</span>
+                                        <div>
+                                            <p className="font-semibold font-headline">{recipe.name}</p>
+                                            <p className="text-sm text-muted-foreground line-clamp-1">{recipe.description}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </DialogTrigger>
+                            <div className='flex items-center gap-2'>
+                                <Button variant="ghost" size="icon" onClick={() => handleToggleFavorite(recipe)}>
+                                    <Star className={cn("h-5 w-5", recipe.isFavorite ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground group-hover:text-yellow-400')} />
+                                </Button>
+                                <DialogClose asChild>
+                                    <Button size="icon" variant="ghost" onClick={() => handleDelete(recipe.id, recipe.name)} className="text-destructive">
+                                        <Trash2 className="h-5 w-5" />
+                                    </Button>
+                                </DialogClose>
+                             </div>
+                        </li>
+                        <DialogContent className="max-w-4xl">
+                            <DialogHeader>
+                            <DialogTitle className="font-headline text-2xl flex items-center gap-4">
+                                <span>{recipe.emoji}</span>
+                                <span>{recipe.name}</span>
+                            </DialogTitle>
+                             <DialogDescription>{recipe.description}</DialogDescription>
+                            </DialogHeader>
+                            <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
+                                <div className="flex gap-4 text-sm text-muted-foreground">
+                                    {recipe.prepTime && <span>Prep: {recipe.prepTime}</span>}
+                                    {recipe.cookTime && <span>Cook: {recipe.cookTime}</span>}
+                                    {recipe.totalTime && <span>Total: {recipe.totalTime}</span>}
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
+                                    <div>
+                                        <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
+                                        <div className="text-sm whitespace-pre-line">{recipe.ingredients}</div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
+                                        <div className="text-sm whitespace-pre-line">{recipe.instructions}</div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                ))}
+            </ul>
         </div>
       ) : (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm mt-10">
@@ -690,7 +708,7 @@ function AiGeneratorTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>
                                 </DialogTitle>
                                 <DialogDescription>{previewRecipe.description}</DialogDescription>
                             </DialogHeader>
-                            <div className="max-h-[60vh] overflow-y-auto pr-4 space-y-4">
+                            <div className="max-h-[60vh] overflow-y-auto pr-4 space-y-6">
                                 <Alert>
                                     <Info className="h-4 w-4" />
                                     <AlertTitle>New Ingredients Needed: {ingredientsNeeded.needed}</AlertTitle>
@@ -705,14 +723,14 @@ function AiGeneratorTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>
                                     {previewRecipe.cookTime && <span>Cook: {previewRecipe.cookTime}</span>}
                                     {previewRecipe.totalTime && <span>Total: {previewRecipe.totalTime}</span>}
                                 </div>
-                                <div className="grid md:grid-cols-2 gap-8">
+                                <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
                                     <div>
                                     <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
-                                    <div className="text-sm whitespace-pre-wrap">{previewRecipe.ingredients}</div>
+                                    <div className="text-sm whitespace-pre-line">{previewRecipe.ingredients}</div>
                                     </div>
                                     <div>
                                     <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
-                                    <div className="text-sm whitespace-pre-wrap">{previewRecipe.instructions}</div>
+                                    <div className="text-sm whitespace-pre-line">{previewRecipe.instructions}</div>
                                     </div>
                                 </div>
                                 </div>
