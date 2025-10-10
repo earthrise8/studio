@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { getRecipes, deleteRecipe, addRecipe, getPantryItems, updateRecipe } from '@/lib/data';
 import type { Recipe, PantryItem } from '@/lib/types';
-import { ChefHat, Trash2, Search, PlusCircle, Loader2, Sparkles, CookingPot, Flame, Bookmark, Info, Star, Clock, Users } from 'lucide-react';
+import { ChefHat, Trash2, Search, PlusCircle, Loader2, Sparkles, CookingPot, Flame, Bookmark, Info, Star, Clock, Users, Award, Heart, Leaf } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import Link from 'next/link';
@@ -493,7 +493,6 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
         return a.name.localeCompare(b.name);
       });
     
-    // Featured Recipe Logic
     if (recipes.length === 0) return { featuredRecipes: [], filteredRecipes: sorted };
 
     const pantryItemNames = new Set(pantry.map(i => i.name.toLowerCase()));
@@ -501,30 +500,39 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
     const healthGoal = user.profile?.healthGoal?.toLowerCase() || '';
 
     const scoredRecipes = recipes.map(recipe => {
-        let score = 0;
         const recipeIngredients = recipe.ingredients.toLowerCase().split('\n').map(l => l.replace(/^- /, '').trim()).filter(Boolean);
-        
-        // Pantry Match Score
+        if (recipeIngredients.length === 0) return { ...recipe, score: 0, featureReason: null };
+
         const pantryMatches = recipeIngredients.filter(ing => 
             Array.from(pantryItemNames).some(pantryItem => ing.includes(pantryItem))
         ).length;
-        score += (pantryMatches / recipeIngredients.length) * 50; // Max 50 points
+        const pantryMatchScore = (pantryMatches / recipeIngredients.length) * 50;
 
-        // Expiring Soon Score
         const expiringMatches = recipeIngredients.filter(ing =>
             Array.from(expiringSoonNames).some(expiringItem => ing.includes(expiringItem))
         ).length;
-        score += expiringMatches * 25; // 25 points for each expiring ingredient used
+        const expiringScore = expiringMatches * 25;
 
-        // Health Goal Score
+        let healthGoalScore = 0;
         if (healthGoal && (recipe.name.toLowerCase().includes(healthGoal) || recipe.description?.toLowerCase().includes(healthGoal))) {
-            score += 40;
+            healthGoalScore = 40;
         }
 
-        return { ...recipe, score };
+        const score = pantryMatchScore + expiringScore + healthGoalScore;
+        
+        let featureReason = null;
+        if (expiringScore > 0) {
+            featureReason = { icon: Flame, text: 'Uses Expiring Items' };
+        } else if (pantryMatchScore > 40) { // e.g., >80% match
+            featureReason = { icon: Award, text: 'Great Pantry Match' };
+        } else if (healthGoalScore > 0) {
+            featureReason = { icon: Heart, text: 'Fits Your Goal' };
+        }
+        
+        return { ...recipe, score, featureReason };
     });
 
-    const topFeatured = scoredRecipes.sort((a,b) => b.score - a.score).slice(0, 3);
+    const topFeatured = scoredRecipes.sort((a,b) => b.score - a.score).slice(0, 3).filter(r => r.score > 0);
     
     return { featuredRecipes: topFeatured, filteredRecipes: sorted };
 
@@ -543,6 +551,12 @@ function MyCookbookTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>[
                             <div className="p-1">
                                  <RecipeDialog recipe={recipe} pantry={pantry} onToggleFavorite={handleToggleFavorite} onDelete={handleDelete}>
                                     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer">
+                                        {recipe.featureReason && (
+                                            <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-md flex items-center gap-1.5 z-10">
+                                                <recipe.featureReason.icon className="h-3 w-3" />
+                                                {recipe.featureReason.text}
+                                            </div>
+                                        )}
                                         <CardHeader>
                                             <CardTitle className="flex items-start gap-3">
                                                 <span className="text-2xl pt-1">{recipe.emoji}</span>
@@ -952,3 +966,6 @@ export default function RecipesPage() {
   );
 }
 
+
+
+    
