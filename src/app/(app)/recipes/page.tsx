@@ -391,12 +391,12 @@ function RecipeDialog({ recipe, pantry, children, onToggleFavorite, onDelete }: 
                                     </div>
                                 </div>
                             </div>
-                            <Separator />
                         </>
                     )}
-                    <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
+                    <div className="space-y-6">
+                        <Separator />
                         <div>
-                            <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
+                            <h3 className="font-headline font-bold mb-4 text-lg">Ingredients</h3>
                             <ul className="text-sm space-y-2">
                                 {recipe.ingredients.split('\n').map((line, i) => {
                                     const pantryInfo = getPantryInfoForIngredient(line);
@@ -409,9 +409,14 @@ function RecipeDialog({ recipe, pantry, children, onToggleFavorite, onDelete }: 
                                 })}
                             </ul>
                         </div>
+                        <Separator />
                         <div>
-                            <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
-                            <div className="text-sm whitespace-pre-line space-y-2">{recipe.instructions}</div>
+                            <h3 className="font-headline font-bold mb-4 text-lg">Instructions</h3>
+                            <div className="text-sm whitespace-pre-line space-y-3 prose prose-sm dark:prose-invert">
+                                {recipe.instructions.split('\n').map((step, i) => (
+                                    <p key={i}>{step}</p>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -891,13 +896,15 @@ function AiGeneratorTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>
                                     {previewRecipe.totalTime && <span className='flex items-center gap-1.5'><Clock className='h-4 w-4'/> {previewRecipe.totalTime}</span>}
                                     {previewRecipe.servings && <span className='flex items-center gap-1.5'><Users className='h-4 w-4'/> {previewRecipe.servings} Servings</span>}
                                 </div>
-                                <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
+                                <div className="space-y-6">
+                                    <Separator />
                                     <div>
-                                        <h3 className="font-headline font-bold mb-2 text-lg">Ingredients</h3>
+                                        <h3 className="font-headline font-bold mb-4 text-lg">Ingredients</h3>
                                         <div className="text-sm whitespace-pre-line space-y-1">{previewRecipe.ingredients}</div>
                                     </div>
+                                    <Separator />
                                     <div>
-                                        <h3 className="font-headline font-bold mb-2 text-lg">Instructions</h3>
+                                        <h3 className="font-headline font-bold mb-4 text-lg">Instructions</h3>
                                         <div className="text-sm whitespace-pre-line space-y-2">{previewRecipe.instructions}</div>
                                     </div>
                                 </div>
@@ -965,7 +972,3 @@ export default function RecipesPage() {
     </main>
   );
 }
-
-
-
-    
