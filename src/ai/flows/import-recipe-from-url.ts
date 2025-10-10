@@ -49,6 +49,7 @@ Extract the name, a short description, and nutritional information per serving i
 Also extract the number of servings the recipe makes.
 Format the ingredients as a markdown list, with each ingredient on its own line (e.g., "- 1 cup flour\n- 2 eggs").
 Format the instructions as a numbered markdown list, with each step on its own line (e.g., "1. Preheat oven.\n2. Mix ingredients.").
+Within the instructions, be sure to include specific cooking times and temperatures where mentioned.
 Also include prep time, cook time, and total time if available.
 
 Ensure the output is well-formatted and easy to read.
@@ -69,3 +70,4 @@ const importRecipeFromUrlFlow = ai.defineFlow(
 );
 
     
+
