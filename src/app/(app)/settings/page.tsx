@@ -39,6 +39,7 @@ import type { Goal } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { getCityInfo } from '@/lib/city-data';
+import { Progress } from '@/components/ui/progress';
 
 
 const profileFormSchema = z.object({
@@ -470,20 +471,15 @@ export default function SettingsPage() {
                     {goals.length > 0 ? (
                         goals.map(goal => (
                             <div key={goal.id} className="flex items-center gap-4">
-                                <div className="flex-1">
+                                <div className="flex-1 space-y-2">
                                     <p className={`text-sm font-medium ${goal.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{goal.description}</p>
-                                    <p className="text-xs text-muted-foreground">Target: {goal.target} | Points: {goal.points}</p>
+                                    <div className="flex items-center gap-2">
+                                       <Progress value={(goal.progress / goal.target) * 100} className="w-full" />
+                                       <span className='text-xs text-muted-foreground whitespace-nowrap'>{goal.progress} / {goal.target}</span>
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Input
-                                      type="number"
-                                      value={goal.progress}
-                                      onChange={(e) => handleProgressChange(goal, parseInt(e.target.value))}
-                                      className="w-20"
-                                      max={goal.target}
-                                      min={0}
-                                      disabled={goal.isCompleted}
-                                    />
+                                    
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <Button size="icon" variant="ghost" className="text-destructive">
@@ -590,4 +586,3 @@ export default function SettingsPage() {
     </main>
   );
 }
-

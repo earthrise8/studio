@@ -21,10 +21,9 @@ import {
 import {
   Apple,
   Flame,
-  PlusCircle,
+  CheckCircle2,
   Dumbbell,
   Lightbulb,
-  CheckCircle2,
   Trophy,
   Plus,
   Minus,
@@ -48,11 +47,11 @@ import {
   Globe,
   Leaf,
 } from 'lucide-react';
-import { formatISO, differenceInDays, isSameDay } from 'date-fns';
+import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth-provider';
-import type { Goal, FoodLog, ActivityLog, PantryItem, Friend, UserProfile } from '@/lib/types';
+import type { Goal, FoodLog, ActivityLog, PantryItem, Friend } from '@/lib/types';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -66,15 +65,17 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getBuildingSet, allBuildings, buildingDataMap, getCityInfo, TILES } from '@/lib/city-data';
+import { Progress } from '@/components/ui/progress';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
+    const progressPercentage = (goal.progress / goal.target) * 100;
     return (
         <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
                 <div className='flex-1'>
                     <p className={goal.isCompleted ? 'line-through text-muted-foreground' : ''}>{goal.description}</p>
-                    <p className='text-xs text-muted-foreground'>{goal.points}</p>
+                    <p className='text-xs text-muted-foreground'>Reward: {goal.points}pts</p>
                 </div>
                 <div className="flex items-center gap-2 font-medium">
                     <Button
@@ -98,6 +99,7 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
                     </Button>
                 </div>
             </div>
+            <Progress value={progressPercentage} />
         </div>
     )
 }
@@ -1180,11 +1182,19 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Your Goals</CardTitle>
-            <CardDescription>
-              Your active goals and challenges.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Your Goals</CardTitle>
+              <CardDescription>
+                Your active goals and challenges.
+              </CardDescription>
+            </div>
+            <Button asChild variant="secondary" size="sm">
+                <Link href="/advisor">
+                    <Lightbulb className="mr-2 h-4 w-4" />
+                    AI Goals
+                </Link>
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
              {activeGoals.length > 0 ? (
@@ -1193,9 +1203,9 @@ export default function DashboardPage() {
                 <div className="flex flex-col items-center justify-center text-center p-4 border border-dashed rounded-lg">
                     <CheckCircle2 className="h-10 w-10 text-muted-foreground" />
                     <h3 className="mt-2 font-semibold">No Active Goals</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Visit settings to add a new goal.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Visit the Goals page to generate new goals.</p>
                     <Button asChild variant="secondary" size="sm" className="mt-4">
-                        <Link href="/settings">Set a Goal</Link>
+                        <Link href="/advisor">Set Goals</Link>
                     </Button>
                 </div>
              )}
@@ -1333,11 +1343,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
-
-
-
-
-
-

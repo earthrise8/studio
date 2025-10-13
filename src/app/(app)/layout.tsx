@@ -20,16 +20,13 @@ import {
   Warehouse,
   BookOpenCheck,
   ChefHat,
-  Sparkles,
   Trophy,
-  LogOut,
   Settings,
   LifeBuoy,
-  Lightbulb,
   Loader2,
-  Building,
   Library,
   ShoppingCart,
+  Target,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-provider';
 import { usePathname, useRouter } from 'next/navigation';
@@ -50,7 +47,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/shopping-cart', label: 'Shopping Cart', icon: ShoppingCart },
     { href: '/logs', label: 'Daily Logs', icon: BookOpenCheck },
     { href: '/recipes', label: 'Recipes', icon: ChefHat },
-    { href: '/advisor', label: 'AI Advisor', icon: Lightbulb },
+    { href: '/advisor', label: 'Goals', icon: Target },
     { href: '/awards', label: 'Awards', icon: Trophy },
     { href: '/wiki', label: 'Wiki', icon: Library },
   ];

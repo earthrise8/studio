@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth-provider';
 import { addGoal, getRecentActivityLogs, getRecentFoodLogs } from '@/lib/data';
-import { Check, Lightbulb, Loader2, Plus } from 'lucide-react';
+import { Check, Lightbulb, Loader2, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -95,12 +95,12 @@ export default function AdvisorPage() {
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <h2 className="font-headline text-3xl font-bold">
-        AI Advisor
+        Goals
       </h2>
       <div className="grid gap-8">
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Health Advisor & Goals</CardTitle>
+            <CardTitle className="font-headline flex items-center gap-2"><Target /> AI Goal Generator</CardTitle>
             <CardDescription>
               Get personalized health advice and generate actionable goals based on your data.
             </CardDescription>
@@ -132,7 +132,7 @@ export default function AdvisorPage() {
                         <CardContent><p>{adviceResult.advice}</p></CardContent>
                     </Card>
                     <Card>
-                        <CardHeader><CardTitle>Actionable Goals</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>Suggested Goals</CardTitle></CardHeader>
                         <CardContent>
                             <ul className="space-y-2">
                                 {adviceResult.goals.map((goal, i) => (
