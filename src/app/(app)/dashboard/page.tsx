@@ -1,5 +1,4 @@
 
-
 'use client';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,6 +45,8 @@ import {
   CalendarDays,
   Globe,
   Leaf,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { formatISO, differenceInDays } from 'date-fns';
 import Link from 'next/link';
@@ -117,6 +118,7 @@ export default function DashboardPage() {
   const [tileView, setTileView] = useState<'grid' | 'list'>('grid');
   const [tileSearchTerm, setTileSearchTerm] = useState('');
   const [inGameDay, setInGameDay] = useState(1);
+  const [isCityVisible, setIsCityVisible] = useState(true);
 
   // Drag selection state
   const [isDragging, setIsDragging] = useState(false);
@@ -787,14 +789,27 @@ export default function DashboardPage() {
       </h2>
 
       <Card>
-        <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2">
-                <Building />
-                Your Fitropolis
-            </CardTitle>
-            <CardDescription>
-                Your city grows as you earn points! Click a tile to customize it, or drag to select multiple tiles.
-            </CardDescription>
+        <CardHeader className="flex-row items-center justify-between">
+            <div>
+                <CardTitle className="font-headline flex items-center gap-2">
+                    <Building />
+                    Your Fitropolis
+                </CardTitle>
+                <CardDescription>
+                    Your city grows as you earn points! Click a tile to customize it, or drag to select multiple tiles.
+                </CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Switch
+                    id="city-visibility"
+                    checked={isCityVisible}
+                    onCheckedChange={setIsCityVisible}
+                />
+                <Label htmlFor="city-visibility" className="flex items-center gap-2">
+                    {isCityVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                     <span className="hidden sm:inline">{isCityVisible ? 'Show' : 'Hide'} City</span>
+                </Label>
+            </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Card>
@@ -834,306 +849,308 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 lg:grid-cols-3">
-             <div 
-              className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto"
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseLeaveGrid}
-              >
-                {cityLoading ? (
-                    <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                        <p>Constructing your glorious city...</p>
-                    </div>
-                ) : cityGrid ? (
-                   <TooltipProvider>
-                       <div className="font-mono text-center text-3xl leading-none border-t border-l border-border/50 select-none">
-                         {cityGrid.map((row, y) => (
-                            <div key={y} className="flex">
-                                {row.map((cell, x) => {
-                                    const building = buildingDataMap.get(cell);
-                                    
-                                    const yMin = dragStart && dragOver ? Math.min(dragStart.y, dragOver.y) : -1;
-                                    const yMax = dragStart && dragOver ? Math.max(dragStart.y, dragOver.y) : -1;
-                                    const xMin = dragStart && dragOver ? Math.min(dragStart.x, dragOver.x) : -1;
-                                    const xMax = dragStart && dragOver ? Math.max(dragStart.x, dragOver.x) : -1;
+          {isCityVisible && (
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div 
+                className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto"
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeaveGrid}
+                >
+                  {cityLoading ? (
+                      <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
+                          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                          <p>Constructing your glorious city...</p>
+                      </div>
+                  ) : cityGrid ? (
+                    <TooltipProvider>
+                        <div className="font-mono text-center text-3xl leading-none border-t border-l border-border/50 select-none">
+                          {cityGrid.map((row, y) => (
+                              <div key={y} className="flex">
+                                  {row.map((cell, x) => {
+                                      const building = buildingDataMap.get(cell);
+                                      
+                                      const yMin = dragStart && dragOver ? Math.min(dragStart.y, dragOver.y) : -1;
+                                      const yMax = dragStart && dragOver ? Math.max(dragStart.y, dragOver.y) : -1;
+                                      const xMin = dragStart && dragOver ? Math.min(dragStart.x, dragOver.x) : -1;
+                                      const xMax = dragStart && dragOver ? Math.max(dragStart.x, dragOver.x) : -1;
 
-                                    const isSelected = selectedTiles.some(t => t.y === y && t.x === x) || (isDragging && y >= yMin && y <= yMax && x >= xMin && x <= xMax);
-                                    const highlight = highlightedCells.find(h => h.y === y && h.x === x);
-                                    const isPermanentRoad = permanentRoads.some(pr => pr.x === x && pr.y === y);
-                                    const isPermanentRiver = permanentRiverEnds.some(pr => pr.x === x && pr.y === y);
-                                    
-                                    const tileButton = (
-                                        <button 
-                                            key={x} 
-                                            onClick={(e) => handleTileClick(e, y, x)}
-                                            onMouseDown={(e) => handleMouseDown(e, y, x)}
-                                            onMouseEnter={() => handleMouseEnterTile(y,x)}
-                                            className={cn(
-                                                'relative flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', 
-                                                isSelected && 'bg-primary/30 ring-2 ring-primary',
-                                                highlight?.type === 'positive' && 'ring-2 ring-blue-500 bg-blue-500/20',
-                                                highlight?.type === 'negative' && 'ring-2 ring-red-500 bg-red-500/20',
-                                                (isPermanentRoad || isPermanentRiver) && 'cursor-not-allowed'
-                                            )}
-                                            >
-                                            <span className={cn(
-                                                highlight?.type === 'area-positive' && 'outline outline-2 outline-blue-500 outline-offset-[-2px] rounded-sm',
-                                                highlight?.type === 'area-negative' && 'outline outline-2 outline-red-500 outline-offset-[-2px] rounded-sm'
-                                            )}>{cell}</span>
-                                            {(isPermanentRoad || isPermanentRiver) && <div className="absolute inset-0 bg-black/30" />}
-                                        </button>
-                                    );
+                                      const isSelected = selectedTiles.some(t => t.y === y && t.x === x) || (isDragging && y >= yMin && y <= yMax && x >= xMin && x <= xMax);
+                                      const highlight = highlightedCells.find(h => h.y === y && h.x === x);
+                                      const isPermanentRoad = permanentRoads.some(pr => pr.x === x && pr.y === y);
+                                      const isPermanentRiver = permanentRiverEnds.some(pr => pr.x === x && pr.y === y);
+                                      
+                                      const tileButton = (
+                                          <button 
+                                              key={x} 
+                                              onClick={(e) => handleTileClick(e, y, x)}
+                                              onMouseDown={(e) => handleMouseDown(e, y, x)}
+                                              onMouseEnter={() => handleMouseEnterTile(y,x)}
+                                              className={cn(
+                                                  'relative flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', 
+                                                  isSelected && 'bg-primary/30 ring-2 ring-primary',
+                                                  highlight?.type === 'positive' && 'ring-2 ring-blue-500 bg-blue-500/20',
+                                                  highlight?.type === 'negative' && 'ring-2 ring-red-500 bg-red-500/20',
+                                                  (isPermanentRoad || isPermanentRiver) && 'cursor-not-allowed'
+                                              )}
+                                              >
+                                              <span className={cn(
+                                                  highlight?.type === 'area-positive' && 'outline outline-2 outline-blue-500 outline-offset-[-2px] rounded-sm',
+                                                  highlight?.type === 'area-negative' && 'outline outline-2 outline-red-500 outline-offset-[-2px] rounded-sm'
+                                              )}>{cell}</span>
+                                              {(isPermanentRoad || isPermanentRiver) && <div className="absolute inset-0 bg-black/30" />}
+                                          </button>
+                                      );
 
-                                    let tooltipContent: React.ReactNode = null;
-                                    
-                                    if (isPermanentRoad) {
-                                        tooltipContent = <p className="font-semibold">Main Road (Permanent)</p>;
-                                    } else if(isPermanentRiver) {
-                                        tooltipContent = <p className="font-semibold">River End (Permanent)</p>;
-                                    } else if (cityGrid && cityInfo && building?.isResidential) {
-                                        const { rating, grade, occupancy } = getCityInfo(user.profile.totalPoints || 0, cityGrid, y, x).tileInfo!;
+                                      let tooltipContent: React.ReactNode = null;
+                                      
+                                      if (isPermanentRoad) {
+                                          tooltipContent = <p className="font-semibold">Main Road (Permanent)</p>;
+                                      } else if(isPermanentRiver) {
+                                          tooltipContent = <p className="font-semibold">River End (Permanent)</p>;
+                                      } else if (cityGrid && cityInfo && building?.isResidential) {
+                                          const { rating, grade, occupancy } = getCityInfo(user.profile.totalPoints || 0, cityGrid, y, x).tileInfo!;
 
-                                        tooltipContent = <>
-                                            <p className="font-semibold">{building.name}</p>
-                                            <p>Rating: {grade} ({rating})</p>
-                                            <p>Occupants: {occupancy} / {building.maxPopulation}</p>
-                                        </>;
-                                    } else if (cityGrid && cityInfo && building?.revenueMultiplier) {
-                                        const revenue = (building.cost * building.revenueMultiplier * (cityInfo.population / 100));
-                                        tooltipContent = <>
-                                            <p className="font-semibold">{building.name}</p>
-                                            <p>Daily Revenue: ${Math.floor(revenue).toLocaleString()}</p>
-                                        </>
-                                    } else if (cityGrid && cityInfo && building?.isPublicService) {
-                                        const cost = (building.maintenanceCostPerCitizen! * cityInfo.population);
-                                        tooltipContent = <>
-                                            <p className="font-semibold">{building.name}</p>
-                                            <p>Daily Cost: ${Math.floor(cost).toLocaleString()}</p>
-                                        </>
-                                    } else if (cityGrid && cityInfo && building?.isFarmland) {
-                                        const plot = cityInfo.farmlandPlots.find(p => p.tiles.some(t => t.y === y && t.x === x));
-                                        if(plot) {
-                                            const revenuePerTile = plot.revenue / plot.size;
-                                            tooltipContent = <>
-                                                <p className="font-semibold">{building.name}</p>
-                                                <p>Daily Revenue: ${Math.floor(revenuePerTile).toLocaleString()}</p>
-                                                <p className="text-xs text-muted-foreground">Part of a {plot.size}-tile plot</p>
-                                            </>
-                                        }
-                                    }
+                                          tooltipContent = <>
+                                              <p className="font-semibold">{building.name}</p>
+                                              <p>Rating: {grade} ({rating})</p>
+                                              <p>Occupants: {occupancy} / {building.maxPopulation}</p>
+                                          </>;
+                                      } else if (cityGrid && cityInfo && building?.revenueMultiplier) {
+                                          const revenue = (building.cost * building.revenueMultiplier * (cityInfo.population / 100));
+                                          tooltipContent = <>
+                                              <p className="font-semibold">{building.name}</p>
+                                              <p>Daily Revenue: ${Math.floor(revenue).toLocaleString()}</p>
+                                          </>
+                                      } else if (cityGrid && cityInfo && building?.isPublicService) {
+                                          const cost = (building.maintenanceCostPerCitizen! * cityInfo.population);
+                                          tooltipContent = <>
+                                              <p className="font-semibold">{building.name}</p>
+                                              <p>Daily Cost: ${Math.floor(cost).toLocaleString()}</p>
+                                          </>
+                                      } else if (cityGrid && cityInfo && building?.isFarmland) {
+                                          const plot = cityInfo.farmlandPlots.find(p => p.tiles.some(t => t.y === y && t.x === x));
+                                          if(plot) {
+                                              const revenuePerTile = plot.revenue / plot.size;
+                                              tooltipContent = <>
+                                                  <p className="font-semibold">{building.name}</p>
+                                                  <p>Daily Revenue: ${Math.floor(revenuePerTile).toLocaleString()}</p>
+                                                  <p className="text-xs text-muted-foreground">Part of a {plot.size}-tile plot</p>
+                                              </>
+                                          }
+                                      }
 
-                                    if (tooltipContent) {
-                                         return (
-                                            <Tooltip key={x}>
-                                                <TooltipTrigger asChild>{tileButton}</TooltipTrigger>
+                                      if (tooltipContent) {
+                                          return (
+                                              <Tooltip key={x}>
+                                                  <TooltipTrigger asChild>{tileButton}</TooltipTrigger>
+                                                  <TooltipContent>
+                                                      {tooltipContent}
+                                                  </TooltipContent>
+                                              </Tooltip>
+                                          )
+                                      }
+
+                                      return tileButton;
+                                  })}
+                              </div>
+                          ))}
+                        </div>
+                    </TooltipProvider>
+                  ) : (
+                      <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
+                          <Building className="h-12 w-12" />
+                          <p>Start earning points to build your city!</p>
+                      </div>
+                  )}
+              </div>
+
+              <div className="lg:col-span-1 space-y-4">
+                <Card className={cn("transition-opacity", selectedTiles.length === 0 && 'opacity-50 pointer-events-none')}>
+                    <CardHeader>
+                        <CardTitle className='font-headline'>Customize Tile</CardTitle>
+                        <CardDescription>
+                            {selectedTiles.length > 0 ? `Customizing ${selectedTiles.length} tile(s).` : 'Select a tile on the grid to customize.'}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <Input 
+                                    placeholder="Search tiles..."
+                                    className="pl-10"
+                                    value={tileSearchTerm}
+                                    onChange={(e) => setTileSearchTerm(e.target.value)}
+                                    disabled={selectedTiles.length === 0}
+                                />
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <Grid3x3 className="h-4 w-4" />
+                                <Switch
+                                    id="view-mode-switch"
+                                    checked={tileView === 'list'}
+                                    onCheckedChange={(checked) => setTileView(checked ? 'list' : 'grid')}
+                                    disabled={selectedTiles.length === 0}
+                                />
+                                <List className="h-4 w-4" />
+                                <Label htmlFor="view-mode-switch">{tileView === 'list' ? 'List View' : 'Grid View'}</Label>
+                            </div>
+                        </div>
+
+                        {tileView === 'list' ? (
+                            <ScrollArea className="h-96 mt-4">
+                              <Accordion type="single" collapsible className="w-full">
+                                  {filteredBuildings.map((building) => (
+                                  <AccordionItem value={building.name} key={building.name}>
+                                      <div className="flex items-center justify-between py-1 pr-4">
+                                          <AccordionTrigger className='flex-1 p-0 hover:no-underline disabled:opacity-50' disabled={selectedTiles.length === 0 || (user.profile.money || 0) < building.cost * selectedTiles.length}>
+                                              <div className='flex items-center gap-4 text-left w-full'>
+                                                  <span className="text-3xl p-4">{building.emoji}</span>
+                                                  <div className="flex-1">
+                                                      <p className="font-semibold">{building.name}</p>
+                                                      <p className="text-sm text-muted-foreground">
+                                                          Cost: ${building.cost.toLocaleString()}
+                                                      </p>
+                                                  </div>
+                                              </div>
+                                          </AccordionTrigger>
+                                          <Button
+                                              size="sm"
+                                              className="ml-4"
+                                              onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleTileSelect(building);
+                                              }}
+                                              disabled={selectedTiles.length === 0 || (user.profile.money || 0) < building.cost * selectedTiles.length}
+                                          >
+                                              Build
+                                          </Button>
+                                      </div>
+                                      <AccordionContent className='text-xs text-muted-foreground ml-4'>
+                                          <div className='p-4 border-t space-y-2'>
+                                              {building.isResidential && (
+                                                  <div className="flex items-center gap-2">
+                                                      <Home className="h-3 w-3" />
+                                                      <span>Residential: Pop. {building.defaultPopulation}-{building.maxPopulation}</span>
+                                                  </div>
+                                              )}
+                                              {building.revenueMultiplier && (
+                                                  <div className="flex items-center gap-2">
+                                                      <DollarSign className="h-3 w-3" />
+                                                      <span>Commercial: Earns revenue based on population.</span>
+                                                  </div>
+                                              )}
+                                              {building.isFarmland && (
+                                                  <div className="flex items-center gap-2">
+                                                      <DollarSign className="h-3 w-3" />
+                                                      <span>Special Commercial: Generates income in large plots.</span>
+                                                  </div>
+                                              )}
+                                              {building.isPublicService && (
+                                                  <div className="flex items-center gap-2 text-yellow-500">
+                                                      <ShieldCheck className="h-3 w-3" />
+                                                      <span>Public Service: Costs ${building.maintenanceCostPerCitizen} per citizen. Increases rating by +{building.ratingBonus} in a {building.ratingRange}-tile radius.</span>
+                                                  </div>
+                                              )}
+                                              {building.ratingBonus && !building.isPublicService && (
+                                                  <div className="flex items-center gap-2 text-green-500">
+                                                      <TrendingUp className="h-3 w-3" />
+                                                      <span>Amenity: Increases rating by +{building.ratingBonus} in a {building.ratingRange}-tile radius.</span>
+                                                  </div>
+                                              )}
+                                              {building.ratingPenalty && (
+                                                  <div className="flex items-center gap-2 text-red-500">
+                                                      <TrendingDown className="h-3 w-3" />
+                                                      <span>Nuisance: Decreases rating by {building.ratingPenalty} in a {building.ratingRange}-tile radius.</span>
+                                                  </div>
+                                              )}
+                                              {!building.isResidential && !building.revenueMultiplier && !building.isPublicService && !building.ratingBonus && !building.ratingPenalty && !building.isFarmland && building.name !== 'Road' && building.name !== 'Remove' && (
+                                                  <div className="flex items-center gap-2">
+                                                      <Info className="h-3 w-3" />
+                                                      <span>Decorative or special-purpose tile.</span>
+                                                  </div>
+                                              )}
+                                          </div>
+                                      </AccordionContent>
+                                  </AccordionItem>
+                                  ))}
+                              </Accordion>
+                            </ScrollArea>
+                        ) : (
+                            <ScrollArea className="h-96 mt-4">
+                                <div className="grid grid-cols-4 gap-2 p-1">
+                                    {filteredBuildings.map((building) => (
+                                        <TooltipProvider key={building.emoji}>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="flex h-20 w-full items-center justify-center text-3xl"
+                                                        onClick={() => handleTileSelect(building)}
+                                                        disabled={selectedTiles.length === 0 || (user.profile.money || 0) < building.cost * selectedTiles.length}
+                                                    >
+                                                        {building.emoji}
+                                                    </Button>
+                                                </TooltipTrigger>
                                                 <TooltipContent>
-                                                    {tooltipContent}
+                                                    <p className="font-semibold">{building.name}</p>
+                                                    <p>Cost: ${building.cost.toLocaleString()}</p>
                                                 </TooltipContent>
                                             </Tooltip>
-                                        )
-                                    }
-
-                                    return tileButton;
-                                })}
-                            </div>
-                         ))}
-                       </div>
-                   </TooltipProvider>
-                ) : (
-                     <div className="flex flex-col items-center gap-4 text-muted-foreground h-64 justify-center">
-                        <Building className="h-12 w-12" />
-                        <p>Start earning points to build your city!</p>
-                    </div>
-                )}
-            </div>
-
-            <div className="lg:col-span-1 space-y-4">
-              <Card className={cn("transition-opacity", selectedTiles.length === 0 && 'opacity-50 pointer-events-none')}>
-                  <CardHeader>
-                      <CardTitle className='font-headline'>Customize Tile</CardTitle>
-                      <CardDescription>
-                          {selectedTiles.length > 0 ? `Customizing ${selectedTiles.length} tile(s).` : 'Select a tile on the grid to customize.'}
-                      </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                      <div className="space-y-4">
-                          <div className="relative">
-                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                              <Input 
-                                  placeholder="Search tiles..."
-                                  className="pl-10"
-                                  value={tileSearchTerm}
-                                  onChange={(e) => setTileSearchTerm(e.target.value)}
-                                  disabled={selectedTiles.length === 0}
-                              />
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                              <Grid3x3 className="h-4 w-4" />
-                              <Switch
-                                  id="view-mode-switch"
-                                  checked={tileView === 'list'}
-                                  onCheckedChange={(checked) => setTileView(checked ? 'list' : 'grid')}
-                                  disabled={selectedTiles.length === 0}
-                              />
-                              <List className="h-4 w-4" />
-                              <Label htmlFor="view-mode-switch">{tileView === 'list' ? 'List View' : 'Grid View'}</Label>
-                          </div>
-                      </div>
-
-                      {tileView === 'list' ? (
-                          <ScrollArea className="h-96 mt-4">
-                            <Accordion type="single" collapsible className="w-full">
-                                {filteredBuildings.map((building) => (
-                                <AccordionItem value={building.name} key={building.name}>
-                                    <div className="flex items-center justify-between py-1 pr-4">
-                                        <AccordionTrigger className='flex-1 p-0 hover:no-underline disabled:opacity-50' disabled={selectedTiles.length === 0 || (user.profile.money || 0) < building.cost * selectedTiles.length}>
-                                            <div className='flex items-center gap-4 text-left w-full'>
-                                                <span className="text-3xl p-4">{building.emoji}</span>
-                                                <div className="flex-1">
-                                                    <p className="font-semibold">{building.name}</p>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Cost: ${building.cost.toLocaleString()}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </AccordionTrigger>
-                                        <Button
-                                            size="sm"
-                                            className="ml-4"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleTileSelect(building);
-                                            }}
-                                            disabled={selectedTiles.length === 0 || (user.profile.money || 0) < building.cost * selectedTiles.length}
-                                        >
-                                            Build
-                                        </Button>
-                                    </div>
-                                    <AccordionContent className='text-xs text-muted-foreground ml-4'>
-                                        <div className='p-4 border-t space-y-2'>
-                                            {building.isResidential && (
-                                                <div className="flex items-center gap-2">
-                                                    <Home className="h-3 w-3" />
-                                                    <span>Residential: Pop. {building.defaultPopulation}-{building.maxPopulation}</span>
-                                                </div>
-                                            )}
-                                             {building.revenueMultiplier && (
-                                                <div className="flex items-center gap-2">
-                                                    <DollarSign className="h-3 w-3" />
-                                                    <span>Commercial: Earns revenue based on population.</span>
-                                                </div>
-                                            )}
-                                            {building.isFarmland && (
-                                                <div className="flex items-center gap-2">
-                                                    <DollarSign className="h-3 w-3" />
-                                                    <span>Special Commercial: Generates income in large plots.</span>
-                                                </div>
-                                            )}
-                                            {building.isPublicService && (
-                                                <div className="flex items-center gap-2 text-yellow-500">
-                                                    <ShieldCheck className="h-3 w-3" />
-                                                    <span>Public Service: Costs ${building.maintenanceCostPerCitizen} per citizen. Increases rating by +{building.ratingBonus} in a {building.ratingRange}-tile radius.</span>
-                                                </div>
-                                            )}
-                                            {building.ratingBonus && !building.isPublicService && (
-                                                <div className="flex items-center gap-2 text-green-500">
-                                                    <TrendingUp className="h-3 w-3" />
-                                                    <span>Amenity: Increases rating by +{building.ratingBonus} in a {building.ratingRange}-tile radius.</span>
-                                                </div>
-                                            )}
-                                            {building.ratingPenalty && (
-                                                <div className="flex items-center gap-2 text-red-500">
-                                                    <TrendingDown className="h-3 w-3" />
-                                                    <span>Nuisance: Decreases rating by {building.ratingPenalty} in a {building.ratingRange}-tile radius.</span>
-                                                </div>
-                                            )}
-                                             {!building.isResidential && !building.revenueMultiplier && !building.isPublicService && !building.ratingBonus && !building.ratingPenalty && !building.isFarmland && building.name !== 'Road' && building.name !== 'Remove' && (
-                                                <div className="flex items-center gap-2">
-                                                    <Info className="h-3 w-3" />
-                                                    <span>Decorative or special-purpose tile.</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                                ))}
-                            </Accordion>
-                          </ScrollArea>
-                      ) : (
-                          <ScrollArea className="h-96 mt-4">
-                              <div className="grid grid-cols-4 gap-2 p-1">
-                                  {filteredBuildings.map((building) => (
-                                      <TooltipProvider key={building.emoji}>
-                                          <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                  <Button
-                                                      variant="outline"
-                                                      className="flex h-20 w-full items-center justify-center text-3xl"
-                                                      onClick={() => handleTileSelect(building)}
-                                                      disabled={selectedTiles.length === 0 || (user.profile.money || 0) < building.cost * selectedTiles.length}
-                                                  >
-                                                      {building.emoji}
-                                                  </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                  <p className="font-semibold">{building.name}</p>
-                                                  <p>Cost: ${building.cost.toLocaleString()}</p>
-                                              </TooltipContent>
-                                          </Tooltip>
-                                      </TooltipProvider>
-                                  ))}
-                              </div>
-                          </ScrollArea>
-                      )}
-                  </CardContent>
-                  
-                {buildingCounts && cityInfo && (
-                <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="item-1" className='border-t'>
-                        <AccordionTrigger className='p-6 font-headline text-lg'>
-                            City Census
-                        </AccordionTrigger>
-                        <AccordionContent>
-                            <div className='space-y-2 max-h-48 overflow-y-auto px-6'>
-                                {buildingCounts.map(b => (
-                                    <div key={b.emoji} className='flex justify-between items-center text-sm'>
-                                        <span className='flex items-center gap-2'>
-                                            <span className='text-lg'>{b.emoji}</span>
-                                            <span>{b.name}</span>
-                                        </span>
-                                        <div className="text-right">
-                                            <span className='font-bold'>{b.count}</span>
-                                            {b.totalRevenue > 0 && (
-                                                <p className="text-xs text-green-500">${Math.floor(b.totalRevenue).toLocaleString()}</p>
-                                            )}
-                                            {b.totalCost > 0 && (
-                                                <p className="text-xs text-red-500">-${Math.floor(b.totalCost).toLocaleString()}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                                <div className='flex justify-between items-center text-sm pt-2 border-t'>
-                                    <span className='flex items-center gap-2'>
-                                      <Leaf className='h-4 w-4' />
-                                      <span>Eco Bonus/Penalty</span>
-                                    </span>
-                                     <div className="text-right">
-                                        <p className={cn("text-sm font-bold", cityInfo.ecoBonus >= 0 ? "text-green-500" : "text-red-500")}>
-                                            ${Math.floor(cityInfo.ecoBonus).toLocaleString()}
-                                        </p>
-                                    </div>
+                                        </TooltipProvider>
+                                    ))}
                                 </div>
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
-              )}
-              </Card>
+                            </ScrollArea>
+                        )}
+                    </CardContent>
+                    
+                  {buildingCounts && cityInfo && (
+                  <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="item-1" className='border-t'>
+                          <AccordionTrigger className='p-6 font-headline text-lg'>
+                              City Census
+                          </AccordionTrigger>
+                          <AccordionContent>
+                              <div className='space-y-2 max-h-48 overflow-y-auto px-6'>
+                                  {buildingCounts.map(b => (
+                                      <div key={b.emoji} className='flex justify-between items-center text-sm'>
+                                          <span className='flex items-center gap-2'>
+                                              <span className='text-lg'>{b.emoji}</span>
+                                              <span>{b.name}</span>
+                                          </span>
+                                          <div className="text-right">
+                                              <span className='font-bold'>{b.count}</span>
+                                              {b.totalRevenue > 0 && (
+                                                  <p className="text-xs text-green-500">${Math.floor(b.totalRevenue).toLocaleString()}</p>
+                                              )}
+                                              {b.totalCost > 0 && (
+                                                  <p className="text-xs text-red-500">-${Math.floor(b.totalCost).toLocaleString()}</p>
+                                              )}
+                                          </div>
+                                      </div>
+                                  ))}
+                                  <div className='flex justify-between items-center text-sm pt-2 border-t'>
+                                      <span className='flex items-center gap-2'>
+                                        <Leaf className='h-4 w-4' />
+                                        <span>Eco Bonus/Penalty</span>
+                                      </span>
+                                      <div className="text-right">
+                                          <p className={cn("text-sm font-bold", cityInfo.ecoBonus >= 0 ? "text-green-500" : "text-red-500")}>
+                                              ${Math.floor(cityInfo.ecoBonus).toLocaleString()}
+                                          </p>
+                                      </div>
+                                  </div>
+                              </div>
+                          </AccordionContent>
+                      </AccordionItem>
+                  </Accordion>
+                )}
+                </Card>
 
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
     </Card>
 
@@ -1343,3 +1360,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
