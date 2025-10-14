@@ -12,25 +12,82 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth-provider';
-import { addGoal, getRecentActivityLogs, getRecentFoodLogs } from '@/lib/data';
-import { Check, Lightbulb, Loader2, Plus, Target } from 'lucide-react';
+import { addGoal, getGoals, getRecentActivityLogs, getRecentFoodLogs, updateGoal } from '@/lib/data';
+import type { Goal } from '@/lib/types';
+import { Check, CheckCircle2, Lightbulb, Loader2, Minus, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 type GoalSuggestion = { description: string; target: number; points: number; };
 type HealthAdvice = { advice: string; goals: GoalSuggestion[] };
 
+
+function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (goal: Goal, amount: number) => void }) {
+    const progressPercentage = (goal.progress / goal.target) * 100;
+    return (
+        <div className="space-y-2 p-4 border rounded-lg">
+            <div className="flex justify-between items-center text-sm">
+                <div className='flex-1'>
+                    <p className={goal.isCompleted ? 'line-through text-muted-foreground' : ''}>{goal.description}</p>
+                    <p className='text-xs text-muted-foreground'>Reward: {goal.points}pts</p>
+                </div>
+                <div className="flex items-center gap-2 font-medium">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => onUpdate(goal, -1)}
+                        disabled={goal.progress <= 0 || goal.isCompleted}
+                    >
+                        <Minus className="h-4 w-4" />
+                    </Button>
+                    <span>{goal.progress} / {goal.target}</span>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => onUpdate(goal, 1)}
+                        disabled={goal.isCompleted}
+                    >
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+            <Progress value={progressPercentage} />
+        </div>
+    )
+}
+
 export default function AdvisorPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { toast } = useToast();
 
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(true);
   const [healthGoal, setHealthGoal] = useState(user?.profile?.healthGoal || '');
   const [adviceResult, setAdviceResult] = useState<HealthAdvice | null>(null);
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [savingGoal, setSavingGoal] = useState<string | null>(null);
+
+  const fetchGoals = useCallback(async () => {
+    if(!user) return;
+    setGoalsLoading(true);
+    const userGoals = await getGoals(user.id);
+    setGoals(userGoals);
+    setGoalsLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+        fetchGoals();
+        setHealthGoal(user.profile?.healthGoal || '');
+    }
+  }, [user, fetchGoals]);
 
 
   const handleGetAdvice = async () => {
@@ -76,10 +133,10 @@ export default function AdvisorPage() {
             progress: 0,
             isCompleted: false,
         });
+        await fetchGoals();
         toast({
             title: 'Goal Saved!',
-            description: 'Your new goal has been added to your dashboard.',
-            action: <Button asChild variant="secondary"><Link href="/dashboard">View Dashboard</Link></Button>
+            description: 'Your new goal has been added to your active goals.',
         });
     } catch(error) {
          toast({
@@ -91,6 +148,48 @@ export default function AdvisorPage() {
         setSavingGoal(null);
     }
   }
+
+    const handleGoalUpdate = async (goal: Goal, amount: number) => {
+    if (!user) return;
+
+    const newProgress = Math.max(0, goal.progress + amount);
+    const isNowCompleted = newProgress >= goal.target;
+    
+    const updatedGoal: Goal = {
+      ...goal,
+      progress: newProgress,
+      isCompleted: isNowCompleted,
+    };
+    
+    // Optimistically update UI
+    const originalGoals = goals;
+    setGoals(currentGoals => currentGoals.map(g => g.id === goal.id ? updatedGoal : g));
+
+    try {
+      await updateGoal(user.id, updatedGoal);
+      if (updatedGoal.isCompleted && !goal.isCompleted) {
+        toast({
+          title: "Goal Complete!",
+          description: `You've achieved: ${goal.description} and earned ${goal.points} points!`,
+          action: <Button asChild variant="secondary"><Link href="/awards">View Awards</Link></Button>
+        });
+      }
+      await refreshUser();
+      // Refetch to ensure state is accurate
+      await fetchGoals();
+    } catch (e) {
+      // Revert if error
+      setGoals(originalGoals);
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Could not update your goal progress.',
+      });
+    }
+  }
+
+  const activeGoals = goals.filter(g => !g.isCompleted);
+  const completedGoals = goals.filter(g => g.isCompleted);
 
   return (
     <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -163,6 +262,48 @@ export default function AdvisorPage() {
              </div>
           </CardContent>
         </Card>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle className='font-headline'>Your Goals</CardTitle>
+                <CardDescription>Track and manage your active and completed goals.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Tabs defaultValue="active">
+                    <TabsList>
+                        <TabsTrigger value="active">Active Goals</TabsTrigger>
+                        <TabsTrigger value="completed">Completed Goals</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="active" className="space-y-4 pt-4">
+                        {goalsLoading ? (
+                           [...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)
+                        ) : activeGoals.length > 0 ? (
+                            activeGoals.map(goal => <GoalProgress key={goal.id} goal={goal} onUpdate={handleGoalUpdate} />)
+                        ) : (
+                            <div className="flex flex-col items-center justify-center text-center p-8 border border-dashed rounded-lg">
+                                <CheckCircle2 className="h-10 w-10 text-muted-foreground" />
+                                <h3 className="mt-2 font-semibold">No Active Goals</h3>
+                                <p className="text-sm text-muted-foreground mt-1">Use the AI Goal Generator above to set new goals.</p>
+                            </div>
+                        )}
+                    </TabsContent>
+                    <TabsContent value="completed" className="space-y-4 pt-4">
+                       {goalsLoading ? (
+                           [...Array(2)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)
+                        ) : completedGoals.length > 0 ? (
+                             completedGoals.map(goal => <GoalProgress key={goal.id} goal={goal} onUpdate={handleGoalUpdate} />)
+                        ) : (
+                            <div className="flex flex-col items-center justify-center text-center p-8 border border-dashed rounded-lg">
+                                <Target className="h-10 w-10 text-muted-foreground" />
+                                <h3 className="mt-2 font-semibold">No Completed Goals Yet</h3>
+                                <p className="text-sm text-muted-foreground mt-1">Keep working on your active goals to see them here!</p>
+                            </div>
+                        )}
+                    </TabsContent>
+                </Tabs>
+            </CardContent>
+        </Card>
+
       </div>
     </main>
   );
