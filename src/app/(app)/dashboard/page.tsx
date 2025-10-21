@@ -128,6 +128,7 @@ export default function DashboardPage() {
   // Hover highlight state
   const [hoveredTile, setHoveredTile] = useState<{y: number, x: number} | null>(null);
   const [highlightedCells, setHighlightedCells] = useState<{y: number, x: number, type: 'positive' | 'negative' | 'area-positive' | 'area-negative'}[]>([]);
+  const [hoveredCensusEmoji, setHoveredCensusEmoji] = useState<string | null>(null);
 
 
   const [data, setData] = useState<{
@@ -878,6 +879,7 @@ export default function DashboardPage() {
                                       const highlight = highlightedCells.find(h => h.y === y && h.x === x);
                                       const isPermanentRoad = permanentRoads.some(pr => pr.x === x && pr.y === y);
                                       const isPermanentRiver = permanentRiverEnds.some(pr => pr.x === x && pr.y === y);
+                                      const isHoveredCensus = hoveredCensusEmoji === cell;
                                       
                                       const tileButton = (
                                           <button 
@@ -888,6 +890,7 @@ export default function DashboardPage() {
                                               className={cn(
                                                   'relative flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', 
                                                   isSelected && 'bg-primary/30 ring-2 ring-primary',
+                                                  isHoveredCensus && 'bg-blue-500/30 ring-2 ring-blue-400',
                                                   highlight?.type === 'positive' && 'ring-2 ring-blue-500 bg-blue-500/20',
                                                   highlight?.type === 'negative' && 'ring-2 ring-red-500 bg-red-500/20',
                                                   (isPermanentRoad || isPermanentRiver) && 'cursor-not-allowed'
@@ -965,14 +968,14 @@ export default function DashboardPage() {
               </div>
 
               <div className="lg:col-span-1 space-y-4">
-                <Card className={cn("transition-opacity", selectedTiles.length === 0 && 'opacity-50 pointer-events-none')}>
+                <Card>
                     <CardHeader>
                         <CardTitle className='font-headline'>Customize Tile</CardTitle>
                         <CardDescription>
                             {selectedTiles.length > 0 ? `Customizing ${selectedTiles.length} tile(s).` : 'Select a tile on the grid to customize.'}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className={cn("transition-opacity", selectedTiles.length === 0 && 'opacity-50 pointer-events-none')}>
                         <div className="space-y-4">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -1104,49 +1107,59 @@ export default function DashboardPage() {
                             </ScrollArea>
                         )}
                     </CardContent>
-                    
-                  {buildingCounts && cityInfo && (
-                  <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="item-1" className='border-t'>
-                          <AccordionTrigger className='p-6 font-headline text-lg'>
-                              City Census
-                          </AccordionTrigger>
-                          <AccordionContent>
-                              <div className='space-y-2 max-h-48 overflow-y-auto px-6'>
-                                  {buildingCounts.map(b => (
-                                      <div key={b.emoji} className='flex justify-between items-center text-sm'>
-                                          <span className='flex items-center gap-2'>
-                                              <span className='text-lg'>{b.emoji}</span>
-                                              <span>{b.name}</span>
-                                          </span>
-                                          <div className="text-right">
-                                              <span className='font-bold'>{b.count}</span>
-                                              {b.totalRevenue > 0 && (
-                                                  <p className="text-xs text-green-500">${Math.floor(b.totalRevenue).toLocaleString()}</p>
-                                              )}
-                                              {b.totalCost > 0 && (
-                                                  <p className="text-xs text-red-500">-${Math.floor(b.totalCost).toLocaleString()}</p>
-                                              )}
-                                          </div>
-                                      </div>
-                                  ))}
-                                  <div className='flex justify-between items-center text-sm pt-2 border-t'>
-                                      <span className='flex items-center gap-2'>
-                                        <Leaf className='h-4 w-4' />
-                                        <span>Eco Bonus/Penalty</span>
-                                      </span>
-                                      <div className="text-right">
-                                          <p className={cn("text-sm font-bold", cityInfo.ecoBonus >= 0 ? "text-green-500" : "text-red-500")}>
-                                              ${Math.floor(cityInfo.ecoBonus).toLocaleString()}
-                                          </p>
-                                      </div>
-                                  </div>
-                              </div>
-                          </AccordionContent>
-                      </AccordionItem>
+                </Card>
+
+                {buildingCounts && cityInfo && (
+                  <Accordion type="single" collapsible className="w-full" asChild>
+                      <Card>
+                        <AccordionItem value="item-1" className='border-0'>
+                            <CardHeader>
+                                <AccordionTrigger className='p-0 font-headline text-lg hover:no-underline'>
+                                    City Census
+                                </AccordionTrigger>
+                            </CardHeader>
+                            <AccordionContent>
+                                <CardContent className='pt-0'>
+                                    <div className='space-y-2 max-h-48 overflow-y-auto' onMouseLeave={() => setHoveredCensusEmoji(null)}>
+                                        {buildingCounts.map(b => (
+                                            <div 
+                                                key={b.emoji} 
+                                                className='flex justify-between items-center text-sm p-1 rounded-md'
+                                                onMouseEnter={() => setHoveredCensusEmoji(b.emoji)}
+                                            >
+                                                <span className='flex items-center gap-2'>
+                                                    <span className='text-lg'>{b.emoji}</span>
+                                                    <span>{b.name}</span>
+                                                </span>
+                                                <div className="text-right">
+                                                    <span className='font-bold'>{b.count}</span>
+                                                    {b.totalRevenue > 0 && (
+                                                        <p className="text-xs text-green-500">${Math.floor(b.totalRevenue).toLocaleString()}</p>
+                                                    )}
+                                                    {b.totalCost > 0 && (
+                                                        <p className="text-xs text-red-500">-${Math.floor(b.totalCost).toLocaleString()}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div className='flex justify-between items-center text-sm pt-2 border-t'>
+                                            <span className='flex items-center gap-2'>
+                                            <Leaf className='h-4 w-4' />
+                                            <span>Eco Bonus/Penalty</span>
+                                            </span>
+                                            <div className="text-right">
+                                                <p className={cn("text-sm font-bold", cityInfo.ecoBonus >= 0 ? "text-green-500" : "text-red-500")}>
+                                                    ${Math.floor(cityInfo.ecoBonus).toLocaleString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </AccordionContent>
+                        </AccordionItem>
+                      </Card>
                   </Accordion>
                 )}
-                </Card>
 
               </div>
             </div>
@@ -1360,5 +1373,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
