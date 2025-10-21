@@ -52,16 +52,17 @@ import {
   addShoppingCartItem,
   updateShoppingCartItem,
   deleteShoppingCartItem,
+  addPantryItem,
 } from '@/lib/data';
 import type { ShoppingCartItem, Store } from '@/lib/types';
-import { PlusCircle, Trash2, Edit, Loader2, Star, ShoppingCart } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Loader2, Star, ShoppingCart, PackagePlus } from 'lucide-react';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 const STORES: Store[] = ['Any', 'Costco', 'Walmart', 'Trader Joe\'s', 'Whole Foods'];
 
@@ -249,6 +250,32 @@ export default function ShoppingCartPage() {
     }
   };
 
+  const handleMoveToPantry = async (item: ShoppingCartItem) => {
+    if (!user) return;
+    try {
+        await addPantryItem(user.id, {
+            name: item.name,
+            quantity: 1,
+            unit: 'units',
+            category: 'Other',
+            purchaseDate: new Date().toISOString(),
+            expirationDate: addDays(new Date(), 14).toISOString(),
+        });
+        await deleteShoppingCartItem(user.id, item.id);
+        toast({
+            title: "Item Moved",
+            description: `"${item.name}" has been added to your pantry and removed from the cart.`,
+        });
+        fetchItems();
+    } catch(error) {
+        toast({
+            variant: 'destructive',
+            title: 'Move Failed',
+            description: 'Could not move the item to the pantry.'
+        });
+    }
+  };
+
   const filteredItems = useMemo(() => {
     if (storeFilter === 'All') return items;
     return items.filter(item => item.store === storeFilter);
@@ -330,6 +357,9 @@ export default function ShoppingCartPage() {
                     </TableCell>
                     <TableCell>{format(new Date(item.dateAdded), 'PPP')}</TableCell>
                     <TableCell className="text-right">
+                       <Button variant="ghost" size="icon" onClick={() => handleMoveToPantry(item)}>
+                        <PackagePlus className="h-4 w-4" />
+                      </Button>
                       <ShoppingCartItemDialog
                         item={item}
                         onSave={handleSaveItem}
@@ -379,5 +409,7 @@ export default function ShoppingCartPage() {
     </main>
   );
 }
+
+    
 
     
