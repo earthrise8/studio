@@ -54,7 +54,7 @@ import {
   deleteShoppingCartItem,
   addPantryItem,
 } from '@/lib/data';
-import type { ShoppingCartItem, Store } from '@/lib/types';
+import type { ShoppingCartItem, Store, PantryItem } from '@/lib/types';
 import { PlusCircle, Trash2, Edit, Loader2, Star, ShoppingCart, PackagePlus } from 'lucide-react';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -208,6 +208,34 @@ function ShoppingCartItemDialog({
   );
 }
 
+const categoryKeywords: Record<PantryItem['category'], string[]> = {
+    'Produce': ['apple', 'banana', 'lettuce', 'tomato', 'onion', 'potato', 'broccoli', 'carrot', 'spinach', 'avocado', 'berries', 'grapes', 'orange', 'lemon'],
+    'Dairy': ['milk', 'cheese', 'yogurt', 'butter', 'cream'],
+    'Meat': ['chicken', 'beef', 'pork', 'turkey', 'lamb', 'fish', 'salmon', 'tuna', 'sausage', 'bacon', 'steak'],
+    'Pantry': ['bread', 'rice', 'pasta', 'flour', 'sugar', 'cereal', 'oats', 'beans', 'lentils', 'oil', 'vinegar', 'sauce', 'soup', 'canned'],
+    'Frozen': ['frozen vegetables', 'frozen fruit', 'ice cream', 'frozen pizza', 'frozen meal'],
+    'Other': [],
+};
+
+const getCategoryFromName = (name: string): PantryItem['category'] => {
+    const lowerCaseName = name.toLowerCase();
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+        if (keywords.some(keyword => lowerCaseName.includes(keyword))) {
+            return category as PantryItem['category'];
+        }
+    }
+    return 'Other';
+};
+
+const defaultExpirationDays: Record<PantryItem['category'], number> = {
+    Produce: 7,
+    Dairy: 10,
+    Meat: 4,
+    Pantry: 365,
+    Frozen: 180,
+    Other: 14,
+};
+
 export default function ShoppingCartPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -253,13 +281,15 @@ export default function ShoppingCartPage() {
   const handleMoveToPantry = async (item: ShoppingCartItem) => {
     if (!user) return;
     try {
+        const category = getCategoryFromName(item.name);
+        const expirationDays = defaultExpirationDays[category];
         await addPantryItem(user.id, {
             name: item.name,
             quantity: 1,
             unit: 'units',
-            category: 'Other',
+            category: category,
             purchaseDate: new Date().toISOString(),
-            expirationDate: addDays(new Date(), 14).toISOString(),
+            expirationDate: addDays(new Date(), expirationDays).toISOString(),
         });
         await deleteShoppingCartItem(user.id, item.id);
         toast({
@@ -409,7 +439,3 @@ export default function ShoppingCartPage() {
     </main>
   );
 }
-
-    
-
-    
