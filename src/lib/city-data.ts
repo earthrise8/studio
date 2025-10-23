@@ -85,21 +85,21 @@ export const getBuildingSet = (points: number) => {
   let available = [TILES.ROAD, TILES.GRASS, TILES.EMPTY, TILES.POND, findBuilding('Tent'), findBuilding('Hut')];
   
   if (points >= 0) available.push(TILES.FARMLAND, TILES.POLICE, TILES.FIRE, TILES.HOSPITAL, TILES.SCHOOL, TILES.GRAVEYARD, TILES['POST OFFICE'], TILES.STATION);
-  if (points >= 100) available.push(...TILES.VILLAGE, findBuilding('Big Tree'));
-  if (points >= 200) available.push(findBuilding('Sunflower Field'));
+  if (points >= 100) available.push(...TILES.VILLAGE);
+  if (points >= 200) available.push(findBuilding('Big Tree'));
   if (points >= 300) available.push(...TILES.GRAND_VILLAGE);
-  if (points >= 400) available.push(...TILES.TOWN, findBuilding('Palm Tree'));
+  if (points >= 400) available.push(...TILES.TOWN);
   if (points >= 500) available.push(...TILES.BOOM_TOWN);
-  if (points >= 600) available.push(...TILES.BUSY_TOWN, findBuilding('Cactus'));
-  if (points >= 700) available.push(...TILES.BIG_TOWN);
-  if (points >= 800) available.push(...TILES.GREAT_TOWN, findBuilding('Leafless Tree'));
-  if (points >= 900) available.push(...TILES.SMALL_CITY, TILES.FACTORY);
-  if (points >= 1000) available.push(...TILES.BIG_CITY, findBuilding('Leaf'));
-  if (points >= 1100) available.push(...TILES.LARGE_CITY);
+  if (points >= 600) available.push(...TILES.BUSY_TOWN);
+  if (points >= 700) available.push(...TILES.BIG_TOWN, findBuilding('Sunflower Field'));
+  if (points >= 800) available.push(...TILES.GREAT_TOWN);
+  if (points >= 900) available.push(...TILES.SMALL_CITY, TILES.FACTORY, findBuilding('Palm Tree'));
+  if (points >= 1000) available.push(...TILES.BIG_CITY);
+  if (points >= 1100) available.push(...TILES.LARGE_CITY, findBuilding('Cactus'));
   if (points >= 1200) available.push(...TILES.HUGE_CITY);
-  if (points >= 1300) available.push(...TILES.GRAND_CITY);
+  if (points >= 1300) available.push(...TILES.GRAND_CITY, findBuilding('Leafless Tree'));
   if (points >= 1400) available.push(...TILES.METROPOLIS, TILES.AIRPORT);
-  if (points >= 1500) available.push(...TILES.MEGALOPOLIS);
+  if (points >= 1500) available.push(...TILES.MEGALOPOLIS, findBuilding('Leaf'));
 
   // Remove duplicates by emoji
   const uniqueAvailable = available.filter((v,i,a)=>a.findIndex(t=>(t.emoji === v.emoji))===i);

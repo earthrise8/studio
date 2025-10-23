@@ -827,7 +827,7 @@ export default function DashboardPage() {
                 <CardTitle className='text-lg font-headline flex items-center justify-center gap-2'><CalendarDays className='h-5 w-5' /> In-Game Time</CardTitle>
                 <p className='text-md font-bold text-primary'>Day {inGameDay}</p>
               </div>
-              <div className="flex flex-col justify-center">
+               <div className="flex flex-col justify-center">
                 <div className="flex items-center justify-center gap-2 text-lg font-headline"><Leaf className='h-5 w-5' /> Eco Score</div>
                 <p className='text-md font-bold'>{cityInfo.ecoScore}</p>
               </div>
