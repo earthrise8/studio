@@ -168,9 +168,9 @@ const initialFriends: Record<string, Friend[]> = {
 
 const initialShoppingCart: Record<string, ShoppingCartItem[]> = {
     'user123': [
-        { id: 'sc1', name: 'Organic Apples', dateAdded: subDays(today, 1).toISOString(), store: 'Whole Foods', price: 3.99, healthRating: 5 },
-        { id: 'sc2', name: 'Almond Milk', dateAdded: subDays(today, 2).toISOString(), store: 'Trader Joe\'s', price: 2.99, healthRating: 4 },
-        { id: 'sc3', name: 'Whole Wheat Bread', dateAdded: subDays(today, 1).toISOString(), store: 'Walmart', price: 2.50, healthRating: 3 },
+        { id: 'sc1', name: 'Organic Apples', quantity: 5, dateAdded: subDays(today, 1).toISOString(), store: 'Whole Foods', price: 3.99, healthRating: 5 },
+        { id: 'sc2', name: 'Almond Milk', quantity: 1, dateAdded: subDays(today, 2).toISOString(), store: 'Trader Joe\'s', price: 2.99, healthRating: 4 },
+        { id: 'sc3', name: 'Whole Wheat Bread', quantity: 1, dateAdded: subDays(today, 1).toISOString(), store: 'Walmart', price: 2.50, healthRating: 3 },
     ]
 };
 
@@ -578,6 +578,18 @@ export const deleteShoppingCartItem = async (userId: string, itemId: string): Pr
         saveToStorage('MOCK_SHOPPING_CART', MOCK_SHOPPING_CART);
     }
 };
-    
 
+export const moveItemToPantry = async (userId: string, item: ShoppingCartItem): Promise<void> => {
+    const category = getCategoryFromName(item.name);
+    const expirationDays = defaultExpirationDays[category];
+    await addPantryItem(userId, {
+        name: item.name,
+        quantity: item.quantity,
+        unit: 'units', // Assuming 'units' for now, could be improved
+        category: category,
+        purchaseDate: new Date().toISOString(),
+        expirationDate: addDays(new Date(), expirationDays).toISOString(),
+    });
+    await deleteShoppingCartItem(userId, item.id);
+};
     

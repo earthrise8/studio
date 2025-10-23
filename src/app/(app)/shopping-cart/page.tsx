@@ -52,7 +52,7 @@ import {
   addShoppingCartItem,
   updateShoppingCartItem,
   deleteShoppingCartItem,
-  addPantryItem,
+  moveItemToPantry,
 } from '@/lib/data';
 import type { ShoppingCartItem, Store, PantryItem } from '@/lib/types';
 import { PlusCircle, Trash2, Edit, Loader2, Star, ShoppingCart, PackagePlus } from 'lucide-react';
@@ -68,6 +68,7 @@ const STORES: Store[] = ['Any', 'Costco', 'Walmart', 'Trader Joe\'s', 'Whole Foo
 
 const shoppingCartItemSchema = z.object({
   name: z.string().min(1, 'Item name is required.'),
+  quantity: z.coerce.number().min(1, 'Quantity must be at least 1.'),
   price: z.coerce.number().min(0, 'Price must be a positive number.'),
   store: z.enum(STORES),
   healthRating: z.coerce.number().min(1).max(5),
@@ -106,11 +107,13 @@ function ShoppingCartItemDialog({
     resolver: zodResolver(shoppingCartItemSchema),
     defaultValues: item ? {
       name: item.name,
+      quantity: item.quantity,
       price: item.price,
       store: item.store,
       healthRating: item.healthRating,
     } : {
       name: '',
+      quantity: 1,
       price: 0,
       store: 'Any',
       healthRating: 3,
@@ -121,11 +124,13 @@ function ShoppingCartItemDialog({
     if(open) {
         form.reset(item ? {
             name: item.name,
+            quantity: item.quantity,
             price: item.price,
             store: item.store,
             healthRating: item.healthRating,
           } : {
             name: '',
+            quantity: 1,
             price: 0,
             store: 'Any',
             healthRating: 3,
@@ -166,6 +171,13 @@ function ShoppingCartItemDialog({
               </FormItem>
             )} />
             <div className="grid grid-cols-2 gap-4">
+              <FormField control={form.control} name="quantity" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantity</FormLabel>
+                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormField control={form.control} name="price" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Price ($)</FormLabel>
@@ -173,7 +185,8 @@ function ShoppingCartItemDialog({
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="store" render={({ field }) => (
+            </div>
+             <FormField control={form.control} name="store" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Store</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -185,7 +198,6 @@ function ShoppingCartItemDialog({
                   <FormMessage />
                 </FormItem>
               )} />
-            </div>
             <FormField control={form.control} name="healthRating" render={({ field }) => (
               <FormItem>
                 <FormLabel>Health Rating</FormLabel>
@@ -281,17 +293,7 @@ export default function ShoppingCartPage() {
   const handleMoveToPantry = async (item: ShoppingCartItem) => {
     if (!user) return;
     try {
-        const category = getCategoryFromName(item.name);
-        const expirationDays = defaultExpirationDays[category];
-        await addPantryItem(user.id, {
-            name: item.name,
-            quantity: 1,
-            unit: 'units',
-            category: category,
-            purchaseDate: new Date().toISOString(),
-            expirationDate: addDays(new Date(), expirationDays).toISOString(),
-        });
-        await deleteShoppingCartItem(user.id, item.id);
+        await moveItemToPantry(user.id, item);
         toast({
             title: "Item Moved",
             description: `"${item.name}" has been added to your pantry and removed from the cart.`,
@@ -311,7 +313,7 @@ export default function ShoppingCartPage() {
     return items.filter(item => item.store === storeFilter);
   }, [items, storeFilter]);
 
-  const totalCost = filteredItems.reduce((acc, item) => acc + item.price, 0);
+  const totalCost = filteredItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const allStores: (Store | 'All')[] = ['All', ...STORES];
 
   return (
@@ -362,6 +364,7 @@ export default function ShoppingCartPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Item</TableHead>
+                  <TableHead>Qty</TableHead>
                   <TableHead>Store</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Health Rating</TableHead>
@@ -373,6 +376,7 @@ export default function ShoppingCartPage() {
                 {filteredItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
                     <TableCell>{item.store}</TableCell>
                     <TableCell>${item.price.toFixed(2)}</TableCell>
                     <TableCell>

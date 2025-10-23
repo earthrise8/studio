@@ -95,9 +95,11 @@ export type Store = 'Any' | 'Costco' | 'Walmart' | 'Trader Joe\'s' | 'Whole Food
 export type ShoppingCartItem = {
   id: string;
   name: string;
+  quantity: number;
   dateAdded: string; // ISO 8601 date string
   store: Store;
   price: number;
   healthRating: number; // 1-5
 };
     
+
