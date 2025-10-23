@@ -608,8 +608,11 @@ export const updateShoppingCartItem = async (userId: string, itemId: string, upd
 export const deleteShoppingCartItem = async (userId: string, itemId: string): Promise<void> => {
     let MOCK_SHOPPING_CART = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
     if (MOCK_SHOPPING_CART[userId]) {
-        MOCK_SHOPPING_CART[userId] = MOCK_SHOPPING_CART[userId].filter(item => item.id !== itemId);
-        saveToStorage('MOCK_SHOPPING_CART', MOCK_SHOPPING_CART);
+        const itemIndex = MOCK_SHOPPING_CART[userId].findIndex(item => item.id === itemId);
+        if (itemIndex > -1) {
+            MOCK_SHOPPING_CART[userId].splice(itemIndex, 1);
+            saveToStorage('MOCK_SHOPPING_CART', MOCK_SHOPPING_CART);
+        }
     }
 };
 
@@ -630,6 +633,7 @@ export const moveItemToPantry = async (userId: string, item: ShoppingCartItem): 
     await deleteShoppingCartItem(userId, item.id);
 };
     
+
 
 
 
