@@ -324,6 +324,32 @@ function AddRecipeDialog({
 function RecipeDialog({ recipe, pantry, children, onToggleFavorite, onDelete }: { recipe: Recipe, pantry: PantryItem[], children: React.ReactNode, onToggleFavorite: (recipe: Recipe) => void, onDelete: (id: string, name: string) => void }) {
     const { user } = useAuth();
     const { toast } = useToast();
+
+    const parseIngredient = (line: string): { name: string; quantity: number } => {
+        const cleanedLine = line.replace(/^-/, '').trim();
+        
+        // Regex to capture quantity (e.g., 1, 1/2, 1.5) and the rest of the line as the name
+        const match = cleanedLine.match(/^(\d+(\.\d+)?(\/\d+)?)\s*([a-zA-Z]+)?\s+(.*)/);
+        
+        if (match) {
+            const quantityStr = match[1];
+            let quantity = 1;
+            
+            if (quantityStr.includes('/')) {
+                const parts = quantityStr.split('/');
+                quantity = parseInt(parts[0], 10) / parseInt(parts[1], 10);
+            } else {
+                quantity = parseFloat(quantityStr);
+            }
+
+            const name = (match[4] ? `${match[4]} ` : '') + match[5];
+            return { name: name.trim(), quantity: Math.ceil(quantity) || 1 };
+        }
+        
+        // Fallback for ingredients without a leading number
+        return { name: cleanedLine, quantity: 1 };
+    };
+
     
     const ingredientsNeeded = useMemo(() => {
         if (!recipe) return { needed: 0, newIngredients: [] };
@@ -332,16 +358,17 @@ function RecipeDialog({ recipe, pantry, children, onToggleFavorite, onDelete }: 
         
         const requiredIngredients = recipe.ingredients
             .split('\n')
-            .map(line => line.replace(/^- /, '').trim().toLowerCase())
+            .map(line => line.trim())
             .filter(Boolean);
 
-        const newIngredients = requiredIngredients.filter(req => {
-            return !Array.from(pantryItemNames).some(pantryItem => req.includes(pantryItem));
+        const newIngredients = requiredIngredients.filter(reqLine => {
+             const lowerReq = reqLine.replace(/^- /, '').trim().toLowerCase();
+            return !Array.from(pantryItemNames).some(pantryItem => lowerReq.includes(pantryItem));
         });
 
         return {
             needed: newIngredients.length,
-            newIngredients: newIngredients.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+            newIngredients: newIngredients.map(parseIngredient),
         };
     }, [recipe, pantry]);
     
@@ -365,10 +392,10 @@ function RecipeDialog({ recipe, pantry, children, onToggleFavorite, onDelete }: 
     const handleAddMissingToCart = async () => {
         if (!user || ingredientsNeeded.needed === 0) return;
         try {
-            await Promise.all(ingredientsNeeded.newIngredients.map(ingredientName => {
+            await Promise.all(ingredientsNeeded.newIngredients.map(ingredient => {
                 return addShoppingCartItem(user.id, {
-                    name: ingredientName,
-                    quantity: 1,
+                    name: ingredient.name,
+                    quantity: ingredient.quantity,
                     price: 0, // Default price
                     store: 'Any',
                     healthRating: 3, // Default rating
@@ -950,7 +977,7 @@ function AiGeneratorTab({ user }: { user: NonNullable<ReturnType<typeof useAuth>
                                     <AlertTitle>New Ingredients Needed: {ingredientsNeeded.needed}</AlertTitle>
                                     <AlertDescription>
                                         {ingredientsNeeded.needed > 0
-                                        ? `You may need to buy these: ${ingredientsNeeded.newIngredients.join(', ')}`
+                                        ? `You may need to buy these: ${ingredientsNeeded.newIngredients.map(i => i.name).join(', ')}`
                                         : "You have all the core ingredients in your pantry!"}
                                     </AlertDescription>
                                 </Alert>
@@ -1034,5 +1061,7 @@ export default function RecipesPage() {
     </main>
   );
 }
+
+    
 
     
