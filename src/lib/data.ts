@@ -174,6 +174,34 @@ const initialShoppingCart: Record<string, ShoppingCartItem[]> = {
     ]
 };
 
+const categoryKeywords: Record<PantryItem['category'], string[]> = {
+    'Produce': ['apple', 'banana', 'lettuce', 'tomato', 'onion', 'potato', 'broccoli', 'carrot', 'spinach', 'avocado', 'berries', 'grapes', 'orange', 'lemon'],
+    'Dairy': ['milk', 'cheese', 'yogurt', 'butter', 'cream'],
+    'Meat': ['chicken', 'beef', 'pork', 'turkey', 'lamb', 'fish', 'salmon', 'tuna', 'sausage', 'bacon', 'steak'],
+    'Pantry': ['bread', 'rice', 'pasta', 'flour', 'sugar', 'cereal', 'oats', 'beans', 'lentils', 'oil', 'vinegar', 'sauce', 'soup', 'canned'],
+    'Frozen': ['frozen vegetables', 'frozen fruit', 'ice cream', 'frozen pizza', 'frozen meal'],
+    'Other': [],
+};
+
+const getCategoryFromName = (name: string): PantryItem['category'] => {
+    const lowerCaseName = name.toLowerCase();
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+        if (keywords.some(keyword => lowerCaseName.includes(keyword))) {
+            return category as PantryItem['category'];
+        }
+    }
+    return 'Other';
+};
+
+const defaultExpirationDays: Record<PantryItem['category'], number> = {
+    Produce: 7,
+    Dairy: 10,
+    Meat: 4,
+    Pantry: 365,
+    Frozen: 180,
+    Other: 14,
+};
+
 
 // --- Data Access Functions using localStorage ---
 
@@ -582,14 +610,18 @@ export const deleteShoppingCartItem = async (userId: string, itemId: string): Pr
 export const moveItemToPantry = async (userId: string, item: ShoppingCartItem): Promise<void> => {
     const category = getCategoryFromName(item.name);
     const expirationDays = defaultExpirationDays[category];
-    await addPantryItem(userId, {
+    
+    const pantryItemData = {
         name: item.name,
         quantity: item.quantity,
-        unit: 'units', // Assuming 'units' for now, could be improved
+        unit: 'units' as const, // Assuming 'units' for now, could be improved
         category: category,
         purchaseDate: new Date().toISOString(),
         expirationDate: addDays(new Date(), expirationDays).toISOString(),
-    });
+    };
+
+    await addPantryItem(userId, pantryItemData);
     await deleteShoppingCartItem(userId, item.id);
 };
     
+
