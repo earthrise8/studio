@@ -20,9 +20,9 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { getRecipes, deleteRecipe, addRecipe, getPantryItems, updateRecipe } from '@/lib/data';
+import { getRecipes, deleteRecipe, addRecipe, getPantryItems, updateRecipe, addShoppingCartItem } from '@/lib/data';
 import type { Recipe, PantryItem } from '@/lib/types';
-import { ChefHat, Trash2, Search, PlusCircle, Loader2, Sparkles, CookingPot, Flame, Bookmark, Info, Star, Clock, Users, Award, Heart, Leaf } from 'lucide-react';
+import { ChefHat, Trash2, Search, PlusCircle, Loader2, Sparkles, CookingPot, Flame, Bookmark, Info, Star, Clock, Users, Award, Heart, Leaf, ShoppingCart } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import Link from 'next/link';
@@ -322,6 +322,29 @@ function AddRecipeDialog({
 }
 
 function RecipeDialog({ recipe, pantry, children, onToggleFavorite, onDelete }: { recipe: Recipe, pantry: PantryItem[], children: React.ReactNode, onToggleFavorite: (recipe: Recipe) => void, onDelete: (id: string, name: string) => void }) {
+    const { user } = useAuth();
+    const { toast } = useToast();
+    
+    const ingredientsNeeded = useMemo(() => {
+        if (!recipe) return { needed: 0, newIngredients: [] };
+        
+        const pantryItemNames = new Set(pantry.map(i => i.name.toLowerCase()));
+        
+        const requiredIngredients = recipe.ingredients
+            .split('\n')
+            .map(line => line.replace(/^- /, '').trim().toLowerCase())
+            .filter(Boolean);
+
+        const newIngredients = requiredIngredients.filter(req => {
+            return !Array.from(pantryItemNames).some(pantryItem => req.includes(pantryItem));
+        });
+
+        return {
+            needed: newIngredients.length,
+            newIngredients: newIngredients.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+        };
+    }, [recipe, pantry]);
+    
     const getPantryInfoForIngredient = (ingredientLine: string) => {
         const lowerIngredientLine = ingredientLine.toLowerCase();
         for (const pantryItem of pantry) {
@@ -337,6 +360,32 @@ function RecipeDialog({ recipe, pantry, children, onToggleFavorite, onDelete }: 
             }
         }
         return null;
+    }
+
+    const handleAddMissingToCart = async () => {
+        if (!user || ingredientsNeeded.needed === 0) return;
+        try {
+            await Promise.all(ingredientsNeeded.newIngredients.map(ingredientName => {
+                return addShoppingCartItem(user.id, {
+                    name: ingredientName,
+                    quantity: 1,
+                    price: 0, // Default price
+                    store: 'Any',
+                    healthRating: 3, // Default rating
+                });
+            }));
+            toast({
+                title: `${ingredientsNeeded.needed} item(s) added to cart`,
+                description: `Missing ingredients for "${recipe.name}" are now in your shopping list.`,
+                action: <Button asChild variant="secondary" size="sm"><Link href="/shopping-cart">View Cart</Link></Button>
+            });
+        } catch(e) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not add items to your shopping cart.'
+            })
+        }
     }
 
     return (
@@ -393,17 +442,30 @@ function RecipeDialog({ recipe, pantry, children, onToggleFavorite, onDelete }: 
                             </div>
                         </>
                     )}
-                    <div className="space-y-6">
+                     <div className="space-y-6">
                         <Separator />
                         <div>
-                            <h3 className="font-headline font-bold mb-4 text-lg">Ingredients</h3>
+                            <div className='flex justify-between items-center mb-4'>
+                                <h3 className="font-headline font-bold text-lg">Ingredients</h3>
+                                {ingredientsNeeded.needed > 0 && (
+                                    <Button size="sm" onClick={handleAddMissingToCart}>
+                                        <ShoppingCart className="mr-2 h-4 w-4" />
+                                        Add {ingredientsNeeded.needed} Missing to Cart
+                                    </Button>
+                                )}
+                            </div>
                             <ul className="text-sm space-y-2">
                                 {recipe.ingredients.split('\n').map((line, i) => {
+                                    if (!line.trim()) return null;
                                     const pantryInfo = getPantryInfoForIngredient(line);
                                     return (
                                         <li key={i} className="flex items-center gap-2">
                                             <span>{line.replace(/^- /, '')}</span>
-                                            {pantryInfo && <span className={cn('text-xs', pantryInfo.color)}>{pantryInfo.text}</span>}
+                                            {pantryInfo ? (
+                                              <span className={cn('text-xs font-semibold', pantryInfo.color)}>{pantryInfo.text}</span>
+                                            ) : (
+                                              <Badge variant="destructive" className="text-xs">Missing</Badge>
+                                            )}
                                         </li>
                                     );
                                 })}
@@ -972,3 +1034,5 @@ export default function RecipesPage() {
     </main>
   );
 }
+
+    
