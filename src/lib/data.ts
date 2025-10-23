@@ -577,7 +577,7 @@ export const addShoppingCartItem = async (userId: string, itemData: Omit<Shoppin
     
     const newItem: ShoppingCartItem = {
         ...itemData,
-        id: `sc${Date.now()}`,
+        id: `sc${Date.now()}${Math.random()}`,
         dateAdded: new Date().toISOString(),
     };
     MOCK_SHOPPING_CART[userId].unshift(newItem);
@@ -624,4 +624,5 @@ export const moveItemToPantry = async (userId: string, item: ShoppingCartItem): 
     await deleteShoppingCartItem(userId, item.id);
 };
     
+
 
