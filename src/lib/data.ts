@@ -41,6 +41,12 @@ const saveToStorage = <T>(key: string, value: T) => {
   window.localStorage.setItem(key, JSON.stringify(value));
 };
 
+// Unique ID generator
+const generateUniqueId = (prefix: string) => {
+    return `${prefix}${Date.now()}${Math.random().toString(36).substring(2, 9)}`;
+}
+
+
 // --- Initial Mock Data ---
 
 const initialUsers: Record<string, User> = {
@@ -251,7 +257,7 @@ const checkAndGrantAwards = async (userId: string, completedGoal: Goal) => {
 
     if(!existingAward) {
         const newAward: Award = {
-            id: `a${Date.now()}`,
+            id: generateUniqueId('a'),
             name: awardName,
             description: 'You successfully completed a personal goal.',
             dateAchieved: new Date().toISOString(),
@@ -328,7 +334,7 @@ export const addPantryItem = async (userId: string, itemData: Omit<PantryItem, '
     let MOCK_PANTRY = getFromStorage('MOCK_PANTRY', initialPantry);
     if (!MOCK_PANTRY[userId]) MOCK_PANTRY[userId] = [];
     
-    const newItem: PantryItem = { ...itemData, id: `p${Date.now()}${Math.random()}` };
+    const newItem: PantryItem = { ...itemData, id: generateUniqueId('p') };
     MOCK_PANTRY[userId].push(newItem);
     saveToStorage('MOCK_PANTRY', MOCK_PANTRY);
     return newItem;
@@ -365,7 +371,7 @@ export const addFoodLog = async (userId: string, logData: Omit<FoodLog, 'id'>): 
     let MOCK_FOOD_LOGS = getFromStorage('MOCK_FOOD_LOGS', initialFoodLogs);
     if (!MOCK_FOOD_LOGS[userId]) MOCK_FOOD_LOGS[userId] = [];
     
-    const newLog: FoodLog = { ...logData, id: `fl${Date.now()}` };
+    const newLog: FoodLog = { ...logData, id: generateUniqueId('fl') };
     MOCK_FOOD_LOGS[userId].push(newLog);
     saveToStorage('MOCK_FOOD_LOGS', MOCK_FOOD_LOGS);
     return newLog;
@@ -402,7 +408,7 @@ export const addActivityLog = async (userId: string, logData: Omit<ActivityLog, 
     let MOCK_ACTIVITY_LOGS = getFromStorage('MOCK_ACTIVITY_LOGS', initialActivityLogs);
     if (!MOCK_ACTIVITY_LOGS[userId]) MOCK_ACTIVITY_LOGS[userId] = [];
 
-    const newLog: ActivityLog = { ...logData, id: `al${Date.now()}` };
+    const newLog: ActivityLog = { ...logData, id: generateUniqueId('al') };
     MOCK_ACTIVITY_LOGS[userId].push(newLog);
     saveToStorage('MOCK_ACTIVITY_LOGS', MOCK_ACTIVITY_LOGS);
     return newLog;
@@ -457,7 +463,7 @@ export const getRecipes = async (userId: string): Promise<Recipe[]> => {
 
 export const addRecipe = async (userId: string, recipe: Omit<Recipe, 'id'>): Promise<Recipe> => {
     let MOCK_RECIPES = getFromStorage('MOCK_RECIPES', initialRecipes);
-    const newRecipe: Recipe = { ...recipe, id: `r${Date.now()}${Math.random()}` };
+    const newRecipe: Recipe = { ...recipe, id: generateUniqueId('r') };
     if (!MOCK_RECIPES[userId]) MOCK_RECIPES[userId] = [];
 
     MOCK_RECIPES[userId].push(newRecipe);
@@ -499,7 +505,7 @@ export const addGoal = async (userId: string, goalData: Omit<Goal, 'id'>): Promi
     let MOCK_GOALS = getFromStorage('MOCK_GOALS', initialGoals);
     if (!MOCK_GOALS[userId]) MOCK_GOALS[userId] = [];
 
-    const newGoal: Goal = { ...goalData, id: `g${Date.now()}`};
+    const newGoal: Goal = { ...goalData, id: generateUniqueId('g')};
     MOCK_GOALS[userId].push(newGoal);
     saveToStorage('MOCK_GOALS', MOCK_GOALS);
     return newGoal;
@@ -577,7 +583,7 @@ export const addShoppingCartItem = async (userId: string, itemData: Omit<Shoppin
     
     const newItem: ShoppingCartItem = {
         ...itemData,
-        id: `sc${Date.now()}${Math.random()}`,
+        id: generateUniqueId('sc'),
         dateAdded: new Date().toISOString(),
     };
     MOCK_SHOPPING_CART[userId].unshift(newItem);
@@ -624,5 +630,6 @@ export const moveItemToPantry = async (userId: string, item: ShoppingCartItem): 
     await deleteShoppingCartItem(userId, item.id);
 };
     
+
 
 
