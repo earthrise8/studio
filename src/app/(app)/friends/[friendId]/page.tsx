@@ -16,7 +16,8 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
-export default function FriendProfilePage({ params: { friendId } }: { params: { friendId: string } }) {
+export default function FriendProfilePage({ params }: { params: { friendId: string } }) {
+  const { friendId } = params;
   const { user } = useAuth();
   const [friend, setFriend] = useState<Friend | null>(null);
   const [loading, setLoading] = useState(true);
