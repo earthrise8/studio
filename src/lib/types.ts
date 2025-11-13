@@ -2,8 +2,8 @@
 
 export type User = {
   id: string; // This is the Firebase UID
-  email: string;
-  name: string;
+  email: string | null;
+  name: string | null;
   profile: UserProfile;
 };
 
@@ -14,7 +14,7 @@ export type UserProfile = {
   weight?: number;
   age?: number;
   activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   totalPoints?: number;
   money?: number;
   level?: number;
@@ -116,5 +116,4 @@ export type ShoppingCartItem = {
   name: string;
   quantity: number;
   dateAdded: string; // ISO 86
-
-    
+};

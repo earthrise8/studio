@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,15 +31,12 @@ export default function FriendsPage() {
 
   useEffect(() => {
     if (user) {
-      Promise.all([
-        getFriends(user.id),
-        // In a real app, you'd fetch posts. For now, we'll get them from the friend data.
-      ]).then(([friendData]) => {
+      getFriends(user.id).then((friendData) => {
         const allFriends = [
           ...friendData,
           {
             id: user.id,
-            name: user.name,
+            name: user.name ?? 'You',
             avatarUrl: user.profile.avatarUrl || '',
             weeklyPoints: 1100, // Mock weekly points for current user
             profile: { ...user.profile, cityGrid: [] },
@@ -46,8 +44,8 @@ export default function FriendsPage() {
             posts: [{
                 id: 'p0',
                 authorId: user.id,
-                authorName: user.name,
-                authorAvatar: user.profile.avatarUrl,
+                authorName: user.name ?? 'You',
+                authorAvatar: user.profile.avatarUrl ?? undefined,
                 timestamp: new Date().toISOString(),
                 content: "Just hit a new personal best on my morning run! Feeling great. 🏃‍♂️"
             }]
