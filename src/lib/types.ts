@@ -21,6 +21,15 @@ export type UserProfile = {
   cityName?: string;
 };
 
+export type Post = {
+    id: string;
+    authorId: string;
+    authorName: string;
+    authorAvatar?: string;
+    timestamp: string; // ISO 8601
+    content: string;
+};
+
 export type Friend = {
   id: string;
   name: string;
@@ -34,6 +43,7 @@ export type Friend = {
     cityGrid: string[][];
   }
   awards: Award[];
+  posts?: Post[];
 };
 
 export type PantryItem = {
@@ -106,3 +116,5 @@ export type ShoppingCartItem = {
   name: string;
   quantity: number;
   dateAdded: string; // ISO 86
+
+    

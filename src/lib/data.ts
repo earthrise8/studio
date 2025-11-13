@@ -14,6 +14,7 @@ import type {
   Friend,
   ShoppingCartItem,
   Store,
+  Post,
 } from '@/lib/types';
 import { addDays, formatISO, subDays } from 'date-fns';
 
@@ -212,7 +213,7 @@ const friendCityGrids: Record<string, string[][]> = {
       [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
       [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
       [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "]
     ],
     'f3': [
       [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
@@ -234,7 +235,7 @@ const friendCityGrids: Record<string, string[][]> = {
       [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
       [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
       [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "]
     ],
 };
 
@@ -248,6 +249,14 @@ const initialFriends: Record<string, Friend[]> = {
       weeklyPoints: 1250,
       profile: { totalPoints: 15000, money: 500000, level: 150, cityName: 'Alexandria', cityGrid: friendCityGrids.f1 },
       awards: getFromStorage('awards', initialAwards).f1 || [],
+      posts: [{
+          id: 'p1',
+          authorId: 'f1',
+          authorName: 'Alex Smith',
+          authorAvatar: 'https://i.pravatar.cc/150?u=alex',
+          timestamp: subDays(new Date(), 1).toISOString(),
+          content: "Just finished a 10k run! The new city park is a great place to train. 🏞️"
+      }]
     },
     {
       id: 'f2',
@@ -256,6 +265,14 @@ const initialFriends: Record<string, Friend[]> = {
       weeklyPoints: 980,
       profile: { totalPoints: 8500, money: 120000, level: 85, cityName: 'Mariaville', cityGrid: friendCityGrids.f2 },
       awards: getFromStorage('awards', initialAwards).f2 || [],
+      posts: [{
+        id: 'p2',
+        authorId: 'f2',
+        authorName: 'Maria Garcia',
+        authorAvatar: 'https://i.pravatar.cc/150?u=maria',
+        timestamp: subDays(new Date(), 2).toISOString(),
+        content: "I tried the AI-generated recipe for quinoa salad and it was delicious! Highly recommend. 🥗"
+    }]
     },
     {
       id: 'f3',
@@ -264,6 +281,14 @@ const initialFriends: Record<string, Friend[]> = {
       weeklyPoints: 1500,
       profile: { totalPoints: 22000, money: 800000, level: 220, cityName: 'Chen City', cityGrid: friendCityGrids.f3 },
       awards: getFromStorage('awards', initialAwards).f3 || [],
+      posts: [{
+        id: 'p3',
+        authorId: 'f3',
+        authorName: 'Chen Wei',
+        authorAvatar: 'https://i.pravatar.cc/150?u=chen',
+        timestamp: subDays(new Date(), 3).toISOString(),
+        content: "My Fitropolis is finally a Megalopolis! Time to build that rocket. 🚀"
+    }]
     },
   ],
 };
@@ -738,3 +763,5 @@ export const resetUserData = (userId: string): void => {
   localStorage.removeItem(`game-start-date-${userId}`);
   localStorage.removeItem(`last-revenue-update-${userId}`);
 };
+
+    

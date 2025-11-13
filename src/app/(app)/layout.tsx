@@ -27,6 +27,7 @@ import {
   Library,
   ShoppingCart,
   Target,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-provider';
 import { usePathname, useRouter } from 'next/navigation';
@@ -48,6 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/logs', label: 'Daily Logs', icon: BookOpenCheck },
     { href: '/recipes', label: 'Recipes', icon: ChefHat },
     { href: '/advisor', label: 'Goals', icon: Target },
+    { href: '/friends', label: 'Friends', icon: Users },
     { href: '/awards', label: 'Awards', icon: Trophy },
     { href: '/wiki', label: 'Wiki', icon: Library },
   ];
@@ -160,3 +162,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    

@@ -1245,28 +1245,28 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
         <Card className="lg:col-span-1">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Friends</CardTitle>
-            <CardDescription>
-              Your friends' weekly points.
-            </CardDescription>
+            <Button asChild size="sm" variant="secondary">
+                <Link href="/friends">View All</Link>
+            </Button>
           </CardHeader>
           <CardContent>
             {friends.length > 0 ? (
               <ul className="space-y-4">
-                {friends.map((friend, index) => (
+                {friends.slice(0, 5).map((friend, index) => (
                   <li
                     key={friend.id}
                     className="flex items-center justify-between"
                   >
-                    <div className="flex items-center gap-4">
+                     <Link href={`/friends/${friend.id}`} className="flex items-center gap-4 hover:underline">
                       <span className="text-lg font-bold text-muted-foreground w-4">{index + 1}</span>
                       <Avatar>
                         <AvatarImage src={friend.avatarUrl} alt={friend.name} />
                         <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <span className='font-medium'>{friend.name}</span>
-                    </div>
+                    </Link>
                     <span className="font-bold text-lg">{friend.weeklyPoints.toLocaleString()} pts</span>
                   </li>
                 ))}
@@ -1276,8 +1276,8 @@ export default function DashboardPage() {
                 <Users className="h-10 w-10 text-muted-foreground" />
                 <h3 className="mt-2 font-semibold">No Friends Yet</h3>
                 <p className="text-sm text-muted-foreground mt-1">Add friends to see their progress.</p>
-                <Button variant="secondary" size="sm" className="mt-4" disabled>
-                    Add Friends
+                 <Button asChild variant="secondary" size="sm" className="mt-4">
+                    <Link href="/friends">Find Friends</Link>
                 </Button>
              </div>
             )}
@@ -1375,5 +1375,7 @@ export default function DashboardPage() {
        </div>
     </main>
   );
+
+    
 
     
