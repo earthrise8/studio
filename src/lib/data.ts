@@ -164,22 +164,492 @@ const initialAwards: Record<string, Award[]> = {
     { id: 'a2', name: 'Perfect Week', description: 'Logged an activity every day for 7 days.', dateAchieved: subDays(today, 3).toISOString(), points: 75 },
     { id: 'a3', name: 'Goal Achiever: Drink 8 glasses of water daily', description: 'You successfully completed a personal goal.', dateAchieved: today.toISOString(), points: 100 },
   ],
+  'f1': [ { id: 'fa1', name: 'Marathon Runner', description: 'Ran a full marathon.', dateAchieved: subDays(today, 15).toISOString(), points: 500 }],
+  'f2': [ { id: 'fa2', name: 'Early Bird', description: 'Worked out before 6 AM for a week.', dateAchieved: subDays(today, 5).toISOString(), points: 100 }],
+  'f3': [ { id: 'fa3', name: 'Healthy Eater', description: 'Logged healthy meals for 30 days straight.', dateAchieved: subDays(today, 2).toISOString(), points: 200 }],
 };
 
+const friendCityGrids: Record<string, string[][]> = {
+    'f1': [
+      ["🌲", "🌲", "⛰️", "⛰️", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      ["🌲", "🌲", "🌲", "⛰️", "⛰️", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", "🌲", "🌲", "🌲", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      ["⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛", "⬛"],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "]
+    ],
+    'f2': [
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+    ],
+    'f3': [
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+      [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
+    ],
+};
+
+
 const initialFriends: Record<string, Friend[]> = {
-    'user123': [
-        { id: 'f1', name: 'Alice', avatarUrl: 'https://i.pravatar.cc/150?u=alice', weeklyPoints: 1250 },
-        { id: 'f2', name: 'Bob', avatarUrl: 'https://i.pravatar.cc/150?u=bob', weeklyPoints: 980 },
-        { id: 'f3', name: 'Charlie', avatarUrl: 'https://i.pravatar.cc/150?u=charlie', weeklyPoints: 750 },
-    ]
-}
+  'user123': [
+    {
+      id: 'f1',
+      name: 'Alex Smith',
+      avatarUrl: 'https://i.pravatar.cc/150?u=alex',
+      weeklyPoints: 1250,
+      profile: { totalPoints: 15000, money: 500000, level: 150, cityName: 'Alexandria', cityGrid: friendCityGrids.f1 },
+      awards: getFromStorage('awards', initialAwards).f1 || [],
+    },
+    {
+      id: 'f2',
+      name: 'Maria Garcia',
+      avatarUrl: 'https://i.pravatar.cc/150?u=maria',
+      weeklyPoints: 980,
+      profile: { totalPoints: 8500, money: 120000, level: 85, cityName: 'Mariaville', cityGrid: friendCityGrids.f2 },
+      awards: getFromStorage('awards', initialAwards).f2 || [],
+    },
+    {
+      id: 'f3',
+      name: 'Chen Wei',
+      avatarUrl: 'https://i.pravatar.cc/150?u=chen',
+      weeklyPoints: 1500,
+      profile: { totalPoints: 22000, money: 800000, level: 220, cityName: 'Chen City', cityGrid: friendCityGrids.f3 },
+      awards: getFromStorage('awards', initialAwards).f3 || [],
+    },
+  ],
+};
 
 const initialShoppingCart: Record<string, ShoppingCartItem[]> = {
     'user123': [
-        { id: 'sc1', name: 'Organic Apples', quantity: 5, dateAdded: subDays(today, 1).toISOString(), store: 'Whole Foods', price: 3.99, healthRating: 5 },
-        { id: 'sc2', name: 'Almond Milk', quantity: 1, dateAdded: subDays(today, 2).toISOString(), store: 'Trader Joe\'s', price: 2.99, healthRating: 4 },
-        { id: 'sc3', name: 'Whole Wheat Bread', quantity: 1, dateAdded: subDays(today, 1).toISOString(), store: 'Walmart', price: 2.50, healthRating: 3 },
+        { id: 'sc1', name: 'Organic Apples', quantity: 6, dateAdded: subDays(today, 1).toISOString(), price: 3.50, store: 'Trader Joe\'s', healthRating: 5 },
+        { id: 'sc2', name: 'Whole Wheat Bread', quantity: 1, dateAdded: subDays(today, 1).toISOString(), price: 4.25, store: 'Whole Foods', healthRating: 4 },
+        { id: 'sc3', name: 'Almond Milk', quantity: 1, dateAdded: subDays(today, 2).toISOString(), price: 3.99, store: 'Any', healthRating: 4 },
     ]
+};
+
+// --- Data Access Functions ---
+
+// User Data
+export const getUser = async (userId: string): Promise<User | null> => {
+  const users = getFromStorage('users', initialUsers);
+  return users[userId] || null;
+};
+
+export const updateUserProfile = async (
+  userId: string,
+  profileUpdates: Partial<Pick<User, 'name' | 'email'> & { profile: Partial<UserProfile> }>
+): Promise<User> => {
+  const users = getFromStorage('users', initialUsers);
+  const user = users[userId];
+  if (!user) throw new Error('User not found');
+  
+  if (profileUpdates.name) user.name = profileUpdates.name;
+  if (profileUpdates.email) user.email = profileUpdates.email;
+  if (profileUpdates.profile) {
+    user.profile = { ...user.profile, ...profileUpdates.profile };
+  }
+
+  saveToStorage('users', users);
+  return user;
+};
+
+
+// Pantry
+export const getPantryItems = async (userId: string): Promise<PantryItem[]> => {
+  const allItems = getFromStorage('pantry', initialPantry);
+  return allItems[userId] || [];
+};
+
+export const addPantryItem = async (
+  userId: string,
+  item: Omit<PantryItem, 'id'>
+): Promise<PantryItem> => {
+  const allItems = getFromStorage('pantry', initialPantry);
+  const userItems = allItems[userId] || [];
+  const newItem = { ...item, id: generateUniqueId('p') };
+  allItems[userId] = [...userItems, newItem];
+  saveToStorage('pantry', allItems);
+  return newItem;
+};
+
+export const updatePantryItem = async (
+  userId: string,
+  itemId: string,
+  updates: Partial<Omit<PantryItem, 'id'>>
+): Promise<PantryItem> => {
+  const allItems = getFromStorage('pantry', initialPantry);
+  const userItems = allItems[userId] || [];
+  const itemIndex = userItems.findIndex((item) => item.id === itemId);
+  if (itemIndex === -1) throw new Error('Item not found');
+
+  const updatedItem = { ...userItems[itemIndex], ...updates };
+  userItems[itemIndex] = updatedItem;
+  saveToStorage('pantry', allItems);
+  return updatedItem;
+};
+
+export const deletePantryItem = async (
+  userId: string,
+  itemId: string
+): Promise<void> => {
+  const allItems = getFromStorage('pantry', initialPantry);
+  const userItems = allItems[userId] || [];
+  allItems[userId] = userItems.filter((item) => item.id !== itemId);
+  saveToStorage('pantry', allItems);
+};
+
+// Food Logs
+export const getFoodLogs = async (
+  userId: string,
+  date: string
+): Promise<FoodLog[]> => {
+  const allLogs = getFromStorage('foodLogs', initialFoodLogs);
+  const userLogs = allLogs[userId] || [];
+  return userLogs.filter((log) => log.date === date);
+};
+
+export const getRecentFoodLogs = async (userId: string, days = 7): Promise<FoodLog[]> => {
+    const allLogs = getFromStorage('foodLogs', initialFoodLogs);
+    const userLogs = allLogs[userId] || [];
+    const endDate = new Date();
+    const startDate = subDays(endDate, days);
+    return userLogs.filter(log => {
+        const logDate = new Date(log.date);
+        return logDate >= startDate && logDate <= endDate;
+    });
+};
+
+export const addFoodLog = async (
+  userId: string,
+  log: Omit<FoodLog, 'id'>
+): Promise<FoodLog> => {
+  const allLogs = getFromStorage('foodLogs', initialFoodLogs);
+  const userLogs = allLogs[userId] || [];
+  const newLog = { ...log, id: generateUniqueId('fl') };
+  allLogs[userId] = [...userLogs, newLog];
+  saveToStorage('foodLogs', allLogs);
+
+  // Award points
+  const users = getFromStorage('users', initialUsers);
+  if(users[userId]) {
+    users[userId].profile.totalPoints = (users[userId].profile.totalPoints || 0) + 10;
+    saveToStorage('users', users);
+  }
+
+  return newLog;
+};
+
+export const updateFoodLog = async (
+    userId: string,
+    logId: string,
+    updates: Partial<Omit<FoodLog, 'id'>>
+): Promise<FoodLog> => {
+    const allLogs = getFromStorage('foodLogs', initialFoodLogs);
+    const userLogs = allLogs[userId] || [];
+    const logIndex = userLogs.findIndex((log) => log.id === logId);
+    if (logIndex === -1) throw new Error('Log not found');
+    const updatedLog = { ...userLogs[logIndex], ...updates };
+    userLogs[logIndex] = updatedLog;
+    saveToStorage('foodLogs', allLogs);
+    return updatedLog;
+};
+
+
+export const deleteFoodLog = async (
+    userId: string,
+    logId: string
+): Promise<void> => {
+    const allLogs = getFromStorage('foodLogs', initialFoodLogs);
+    const userLogs = allLogs[userId] || [];
+    allLogs[userId] = userLogs.filter((log) => log.id !== logId);
+    saveToStorage('foodLogs', allLogs);
+}
+
+// Activity Logs
+export const getActivityLogs = async (
+  userId: string,
+  date: string
+): Promise<ActivityLog[]> => {
+  const allLogs = getFromStorage('activityLogs', initialActivityLogs);
+  const userLogs = allLogs[userId] || [];
+  return userLogs.filter((log) => log.date === date);
+};
+
+export const getRecentActivityLogs = async (userId: string, days = 7): Promise<ActivityLog[]> => {
+    const allLogs = getFromStorage('activityLogs', initialActivityLogs);
+    const userLogs = allLogs[userId] || [];
+    const endDate = new Date();
+    const startDate = subDays(endDate, days);
+    return userLogs.filter(log => {
+        const logDate = new Date(log.date);
+        return logDate >= startDate && logDate <= endDate;
+    });
+};
+
+export const addActivityLog = async (
+    userId: string,
+    log: Omit<ActivityLog, 'id'>
+): Promise<ActivityLog> => {
+    const allLogs = getFromStorage('activityLogs', initialActivityLogs);
+    const userLogs = allLogs[userId] || [];
+    const newLog = { ...log, id: generateUniqueId('al') };
+    allLogs[userId] = [...userLogs, newLog];
+    saveToStorage('activityLogs', allLogs);
+
+    // Award points
+    const users = getFromStorage('users', initialUsers);
+    if(users[userId]) {
+        users[userId].profile.totalPoints = (users[userId].profile.totalPoints || 0) + 25;
+        saveToStorage('users', users);
+    }
+
+    return newLog;
+};
+
+export const updateActivityLog = async (
+    userId: string,
+    logId: string,
+    updates: Partial<Omit<ActivityLog, 'id'>>
+): Promise<ActivityLog> => {
+    const allLogs = getFromStorage('activityLogs', initialActivityLogs);
+    const userLogs = allLogs[userId] || [];
+    const logIndex = userLogs.findIndex((log) => log.id === logId);
+    if (logIndex === -1) throw new Error('Log not found');
+    const updatedLog = { ...userLogs[logIndex], ...updates };
+    userLogs[logIndex] = updatedLog;
+    saveToStorage('activityLogs', allLogs);
+    return updatedLog;
+};
+
+
+export const deleteActivityLog = async (
+    userId: string,
+    logId: string
+): Promise<void> => {
+    const allLogs = getFromStorage('activityLogs', initialActivityLogs);
+    const userLogs = allLogs[userId] || [];
+    allLogs[userId] = userLogs.filter((log) => log.id !== logId);
+    saveToStorage('activityLogs', allLogs);
+};
+
+
+// Recipes
+export const getRecipes = async (userId: string): Promise<Recipe[]> => {
+  const allRecipes = getFromStorage('recipes', initialRecipes);
+  return allRecipes[userId] || [];
+};
+
+export const addRecipe = async (
+  userId: string,
+  recipe: Omit<Recipe, 'id'>
+): Promise<Recipe> => {
+  const allRecipes = getFromStorage('recipes', initialRecipes);
+  const userRecipes = allRecipes[userId] || [];
+  const newRecipe = { ...recipe, id: generateUniqueId('r') };
+  allRecipes[userId] = [...userRecipes, newRecipe];
+  saveToStorage('recipes', allRecipes);
+  return newRecipe;
+};
+
+export const updateRecipe = async (
+    userId: string,
+    recipeId: string,
+    updates: Partial<Omit<Recipe, 'id'>>
+): Promise<Recipe> => {
+    const allRecipes = getFromStorage('recipes', initialRecipes);
+    const userRecipes = allRecipes[userId] || [];
+    const recipeIndex = userRecipes.findIndex((recipe) => recipe.id === recipeId);
+    if (recipeIndex === -1) throw new Error('Recipe not found');
+    
+    const updatedRecipe = { ...userRecipes[recipeIndex], ...updates };
+    userRecipes[recipeIndex] = updatedRecipe;
+    saveToStorage('recipes', allRecipes);
+    return updatedRecipe;
+};
+
+export const deleteRecipe = async (
+  userId: string,
+  recipeId: string
+): Promise<void> => {
+  const allRecipes = getFromStorage('recipes', initialRecipes);
+  const userRecipes = allRecipes[userId] || [];
+  allRecipes[userId] = userRecipes.filter((recipe) => recipe.id !== recipeId);
+  saveToStorage('recipes', allRecipes);
+};
+
+// Goals
+export const getGoals = async (userId: string): Promise<Goal[]> => {
+  const allGoals = getFromStorage('goals', initialGoals);
+  return allGoals[userId] || [];
+};
+
+export const addGoal = async (userId: string, goal: Omit<Goal, 'id'>): Promise<Goal> => {
+    const allGoals = getFromStorage('goals', initialGoals);
+    const userGoals = allGoals[userId] || [];
+    const newGoal = { ...goal, id: generateUniqueId('g') };
+    allGoals[userId] = [...userGoals, newGoal];
+    saveToStorage('goals', allGoals);
+    return newGoal;
+};
+
+export const updateGoal = async (
+    userId: string,
+    updatedGoal: Goal
+): Promise<Goal> => {
+    const allGoals = getFromStorage('goals', initialGoals);
+    const userGoals = allGoals[userId] || [];
+    const goalIndex = userGoals.findIndex(g => g.id === updatedGoal.id);
+    if(goalIndex === -1) throw new Error("Goal not found");
+    
+    const oldGoal = userGoals[goalIndex];
+    userGoals[goalIndex] = updatedGoal;
+    
+    // If the goal was just completed, add points and an award
+    if (updatedGoal.isCompleted && !oldGoal.isCompleted) {
+        const users = getFromStorage('users', initialUsers);
+        if (users[userId]) {
+            users[userId].profile.totalPoints = (users[userId].profile.totalPoints || 0) + updatedGoal.points;
+            saveToStorage('users', users);
+        }
+        
+        const allAwards = getFromStorage('awards', initialAwards);
+        const userAwards = allAwards[userId] || [];
+        const newAward: Award = {
+            id: generateUniqueId('aw'),
+            name: `Goal Achiever: ${updatedGoal.description}`,
+            description: 'You successfully completed a personal goal.',
+            dateAchieved: new Date().toISOString(),
+            points: updatedGoal.points
+        };
+        allAwards[userId] = [...userAwards, newAward];
+        saveToStorage('awards', allAwards);
+    }
+    
+    saveToStorage('goals', allGoals);
+    return updatedGoal;
+};
+
+export const deleteGoal = async (userId: string, goalId: string): Promise<void> => {
+    const allGoals = getFromStorage('goals', initialGoals);
+    const userGoals = allGoals[userId] || [];
+    allGoals[userId] = userGoals.filter(g => g.id !== goalId);
+    saveToStorage('goals', allGoals);
+};
+
+// Awards
+export const getAwards = async (userId: string): Promise<Award[]> => {
+  const allAwards = getFromStorage('awards', initialAwards);
+  return allAwards[userId] || [];
+};
+
+// Friends
+export const getFriends = async (userId: string): Promise<Friend[]> => {
+    const allFriends = getFromStorage('friends', initialFriends);
+    return allFriends[userId] || [];
+};
+
+export const getFriendById = async (userId: string, friendId: string): Promise<Friend | null> => {
+    const allFriends = getFromStorage('friends', initialFriends);
+    const userFriends = allFriends[userId] || [];
+    return userFriends.find(f => f.id === friendId) || null;
+}
+
+// Shopping Cart
+export const getShoppingCartItems = async (userId: string): Promise<ShoppingCartItem[]> => {
+  const allItems = getFromStorage('shoppingCart', initialShoppingCart);
+  return allItems[userId] || [];
+};
+
+export const addShoppingCartItem = async (
+  userId: string,
+  item: Omit<ShoppingCartItem, 'id' | 'dateAdded'>
+): Promise<ShoppingCartItem> => {
+  const allItems = getFromStorage('shoppingCart', initialShoppingCart);
+  const userItems = allItems[userId] || [];
+  const newItem = { ...item, id: generateUniqueId('sc'), dateAdded: new Date().toISOString() };
+  allItems[userId] = [...userItems, newItem];
+  saveToStorage('shoppingCart', allItems);
+  return newItem;
+};
+
+export const updateShoppingCartItem = async (
+  userId: string,
+  itemId: string,
+  updates: Partial<Omit<ShoppingCartItem, 'id'>>
+): Promise<ShoppingCartItem> => {
+  const allItems = getFromStorage('shoppingCart', initialShoppingCart);
+  const userItems = allItems[userId] || [];
+  const itemIndex = userItems.findIndex((item) => item.id === itemId);
+  if (itemIndex === -1) throw new Error('Item not found in shopping cart');
+
+  const updatedItem = { ...userItems[itemIndex], ...updates };
+  userItems[itemIndex] = updatedItem;
+  saveToStorage('shoppingCart', allItems);
+  return updatedItem;
+};
+
+export const deleteShoppingCartItem = async (
+  userId: string,
+  itemId: string
+): Promise<void> => {
+    const allItems = getFromStorage('shoppingCart', initialShoppingCart);
+    if (!allItems[userId]) return;
+
+    const itemIndex = allItems[userId].findIndex(item => item.id === itemId);
+
+    if (itemIndex > -1) {
+        allItems[userId].splice(itemIndex, 1);
+        saveToStorage('shoppingCart', allItems);
+    }
 };
 
 const categoryKeywords: Record<PantryItem['category'], string[]> = {
@@ -210,433 +680,61 @@ const defaultExpirationDays: Record<PantryItem['category'], number> = {
     Other: 14,
 };
 
-
-// --- Data Access Functions using localStorage ---
-
-export const resetUserData = (userId: string) => {
-    let users = getFromStorage('MOCK_USERS', initialUsers);
-    let pantry = getFromStorage('MOCK_PANTRY', initialPantry);
-    let foodLogs = getFromStorage('MOCK_FOOD_LOGS', initialFoodLogs);
-    let activityLogs = getFromStorage('MOCK_ACTIVITY_LOGS', initialActivityLogs);
-    let recipes = getFromStorage('MOCK_RECIPES', initialRecipes);
-    let goals = getFromStorage('MOCK_GOALS', initialGoals);
-    let awards = getFromStorage('MOCK_AWARDS', initialAwards);
-    let shoppingCart = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
-
-
-    users[userId] = JSON.parse(JSON.stringify(initialUsers[userId]));
-    pantry[userId] = JSON.parse(JSON.stringify(initialPantry[userId]));
-    foodLogs[userId] = JSON.parse(JSON.stringify(initialFoodLogs[userId]));
-    activityLogs[userId] = JSON.parse(JSON.stringify(initialActivityLogs[userId]));
-    recipes[userId] = JSON.parse(JSON.stringify(initialRecipes[userId]));
-    goals[userId] = JSON.parse(JSON.stringify(initialGoals[userId]));
-    awards[userId] = JSON.parse(JSON.stringify(initialAwards[userId]));
-    shoppingCart[userId] = JSON.parse(JSON.stringify(initialShoppingCart[userId]));
-
-    saveToStorage('MOCK_USERS', users);
-    saveToStorage('MOCK_PANTRY', pantry);
-    saveToStorage('MOCK_FOOD_LOGS', foodLogs);
-    saveToStorage('MOCK_ACTIVITY_LOGS', activityLogs);
-    saveToStorage('MOCK_RECIPES', recipes);
-    saveToStorage('MOCK_GOALS', goals);
-    saveToStorage('MOCK_AWARDS', awards);
-    saveToStorage('MOCK_SHOPPING_CART', shoppingCart);
-
-    // Also clear any cached city grids and game state
-    Object.keys(localStorage).forEach(key => {
-        if(key.startsWith(`city-grid-${userId}`) || key.startsWith(`game-start-date-${userId}`) || key.startsWith(`last-revenue-update-${userId}`)) {
-            localStorage.removeItem(key);
-        }
-    })
-}
-
-const checkAndGrantAwards = async (userId: string, completedGoal: Goal) => {
-    let MOCK_AWARDS = getFromStorage('MOCK_AWARDS', initialAwards);
-    if(!MOCK_AWARDS[userId]) MOCK_AWARDS[userId] = [];
-
-    const awardName = `Goal Achiever: ${completedGoal.description}`;
-    const existingAward = MOCK_AWARDS[userId].find(a => a.name === awardName);
-
-    if(!existingAward) {
-        const newAward: Award = {
-            id: generateUniqueId('a'),
-            name: awardName,
-            description: 'You successfully completed a personal goal.',
-            dateAchieved: new Date().toISOString(),
-            points: completedGoal.points,
-        };
-        MOCK_AWARDS[userId].push(newAward);
-        saveToStorage('MOCK_AWARDS', MOCK_AWARDS);
-    }
-}
-
-export const getUser = async (userId: string): Promise<User | null> => {
-  const MOCK_USERS = getFromStorage('MOCK_USERS', initialUsers);
-  return MOCK_USERS[userId] || null;
-}
-
-export const createUser = async(userData: Omit<User, 'profile'> & { profile: UserProfile }): Promise<User> => {
-    let MOCK_USERS = getFromStorage('MOCK_USERS', initialUsers);
-    if (MOCK_USERS[userData.id]) {
-      throw new Error('User already exists');
-    }
-    const newUser: User = { ...userData };
-    MOCK_USERS[newUser.id] = newUser;
-    saveToStorage('MOCK_USERS', MOCK_USERS);
-
-    let MOCK_PANTRY = getFromStorage('MOCK_PANTRY', initialPantry);
-    MOCK_PANTRY[newUser.id] = [];
-    saveToStorage('MOCK_PANTRY', MOCK_PANTRY);
-
-    let MOCK_FOOD_LOGS = getFromStorage('MOCK_FOOD_LOGS', initialFoodLogs);
-    MOCK_FOOD_LOGS[newUser.id] = [];
-    saveToStorage('MOCK_FOOD_LOGS', MOCK_FOOD_LOGS);
-
-    let MOCK_ACTIVITY_LOGS = getFromStorage('MOCK_ACTIVITY_LOGS', initialActivityLogs);
-    MOCK_ACTIVITY_LOGS[newUser.id] = [];
-    saveToStorage('MOCK_ACTIVITY_LOGS', MOCK_ACTIVITY_LOGS);
-
-    let MOCK_RECIPES = getFromStorage('MOCK_RECIPES', initialRecipes);
-    MOCK_RECIPES[newUser.id] = [];
-    saveToStorage('MOCK_RECIPES', MOCK_RECIPES);
-
-    let MOCK_GOALS = getFromStorage('MOCK_GOALS', initialGoals);
-    MOCK_GOALS[newUser.id] = [];
-    saveToStorage('MOCK_GOALS', MOCK_GOALS);
-    
-    let MOCK_AWARDS = getFromStorage('MOCK_AWARDS', initialAwards);
-    MOCK_AWARDS[newUser.id] = [];
-    saveToStorage('MOCK_AWARDS', MOCK_AWARDS);
-
-    return newUser;
-}
-
-export const updateUserProfile = async (userId: string, data: Partial<{ name: string; email: string; profile: Partial<UserProfile> }>): Promise<User> => {
-  let MOCK_USERS = getFromStorage('MOCK_USERS', initialUsers);
-  if (!MOCK_USERS[userId]) {
-    throw new Error('User not found');
-  }
-
-  if (data.name) MOCK_USERS[userId].name = data.name;
-  if (data.email) MOCK_USERS[userId].email = data.email;
-  if (data.profile) {
-    MOCK_USERS[userId].profile = { ...MOCK_USERS[userId].profile, ...data.profile };
-  }
-  
-  saveToStorage('MOCK_USERS', MOCK_USERS);
-  return MOCK_USERS[userId];
-};
-
-export const getPantryItems = async (userId: string): Promise<PantryItem[]> => {
-  const MOCK_PANTRY = getFromStorage('MOCK_PANTRY', initialPantry);
-  return MOCK_PANTRY[userId] || [];
-};
-
-export const addPantryItem = async (userId: string, itemData: Omit<PantryItem, 'id'>): Promise<PantryItem> => {
-    let MOCK_PANTRY = getFromStorage('MOCK_PANTRY', initialPantry);
-    if (!MOCK_PANTRY[userId]) MOCK_PANTRY[userId] = [];
-    
-    const newItem: PantryItem = { ...itemData, id: generateUniqueId('p') };
-    MOCK_PANTRY[userId].push(newItem);
-    saveToStorage('MOCK_PANTRY', MOCK_PANTRY);
-    return newItem;
-};
-
-export const updatePantryItem = async (userId: string, itemId: string, updatedData: PantryItem): Promise<PantryItem> => {
-  let MOCK_PANTRY = getFromStorage('MOCK_PANTRY', initialPantry);
-  const userItems = MOCK_PANTRY[userId];
-  if (!userItems) throw new Error("User pantry not found");
-  
-  const itemIndex = userItems.findIndex(i => i.id === itemId);
-  if (itemIndex !== -1) {
-      userItems[itemIndex] = { ...userItems[itemIndex], ...updatedData };
-      saveToStorage('MOCK_PANTRY', MOCK_PANTRY);
-      return userItems[itemIndex];
-  }
-  throw new Error("Item not found");
-}
-
-export const deletePantryItem = async (userId: string, itemId: string): Promise<void> => {
-  let MOCK_PANTRY = getFromStorage('MOCK_PANTRY', initialPantry);
-  if (MOCK_PANTRY[userId]) {
-    MOCK_PANTRY[userId] = MOCK_PANTRY[userId].filter(item => item.id !== itemId);
-    saveToStorage('MOCK_PANTRY', MOCK_PANTRY);
-  }
-};
-
-export const getFoodLogs = async (userId: string, date: string): Promise<FoodLog[]> => {
-  const MOCK_FOOD_LOGS = getFromStorage('MOCK_FOOD_LOGS', initialFoodLogs);
-  return (MOCK_FOOD_LOGS[userId] || []).filter(log => log.date === date);
-};
-
-export const addFoodLog = async (userId: string, logData: Omit<FoodLog, 'id'>): Promise<FoodLog> => {
-    let MOCK_FOOD_LOGS = getFromStorage('MOCK_FOOD_LOGS', initialFoodLogs);
-    if (!MOCK_FOOD_LOGS[userId]) MOCK_FOOD_LOGS[userId] = [];
-    
-    const newLog: FoodLog = { ...logData, id: generateUniqueId('fl') };
-    MOCK_FOOD_LOGS[userId].push(newLog);
-    saveToStorage('MOCK_FOOD_LOGS', MOCK_FOOD_LOGS);
-    return newLog;
-}
-
-export const updateFoodLog = async (userId: string, logId: string, updatedData: Partial<FoodLog>): Promise<FoodLog> => {
-    let MOCK_FOOD_LOGS = getFromStorage('MOCK_FOOD_LOGS', initialFoodLogs);
-    const userLogs = MOCK_FOOD_LOGS[userId];
-    if (!userLogs) throw new Error("User food logs not found");
-
-    const logIndex = userLogs.findIndex(log => log.id === logId);
-    if (logIndex !== -1) {
-        userLogs[logIndex] = { ...userLogs[logIndex], ...updatedData };
-        saveToStorage('MOCK_FOOD_LOGS', MOCK_FOOD_LOGS);
-        return userLogs[logIndex];
-    }
-    throw new Error("Food log not found");
-};
-
-export const deleteFoodLog = async (userId: string, logId: string): Promise<void> => {
-    let MOCK_FOOD_LOGS = getFromStorage('MOCK_FOOD_LOGS', initialFoodLogs);
-    if (MOCK_FOOD_LOGS[userId]) {
-        MOCK_FOOD_LOGS[userId] = MOCK_FOOD_LOGS[userId].filter(log => log.id !== logId);
-        saveToStorage('MOCK_FOOD_LOGS', MOCK_FOOD_LOGS);
-    }
-};
-
-export const getActivityLogs = async (userId: string, date: string): Promise<ActivityLog[]> => {
-  const MOCK_ACTIVITY_LOGS = getFromStorage('MOCK_ACTIVITY_LOGS', initialActivityLogs);
-  return (MOCK_ACTIVITY_LOGS[userId] || []).filter(log => log.date === date);
-};
-
-export const addActivityLog = async (userId: string, logData: Omit<ActivityLog, 'id'>): Promise<ActivityLog> => {
-    let MOCK_ACTIVITY_LOGS = getFromStorage('MOCK_ACTIVITY_LOGS', initialActivityLogs);
-    if (!MOCK_ACTIVITY_LOGS[userId]) MOCK_ACTIVITY_LOGS[userId] = [];
-
-    const newLog: ActivityLog = { ...logData, id: generateUniqueId('al') };
-    MOCK_ACTIVITY_LOGS[userId].push(newLog);
-    saveToStorage('MOCK_ACTIVITY_LOGS', MOCK_ACTIVITY_LOGS);
-    return newLog;
-}
-
-export const updateActivityLog = async (userId: string, logId: string, updatedData: Partial<ActivityLog>): Promise<ActivityLog> => {
-    let MOCK_ACTIVITY_LOGS = getFromStorage('MOCK_ACTIVITY_LOGS', initialActivityLogs);
-    const userLogs = MOCK_ACTIVITY_LOGS[userId];
-    if (!userLogs) throw new Error("User activity logs not found");
-
-    const logIndex = userLogs.findIndex(log => log.id === logId);
-    if (logIndex !== -1) {
-        userLogs[logIndex] = { ...userLogs[logIndex], ...updatedData };
-        saveToStorage('MOCK_ACTIVITY_LOGS', MOCK_ACTIVITY_LOGS);
-        return userLogs[logIndex];
-    }
-    throw new Error("Activity log not found");
-};
-
-export const deleteActivityLog = async (userId: string, logId: string): Promise<void> => {
-    let MOCK_ACTIVITY_LOGS = getFromStorage('MOCK_ACTIVITY_LOGS', initialActivityLogs);
-    if (MOCK_ACTIVITY_LOGS[userId]) {
-        MOCK_ACTIVITY_LOGS[userId] = MOCK_ACTIVITY_LOGS[userId].filter(log => log.id !== logId);
-        saveToStorage('MOCK_ACTIVITY_LOGS', MOCK_ACTIVITY_LOGS);
-    }
-};
-
-export const getRecentFoodLogs = async (userId: string, days = 7): Promise<FoodLog[]> => {
-  const MOCK_FOOD_LOGS = getFromStorage('MOCK_FOOD_LOGS', initialFoodLogs);
-  const endDate = new Date();
-  const startDate = subDays(endDate, days);
-  return (MOCK_FOOD_LOGS[userId] || []).filter(log => {
-    const logDate = new Date(log.date);
-    return logDate >= startDate && logDate <= endDate;
-  })
-}
-
-export const getRecentActivityLogs = async (userId: string, days = 7): Promise<ActivityLog[]> => {
-  const MOCK_ACTIVITY_LOGS = getFromStorage('MOCK_ACTIVITY_LOGS', initialActivityLogs);
-  const endDate = new Date();
-  const startDate = subDays(endDate, days);
-  return (MOCK_ACTIVITY_LOGS[userId] || []).filter(log => {
-    const logDate = new Date(log.date);
-    return logDate >= startDate && logDate <= endDate;
-  })
-}
-
-export const getRecipes = async (userId: string): Promise<Recipe[]> => {
-  const MOCK_RECIPES = getFromStorage('MOCK_RECIPES', initialRecipes);
-  return MOCK_RECIPES[userId] || [];
-};
-
-export const addRecipe = async (userId: string, recipe: Omit<Recipe, 'id'>): Promise<Recipe> => {
-    let MOCK_RECIPES = getFromStorage('MOCK_RECIPES', initialRecipes);
-    const newRecipe: Recipe = { ...recipe, id: generateUniqueId('r') };
-    if (!MOCK_RECIPES[userId]) MOCK_RECIPES[userId] = [];
-
-    MOCK_RECIPES[userId].push(newRecipe);
-    saveToStorage('MOCK_RECIPES', MOCK_RECIPES);
-    return newRecipe;
-}
-
-export const updateRecipe = async (userId: string, recipeId: string, updatedData: Partial<Recipe>): Promise<Recipe> => {
-    let MOCK_RECIPES = getFromStorage('MOCK_RECIPES', initialRecipes);
-    const userRecipes = MOCK_RECIPES[userId];
-    if (!userRecipes) throw new Error("User recipes not found");
-
-    const recipeIndex = userRecipes.findIndex(r => r.id === recipeId);
-    if (recipeIndex !== -1) {
-        userRecipes[recipeIndex] = { ...userRecipes[recipeIndex], ...updatedData };
-        saveToStorage('MOCK_RECIPES', MOCK_RECIPES);
-        return userRecipes[recipeIndex];
-    }
-    throw new Error("Recipe not found");
-};
-
-export const deleteRecipe = async (userId: string, recipeId: string): Promise<void> => {
-  let MOCK_RECIPES = getFromStorage('MOCK_RECIPES', initialRecipes);
-  if (MOCK_RECIPES[userId]) {
-    const index = MOCK_RECIPES[userId].findIndex(r => r.id === recipeId);
-    if (index !== -1) {
-      MOCK_RECIPES[userId].splice(index, 1);
-      saveToStorage('MOCK_RECIPES', MOCK_RECIPES);
-    }
-  }
-};
-
-export const getGoals = async (userId: string): Promise<Goal[]> => {
-  const MOCK_GOALS = getFromStorage('MOCK_GOALS', initialGoals);
-  return [...(MOCK_GOALS[userId] || [])].sort((a,b) => a.isCompleted === b.isCompleted ? 0 : a.isCompleted ? 1 : -1);
-};
-
-export const addGoal = async (userId: string, goalData: Omit<Goal, 'id'>): Promise<Goal> => {
-    let MOCK_GOALS = getFromStorage('MOCK_GOALS', initialGoals);
-    if (!MOCK_GOALS[userId]) MOCK_GOALS[userId] = [];
-
-    const newGoal: Goal = { ...goalData, id: generateUniqueId('g')};
-    MOCK_GOALS[userId].push(newGoal);
-    saveToStorage('MOCK_GOALS', MOCK_GOALS);
-    return newGoal;
-}
-
-export const updateGoal = async (userId: string, updatedGoal: Goal): Promise<Goal> => {
-    let MOCK_USERS = getFromStorage('MOCK_USERS', initialUsers);
-    let MOCK_GOALS = getFromStorage('MOCK_GOALS', initialGoals);
-    if (!MOCK_GOALS[userId] || !MOCK_USERS[userId]) throw new Error("User data not found");
-    
-    const goalIndex = MOCK_GOALS[userId].findIndex(g => g.id === updatedGoal.id);
-    if (goalIndex === -1) throw new Error("Goal not found");
-    
-    const oldGoal = MOCK_GOALS[userId][goalIndex];
-    const wasCompleted = oldGoal.isCompleted;
-    MOCK_GOALS[userId][goalIndex] = updatedGoal;
-    
-    if(updatedGoal.isCompleted && !wasCompleted) {
-        await checkAndGrantAwards(userId, updatedGoal);
-        const currentUser = MOCK_USERS[userId];
-        const oldPoints = currentUser.profile.totalPoints || 0;
-        const newPoints = oldPoints + updatedGoal.points;
-        currentUser.profile.totalPoints = newPoints;
-        
-        const oldLevel = Math.floor(oldPoints / 100);
-        const newLevel = Math.floor(newPoints / 100);
-
-        if (newLevel > oldLevel) {
-            const levelsGained = newLevel - oldLevel;
-            const moneyEarned = levelsGained * (500 + oldLevel * 100);
-            currentUser.profile.money = (currentUser.profile.money || 0) + moneyEarned;
-            currentUser.profile.level = newLevel;
-        }
-
-        saveToStorage('MOCK_USERS', MOCK_USERS);
-    } else if (!updatedGoal.isCompleted && wasCompleted) {
-        // If a goal is "un-completed", subtract points
-        const currentUser = MOCK_USERS[userId];
-        currentUser.profile.totalPoints = Math.max(0, (currentUser.profile.totalPoints || 0) - updatedGoal.points);
-        // Note: We are not revoking awards or money if a goal is un-completed to keep it simple.
-        saveToStorage('MOCK_USERS', MOCK_USERS);
-    }
-    
-    saveToStorage('MOCK_GOALS', MOCK_GOALS);
-    return updatedGoal;
-}
-
-export const deleteGoal = async (userId: string, goalId: string): Promise<void> => {
-    let MOCK_GOALS = getFromStorage('MOCK_GOALS', initialGoals);
-    if (MOCK_GOALS[userId]) {
-        MOCK_GOALS[userId] = MOCK_GOALS[userId].filter(g => g.id !== goalId);
-        saveToStorage('MOCK_GOALS', MOCK_GOALS);
-    }
-}
-
-export const getAwards = async (userId: string): Promise<Award[]> => {
-  const MOCK_AWARDS = getFromStorage('MOCK_AWARDS', initialAwards);
-  return MOCK_AWARDS[userId] || [];
-};
-
-export const getFriends = async (userId: string): Promise<Friend[]> => {
-    const MOCK_FRIENDS = getFromStorage('MOCK_FRIENDS', initialFriends);
-    return (MOCK_FRIENDS[userId] || []).sort((a,b) => b.weeklyPoints - a.weeklyPoints);
-}
-
-// Shopping Cart Functions
-export const getShoppingCartItems = async (userId: string): Promise<ShoppingCartItem[]> => {
-    const MOCK_SHOPPING_CART = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
-    return MOCK_SHOPPING_CART[userId] || [];
-};
-
-export const addShoppingCartItem = async (userId: string, itemData: Omit<ShoppingCartItem, 'id' | 'dateAdded'>): Promise<ShoppingCartItem> => {
-    let MOCK_SHOPPING_CART = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
-    if (!MOCK_SHOPPING_CART[userId]) MOCK_SHOPPING_CART[userId] = [];
-    
-    const newItem: ShoppingCartItem = {
-        ...itemData,
-        id: generateUniqueId('sc'),
-        dateAdded: new Date().toISOString(),
-    };
-    MOCK_SHOPPING_CART[userId].unshift(newItem);
-    saveToStorage('MOCK_SHOPPING_CART', MOCK_SHOPPING_CART);
-    return newItem;
-};
-
-export const updateShoppingCartItem = async (userId: string, itemId: string, updatedData: Partial<ShoppingCartItem>): Promise<ShoppingCartItem> => {
-    let MOCK_SHOPPING_CART = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
-    const userItems = MOCK_SHOPPING_CART[userId];
-    if (!userItems) throw new Error("User shopping cart not found");
-
-    const itemIndex = userItems.findIndex(item => item.id === itemId);
-    if (itemIndex !== -1) {
-        userItems[itemIndex] = { ...userItems[itemIndex], ...updatedData };
-        saveToStorage('MOCK_SHOPPING_CART', MOCK_SHOPPING_CART);
-        return userItems[itemIndex];
-    }
-    throw new Error("Shopping cart item not found");
-};
-
-export const deleteShoppingCartItem = async (userId: string, itemId: string): Promise<void> => {
-    let MOCK_SHOPPING_CART = getFromStorage('MOCK_SHOPPING_CART', initialShoppingCart);
-    if (MOCK_SHOPPING_CART[userId]) {
-        const itemIndex = MOCK_SHOPPING_CART[userId].findIndex(item => item.id === itemId);
-        if (itemIndex > -1) {
-            MOCK_SHOPPING_CART[userId].splice(itemIndex, 1);
-            saveToStorage('MOCK_SHOPPING_CART', MOCK_SHOPPING_CART);
-        }
-    }
-};
-
 export const moveItemToPantry = async (userId: string, item: ShoppingCartItem): Promise<void> => {
     const category = getCategoryFromName(item.name);
     const expirationDays = defaultExpirationDays[category];
     
-    const pantryItemData: Omit<PantryItem, 'id'> = {
+    const pantryItem: Omit<PantryItem, 'id'> = {
         name: item.name,
         quantity: item.quantity,
-        unit: 'units', // Defaulting to 'units' as shopping cart doesn't have this detail
+        unit: 'units', // Defaulting to 'units', can be improved
         category: category,
         purchaseDate: new Date().toISOString(),
         expirationDate: addDays(new Date(), expirationDays).toISOString(),
     };
 
-    await addPantryItem(userId, pantryItemData);
+    await addPantryItem(userId, pantryItem);
     await deleteShoppingCartItem(userId, item.id);
+}
+
+
+// Reset all data
+export const resetUserData = (userId: string): void => {
+  const users = getFromStorage('users', initialUsers);
+  if (users[userId]) {
+    users[userId] = initialUsers[userId];
+    saveToStorage('users', users);
+  }
+
+  const pantry = getFromStorage('pantry', initialPantry);
+  pantry[userId] = initialPantry[userId] || [];
+  saveToStorage('pantry', pantry);
+
+  const foodLogs = getFromStorage('foodLogs', initialFoodLogs);
+  foodLogs[userId] = initialFoodLogs[userId] || [];
+  saveToStorage('foodLogs', foodLogs);
+
+  const activityLogs = getFromStorage('activityLogs', initialActivityLogs);
+  activityLogs[userId] = initialActivityLogs[userId] || [];
+  saveToStorage('activityLogs', activityLogs);
+
+  const recipes = getFromStorage('recipes', initialRecipes);
+  recipes[userId] = initialRecipes[userId] || [];
+  saveToStorage('recipes', recipes);
+
+  const goals = getFromStorage('goals', initialGoals);
+  goals[userId] = initialGoals[userId] || [];
+  saveToStorage('goals', goals);
+
+  const awards = getFromStorage('awards', initialAwards);
+  awards[userId] = initialAwards[userId] || [];
+  saveToStorage('awards', awards);
+
+  const shoppingCart = getFromStorage('shoppingCart', initialShoppingCart);
+  shoppingCart[userId] = initialShoppingCart[userId] || [];
+  saveToStorage('shoppingCart', shoppingCart);
+  
+  localStorage.removeItem(`city-grid-${userId}`);
+  localStorage.removeItem(`game-start-date-${userId}`);
+  localStorage.removeItem(`last-revenue-update-${userId}`);
 };
-    
-
-
-
-
-

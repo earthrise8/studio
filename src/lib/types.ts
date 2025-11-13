@@ -26,6 +26,14 @@ export type Friend = {
   name: string;
   avatarUrl: string;
   weeklyPoints: number;
+  profile: {
+    totalPoints: number;
+    money: number;
+    level: number;
+    cityName: string;
+    cityGrid: string[][];
+  }
+  awards: Award[];
 };
 
 export type PantryItem = {
@@ -97,11 +105,4 @@ export type ShoppingCartItem = {
   id: string;
   name: string;
   quantity: number;
-  dateAdded: string; // ISO 8601 date string
-  store: Store;
-  price: number;
-  healthRating: number; // 1-5
-};
-    
-
-
+  dateAdded: string; // ISO 86
