@@ -16,19 +16,19 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
-export default function FriendProfilePage({ params }: { params: { friendId: string } }) {
+export default function FriendProfilePage({ params: { friendId } }: { params: { friendId: string } }) {
   const { user } = useAuth();
   const [friend, setFriend] = useState<Friend | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      getFriendById(user.id, params.friendId).then(friendData => {
+      getFriendById(user.id, friendId).then(friendData => {
         setFriend(friendData);
         setLoading(false);
       });
     }
-  }, [user, params.friendId]);
+  }, [user, friendId]);
   
   const { cityInfo } = useMemo(() => {
     if (!friend?.profile.cityGrid) return { cityInfo: null };
@@ -181,4 +181,3 @@ export default function FriendProfilePage({ params }: { params: { friendId: stri
     </main>
   );
 }
-
