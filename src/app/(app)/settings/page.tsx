@@ -51,6 +51,7 @@ const profileFormSchema = z.object({
   activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'very-active']).optional(),
   dailyCalorieGoal: z.coerce.number().positive().int().optional().or(z.literal('')),
   healthGoal: z.string().optional(),
+  cityName: z.string().optional(),
 });
 
 const goalFormSchema = z.object({
@@ -81,6 +82,7 @@ export default function SettingsPage() {
       activityLevel: undefined,
       dailyCalorieGoal: '',
       healthGoal: '',
+      cityName: '',
     },
   });
   
@@ -118,6 +120,7 @@ export default function SettingsPage() {
         activityLevel: user.profile?.activityLevel || undefined,
         dailyCalorieGoal: user.profile?.dailyCalorieGoal || '',
         healthGoal: user.profile?.healthGoal || '',
+        cityName: user.profile?.cityName || '',
       });
     }
   }, [user, form]);
@@ -320,6 +323,32 @@ export default function SettingsPage() {
                     />
                     <FormField
                         control={form.control}
+                        name="cityName"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>City Name</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., My Fitropolis" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="healthGoal"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Primary Health Goal</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., Lose weight, build muscle" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
                         name="age"
                         render={({ field }) => (
                         <FormItem>
@@ -387,19 +416,6 @@ export default function SettingsPage() {
                             <FormLabel>Daily Calorie Goal (kcal)</FormLabel>
                             <FormControl>
                             <Input type="number" placeholder="2200" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="healthGoal"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Primary Health Goal</FormLabel>
-                            <FormControl>
-                            <Input placeholder="e.g., Lose weight, build muscle" {...field} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

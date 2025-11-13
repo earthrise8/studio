@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type {
@@ -65,6 +66,7 @@ const initialUsers: Record<string, User> = {
       totalPoints: 0,
       money: 1000,
       level: 0,
+      cityName: 'My Fitropolis',
     },
   },
 };
@@ -620,10 +622,10 @@ export const moveItemToPantry = async (userId: string, item: ShoppingCartItem): 
     const category = getCategoryFromName(item.name);
     const expirationDays = defaultExpirationDays[category];
     
-    const pantryItemData = {
+    const pantryItemData: Omit<PantryItem, 'id'> = {
         name: item.name,
         quantity: item.quantity,
-        unit: 'units' as const, // Assuming 'units' for now, could be improved
+        unit: 'units', // Defaulting to 'units' as shopping cart doesn't have this detail
         category: category,
         purchaseDate: new Date().toISOString(),
         expirationDate: addDays(new Date(), expirationDays).toISOString(),
@@ -633,6 +635,7 @@ export const moveItemToPantry = async (userId: string, item: ShoppingCartItem): 
     await deleteShoppingCartItem(userId, item.id);
 };
     
+
 
 
 

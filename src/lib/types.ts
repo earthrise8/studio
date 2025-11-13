@@ -18,6 +18,7 @@ export type UserProfile = {
   totalPoints?: number;
   money?: number;
   level?: number;
+  cityName?: string;
 };
 
 export type Friend = {
@@ -102,4 +103,5 @@ export type ShoppingCartItem = {
   healthRating: number; // 1-5
 };
     
+
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Button } from '@/components/ui/button';
 import {
@@ -794,7 +795,7 @@ export default function DashboardPage() {
             <div>
                 <CardTitle className="font-headline flex items-center gap-2">
                     <Building />
-                    Your Fitropolis
+                    {user.profile.cityName || 'Your Fitropolis'}
                 </CardTitle>
                 {isCityVisible && (
                     <CardDescription>
