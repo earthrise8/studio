@@ -17,11 +17,33 @@ export default function LandingPage() {
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
+      // Explicitly redirect after successful login
       router.push('/dashboard');
     } catch (error) {
-      console.error("Error during sign-in:", error);
+      // Don't show an error if the user closes the popup manually
+      if ((error as any).code !== 'auth/popup-closed-by-user') {
+          console.error("Error during sign-in:", error);
+      }
     }
   };
+
+  if (loading) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    )
+  }
+
+  // If user is already logged in, redirect them
+  if (user) {
+    router.push('/dashboard');
+    return (
+         <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -29,18 +51,10 @@ export default function LandingPage() {
         <div className="flex h-20 items-center justify-between py-6">
           <Logo />
           <nav className="flex items-center gap-4">
-             {loading ? (
-              <Button disabled><Loader2 className="animate-spin" /></Button>
-            ) : user ? (
-              <Button asChild>
-                <Link href="/dashboard">View Dashboard</Link>
-              </Button>
-            ) : (
               <Button onClick={handleLogin}>
                 <LogIn className="mr-2 h-4 w-4" />
                 Login with Google
               </Button>
-            )}
           </nav>
         </div>
       </header>
@@ -56,13 +70,7 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="flex w-full items-center justify-center space-x-4 py-8 md:py-12">
-            {loading ? (
-                <Button size="lg" disabled><Loader2 className="animate-spin" /></Button>
-            ) : user ? (
-                <Button size="lg" asChild><Link href="/dashboard">Go to Your City</Link></Button>
-            ) : (
-                <Button size="lg" onClick={handleLogin}>Get Started</Button>
-            )}
+            <Button size="lg" onClick={handleLogin}>Get Started</Button>
           </div>
         </div>
       </main>

@@ -34,13 +34,9 @@ export default function AuthProvider({
     if (firebaseUser) {
       const appUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
       setUser(appUser);
-      // Only redirect if they are on the landing page
-      if (pathname === '/') {
-        router.push('/dashboard');
-      }
     } else {
       setUser(null);
-      // Don't redirect if already on a public page
+      // If user logs out, redirect to landing page if they are not already there.
       if (pathname !== '/') {
         router.push('/');
       }
@@ -69,12 +65,23 @@ export default function AuthProvider({
     router.push('/');
   }
 
-  if (loading) {
+  // This prevents showing a protected page for a split second before redirecting.
+  if (loading && pathname !== '/') {
      return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
+  }
+
+  // If not loading and no user, but trying to access a protected route, redirect.
+  if (!loading && !user && pathname !== '/') {
+      router.push('/');
+      return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      );
   }
 
   return (
