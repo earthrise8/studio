@@ -11,6 +11,11 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Check if the config is valid before initializing
+if (!firebaseConfig.apiKey) {
+    throw new Error('Firebase configuration is missing. Make sure you have a .env.local file with your Firebase project credentials.');
+}
+
 const apps = getApps();
 const app = !apps.length ? initializeApp(firebaseConfig) : apps[0];
 
