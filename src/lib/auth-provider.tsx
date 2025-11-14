@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
@@ -28,17 +28,25 @@ export default function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleAuthStateChange = useCallback(async (firebaseUser: FirebaseUser | null) => {
     if (firebaseUser) {
       const appUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
       setUser(appUser);
+      // Only redirect if they are on the landing page
+      if (pathname === '/') {
+        router.push('/dashboard');
+      }
     } else {
       setUser(null);
-      router.push('/');
+      // Don't redirect if already on a public page
+      if (pathname !== '/') {
+        router.push('/');
+      }
     }
     setLoading(false);
-  }, [router]);
+  }, [router, pathname]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, handleAuthStateChange);
