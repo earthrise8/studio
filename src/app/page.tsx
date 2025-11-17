@@ -17,8 +17,7 @@ export default function LandingPage() {
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      // Explicitly redirect after successful login
-      router.push('/dashboard');
+      // The redirect is now handled by the AuthProvider
     } catch (error) {
       // Don't show an error if the user closes the popup manually
       if ((error as any).code !== 'auth/popup-closed-by-user') {
@@ -35,9 +34,9 @@ export default function LandingPage() {
     )
   }
 
-  // If user is already logged in, redirect them
+  // If user is already logged in, redirect them. This is now handled by AuthProvider as well.
   if (user) {
-    router.push('/dashboard');
+    // router.push('/dashboard'); // This is now handled by AuthProvider
     return (
          <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />

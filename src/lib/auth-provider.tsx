@@ -30,24 +30,34 @@ export default function AuthProvider({
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleAuthStateChange = useCallback(async (firebaseUser: FirebaseUser | null) => {
-    if (firebaseUser) {
-      const appUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
-      setUser(appUser);
-    } else {
-      setUser(null);
-      // If user logs out, redirect to landing page if they are not already there.
-      if (pathname !== '/') {
-        router.push('/');
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const appUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
+        setUser(appUser);
+      } else {
+        setUser(null);
       }
-    }
-    setLoading(false);
-  }, [router, pathname]);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, handleAuthStateChange);
-    return () => unsubscribe();
-  }, [handleAuthStateChange]);
+    if (!loading) {
+      if (user) {
+        // If user is logged in, redirect to dashboard if they are on the landing page
+        if (pathname === '/') {
+          router.push('/dashboard');
+        }
+      } else {
+        // If user is not logged in, redirect to landing page if they are on a protected route
+        if (pathname !== '/') {
+          router.push('/');
+        }
+      }
+    }
+  }, [user, loading, pathname, router]);
 
   const refreshUser = async () => {
     const firebaseUser = auth.currentUser;
@@ -62,26 +72,15 @@ export default function AuthProvider({
   const signOut = async () => {
     await firebaseSignOut(auth);
     setUser(null);
-    router.push('/');
+    // The useEffect above will handle the redirect to '/'
   }
 
-  // This prevents showing a protected page for a split second before redirecting.
-  if (loading && pathname !== '/') {
+  if (loading) {
      return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
-  }
-
-  // If not loading and no user, but trying to access a protected route, redirect.
-  if (!loading && !user && pathname !== '/') {
-      router.push('/');
-      return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
   }
 
   return (
