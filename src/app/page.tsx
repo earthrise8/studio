@@ -26,22 +26,12 @@ export default function LandingPage() {
     }
   };
 
-  if (loading) {
+  if (loading || user) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     )
-  }
-
-  // If user is already logged in, redirect them. This is now handled by AuthProvider as well.
-  if (user) {
-    // router.push('/dashboard'); // This is now handled by AuthProvider
-    return (
-         <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-    );
   }
 
   return (
