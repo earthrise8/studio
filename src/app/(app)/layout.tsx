@@ -63,18 +63,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (loading) {
+  if (loading || !user) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
-  }
-
-  if (!user) {
-    // This should be handled by the AuthProvider, but as a fallback
-    router.push('/');
-    return null;
   }
 
   const navItems = [

@@ -46,41 +46,39 @@ export default function AuthProvider({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isDemoMode = searchParams.get('demo') === 'true';
 
   useEffect(() => {
+    const isDemoMode = searchParams.get('demo') === 'true';
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const appUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
         setUser(appUser);
-        setLoading(false);
-      } else if (isDemoMode) {
+      } else if (isDemoMode && pathname.startsWith('/dashboard')) {
         setUser(demoUser);
-        setLoading(false);
       } else {
         setUser(null);
-        setLoading(false);
       }
+      setLoading(false);
     });
+
     return () => unsubscribe();
-  }, [isDemoMode]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
-    if (!loading) {
-      if (user) {
-        // If a real user is logged in, redirect to dashboard if they land on the home page.
-        if (pathname === '/' && user.id !== 'demo-user') {
-          router.push('/dashboard');
-        }
-      } else {
-        // If no user (and not entering demo mode), redirect to home if on a protected route.
-        const isAppRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/pantry') || pathname.startsWith('/logs') || pathname.startsWith('/recipes') || pathname.startsWith('/advisor') || pathname.startsWith('/friends') || pathname.startsWith('/awards') || pathname.startsWith('/settings') || pathname.startsWith('/shopping-cart') || pathname.startsWith('/wiki');
-        if (isAppRoute && !isDemoMode) {
-          router.push('/');
-        }
-      }
+    if (loading) return;
+
+    const isAppRoute = /^\/(dashboard|pantry|shopping-cart|logs|recipes|advisor|friends|awards|wiki|settings)/.test(pathname);
+    
+    if (!user && isAppRoute) {
+      router.push('/');
     }
-  }, [user, loading, pathname, router, isDemoMode]);
+    
+    if (user && user.id !== 'demo-user' && pathname === '/') {
+      router.push('/dashboard');
+    }
+
+  }, [user, loading, pathname, router]);
 
   const refreshUser = async () => {
     if (user?.id === 'demo-user') return; // No refreshing for demo user
@@ -106,16 +104,8 @@ export default function AuthProvider({
     } else {
       await firebaseSignOut(auth);
       setUser(null);
-      // The useEffect hook will handle redirecting to '/'
+      router.push('/');
     }
-  }
-
-  if (loading) {
-     return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-    );
   }
 
   return (
