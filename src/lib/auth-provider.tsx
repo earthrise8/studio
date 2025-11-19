@@ -50,12 +50,23 @@ export default function AuthProvider({
   useEffect(() => {
     const isDemoMode = searchParams.get('demo') === 'true';
 
+    // If we're entering demo mode, set the user immediately and finish.
+    if (isDemoMode && user?.id !== 'demo-user') {
+      setUser(demoUser);
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // If we're in a demo session, don't process Google auth state changes.
+      if (user?.id === 'demo-user') {
+        setLoading(false);
+        return;
+      }
+
       if (firebaseUser) {
         const appUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
         setUser(appUser);
-      } else if (isDemoMode && pathname.startsWith('/dashboard')) {
-        setUser(demoUser);
       } else {
         setUser(null);
       }
@@ -63,17 +74,19 @@ export default function AuthProvider({
     });
 
     return () => unsubscribe();
-  }, [pathname, searchParams]);
+  }, [searchParams, user]);
 
   useEffect(() => {
     if (loading) return;
 
     const isAppRoute = /^\/(dashboard|pantry|shopping-cart|logs|recipes|advisor|friends|awards|wiki|settings)/.test(pathname);
     
+    // If there's no user (and not in demo) on a protected route, redirect to home.
     if (!user && isAppRoute) {
       router.push('/');
     }
     
+    // If a real user is logged in, redirect from home to dashboard.
     if (user && user.id !== 'demo-user' && pathname === '/') {
       router.push('/dashboard');
     }
@@ -93,6 +106,10 @@ export default function AuthProvider({
   };
 
   const signIn = async () => {
+    // If in demo mode, clear the demo user before signing in.
+    if (user?.id === 'demo-user') {
+      setUser(null);
+    }
     setLoading(true);
     await signInWithRedirect(auth, googleProvider);
   }
