@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Logo from '@/components/logo';
 import { useAuth } from '@/lib/auth-provider';
 import { auth, googleProvider } from '@/lib/firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithRedirect } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Loader2, LogIn } from 'lucide-react';
 
@@ -15,15 +15,10 @@ export default function LandingPage() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-      // The redirect is now handled by the AuthProvider
-    } catch (error) {
-      // Don't show an error if the user closes the popup manually
-      if ((error as any).code !== 'auth/popup-closed-by-user') {
-          console.error("Error during sign-in:", error);
-      }
-    }
+    // This will redirect the user to the Google sign-in page.
+    // After sign-in, they will be redirected back to the app,
+    // and the AuthProvider will handle the rest.
+    await signInWithRedirect(auth, googleProvider);
   };
 
   if (loading || user) {
