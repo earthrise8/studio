@@ -63,7 +63,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (loading || !user) {
+  if (loading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -71,6 +71,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (!user) {
+    // This case should be handled by AuthProvider, but as a fallback:
+    return (
+       <div className="flex h-screen w-full items-center justify-center">
+            <p>Redirecting...</p>
+        </div>
+    )
+  }
+
+  const isDemo = user?.id === 'demo-user';
+  
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/pantry', label: 'Pantry', icon: Warehouse },
@@ -82,6 +93,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/awards', label: 'Awards', icon: Trophy },
     { href: '/wiki', label: 'Wiki', icon: Library },
   ];
+
+  const getHref = (path: string) => isDemo ? `${path}?demo=true` : path;
+
 
   const pageContent = (
     <>
@@ -99,12 +113,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
-                    href={item.href}
+                    href={getHref(item.href)}
                     isActive={pathname.startsWith(item.href)}
                     asChild
                     tooltip={item.label}
                   >
-                    <a href={item.href}>
+                    <a href={getHref(item.href)}>
                       <item.icon />
                       <span>{item.label}</span>
                     </a>
@@ -117,8 +131,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton href="/settings" isActive={pathname === '/settings'} asChild tooltip="Settings">
-                         <Link href="/settings">
+                    <SidebarMenuButton href={getHref("/settings")} isActive={pathname === '/settings'} asChild tooltip="Settings">
+                         <Link href={getHref("/settings")}>
                             <Settings />
                             <span>Settings</span>
                         </Link>
