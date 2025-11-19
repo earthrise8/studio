@@ -54,6 +54,7 @@ export default function AuthProvider({
     if (isDemoMode && user?.id !== 'demo-user') {
       setUser(demoUser);
       setLoading(false);
+      // We explicitly return here to avoid the auth state listener logic below.
       return;
     }
 
@@ -74,14 +75,16 @@ export default function AuthProvider({
     });
 
     return () => unsubscribe();
-  }, [searchParams, user]);
+  // We only want this to run on mount or when the demo param changes, not when user state changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (loading) return;
 
     const isAppRoute = /^\/(dashboard|pantry|shopping-cart|logs|recipes|advisor|friends|awards|wiki|settings)/.test(pathname);
     
-    // If there's no user (and not in demo) on a protected route, redirect to home.
+    // If there's no user on a protected route, redirect to home.
     if (!user && isAppRoute) {
       router.push('/');
     }
