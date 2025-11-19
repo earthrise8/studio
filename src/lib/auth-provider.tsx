@@ -2,10 +2,10 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
+import { auth, googleProvider } from '@/lib/firebase';
+import { onAuthStateChanged, signOut as firebaseSignOut, signInWithRedirect } from 'firebase/auth';
 import type { User } from '@/lib/types';
 import { getOrCreateUser } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
@@ -15,10 +15,26 @@ interface AuthContextType {
   loading: boolean;
   refreshUser: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  signIn: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const demoUser: User = {
+    id: 'demo-user',
+    email: 'demo@example.com',
+    name: 'Demo User',
+    profile: {
+        dailyCalorieGoal: 2000,
+        healthGoal: 'Try out Fitropolis',
+        totalPoints: 50,
+        money: 1000,
+        level: 1,
+        cityName: 'Demo City',
+        avatarUrl: `https://i.pravatar.cc/150?u=demo`,
+    },
+};
 
 export default function AuthProvider({
   children,
@@ -29,37 +45,46 @@ export default function AuthProvider({
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isDemoMode = searchParams.get('demo') === 'true';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const appUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
         setUser(appUser);
+        setLoading(false);
+      } else if (isDemoMode) {
+        setUser(demoUser);
+        setLoading(false);
       } else {
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [isDemoMode]);
 
   useEffect(() => {
     if (!loading) {
       if (user) {
-        // If user is logged in, redirect to dashboard if they are on the landing page
-        if (pathname === '/') {
+        // If a real user is logged in, redirect to dashboard if they land on the home page.
+        if (pathname === '/' && user.id !== 'demo-user') {
           router.push('/dashboard');
         }
       } else {
-        // If user is not logged in, redirect to landing page if they are on a protected route
-        if (pathname !== '/') {
+        // If no user (and not entering demo mode), redirect to home if on a protected route.
+        const isAppRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/pantry') || pathname.startsWith('/logs') || pathname.startsWith('/recipes') || pathname.startsWith('/advisor') || pathname.startsWith('/friends') || pathname.startsWith('/awards') || pathname.startsWith('/settings') || pathname.startsWith('/shopping-cart') || pathname.startsWith('/wiki');
+        if (isAppRoute && !isDemoMode) {
           router.push('/');
         }
       }
     }
-  }, [user, loading, pathname, router]);
+  }, [user, loading, pathname, router, isDemoMode]);
 
   const refreshUser = async () => {
+    if (user?.id === 'demo-user') return; // No refreshing for demo user
+
     const firebaseUser = auth.currentUser;
     if (firebaseUser) {
       setLoading(true);
@@ -69,10 +94,20 @@ export default function AuthProvider({
     }
   };
 
+  const signIn = async () => {
+    setLoading(true);
+    await signInWithRedirect(auth, googleProvider);
+  }
+
   const signOut = async () => {
-    await firebaseSignOut(auth);
-    setUser(null);
-    // The useEffect above will handle the redirect to '/'
+    if (user?.id === 'demo-user') {
+      setUser(null);
+      router.push('/');
+    } else {
+      await firebaseSignOut(auth);
+      setUser(null);
+      // The useEffect hook will handle redirecting to '/'
+    }
   }
 
   if (loading) {
@@ -84,7 +119,7 @@ export default function AuthProvider({
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, refreshUser, setUser, signOut }}>
+    <AuthContext.Provider value={{ user, loading, refreshUser, setUser, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

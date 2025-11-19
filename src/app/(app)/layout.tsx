@@ -29,6 +29,8 @@ import {
   Target,
   Users,
   LogOut,
+  LogIn,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-provider';
 import { usePathname, useRouter } from 'next/navigation';
@@ -38,6 +40,23 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ProgressRing } from '@/components/ui/progress-ring';
+
+function DemoModeWarning() {
+    const { user, signIn } = useAuth();
+    if (!user || user.id !== 'demo-user') return null;
+
+    return (
+        <div className="bg-yellow-500/20 border-b border-yellow-600/30 text-yellow-900 dark:text-yellow-200 text-center p-2 text-sm">
+            <div className="container mx-auto flex items-center justify-center gap-4">
+                <AlertTriangle className="h-5 w-5" />
+                <span>You are in Demo Mode. Your data will not be saved.</span>
+                <Button size="sm" variant="ghost" className="underline" onClick={signIn}>
+                    Sign In to save your progress
+                </Button>
+            </div>
+        </div>
+    )
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
@@ -159,7 +178,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
              </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset>
+        <DemoModeWarning />
+        {children}
+        </SidebarInset>
     </>
   );
 

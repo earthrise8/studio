@@ -5,23 +5,14 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Logo from '@/components/logo';
 import { useAuth } from '@/lib/auth-provider';
-import { auth, googleProvider } from '@/lib/firebase';
-import { signInWithRedirect } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Loader2, LogIn } from 'lucide-react';
 
 export default function LandingPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, signIn } = useAuth();
   const router = useRouter();
 
-  const handleLogin = async () => {
-    // This will redirect the user to the Google sign-in page.
-    // After sign-in, they will be redirected back to the app,
-    // and the AuthProvider will handle the rest.
-    await signInWithRedirect(auth, googleProvider);
-  };
-
-  if (loading || user) {
+  if (loading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -29,13 +20,24 @@ export default function LandingPage() {
     )
   }
 
+  // If a real user is already logged in, redirect them.
+  if (user && user.id !== 'demo-user') {
+    router.push('/dashboard');
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="container z-40 bg-background">
         <div className="flex h-20 items-center justify-between py-6">
           <Logo />
           <nav className="flex items-center gap-4">
-              <Button onClick={handleLogin}>
+              <Button onClick={signIn}>
                 <LogIn className="mr-2 h-4 w-4" />
                 Login with Google
               </Button>
@@ -54,7 +56,9 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="flex w-full items-center justify-center space-x-4 py-8 md:py-12">
-            <Button size="lg" onClick={handleLogin}>Get Started</Button>
+            <Button asChild size="lg">
+                <Link href="/dashboard?demo=true">Try a Demo</Link>
+            </Button>
           </div>
         </div>
       </main>

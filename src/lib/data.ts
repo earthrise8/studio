@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import type {
@@ -20,27 +19,42 @@ import { addDays, formatISO, subDays } from 'date-fns';
 
 const today = new Date();
 
-// --- Helper functions for localStorage ---
+// --- Helper functions for storage ---
 
-const getFromStorage = <T>(key: string, defaultValue: T): T => {
-  if (typeof window === 'undefined') {
-    return defaultValue;
-  }
-  const storedValue = window.localStorage.getItem(key);
+const getStorage = (userId: string): Storage => {
+    if (typeof window === 'undefined') {
+        // Return a mock storage for server-side rendering
+        const mockStorage = new Map<string, string>();
+        return {
+            getItem: (key: string) => mockStorage.get(key) || null,
+            setItem: (key: string, value: string) => mockStorage.set(key, value),
+            removeItem: (key: string) => mockStorage.delete(key),
+            clear: () => mockStorage.clear(),
+            key: (index: number) => [...mockStorage.keys()][index] || null,
+            length: mockStorage.size,
+        };
+    }
+    return userId === 'demo-user' ? window.sessionStorage : window.localStorage;
+}
+
+
+const getFromStorage = <T>(userId: string, key: string, defaultValue: T): T => {
+  const storage = getStorage(userId);
+  const storedValue = storage.getItem(key);
   if (storedValue) {
     try {
       return JSON.parse(storedValue);
     } catch (e) {
-      console.error(`Error parsing localStorage key "${key}":`, e);
+      console.error(`Error parsing storage key "${key}":`, e);
       return defaultValue;
     }
   }
   return defaultValue;
 };
 
-const saveToStorage = <T>(key: string, value: T) => {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(key, JSON.stringify(value));
+const saveToStorage = <T>(userId: string, key: string, value: T) => {
+  const storage = getStorage(userId);
+  storage.setItem(key, JSON.stringify(value));
 };
 
 // Unique ID generator
@@ -217,19 +231,19 @@ const initialFriends: Record<string, Friend[]> = {
 // --- Data Access Functions ---
 
 const getUserData = <T>(userId: string, key: string, defaultValue: T): T => {
-    const allData = getFromStorage(key, {});
+    const allData = getFromStorage(userId, key, {});
     return (allData as Record<string, T>)[userId] || defaultValue;
 }
 
 const saveUserData = <T>(userId: string, key: string, data: T) => {
-    const allData = getFromStorage(key, {});
+    const allData = getFromStorage(userId, key, {});
     (allData as Record<string, T>)[userId] = data;
-    saveToStorage(key, allData);
+    saveToStorage(userId, key, allData);
 }
 
 // User Data
 export const getUser = async (userId: string): Promise<User | null> => {
-  const users = getFromStorage('users', {});
+  const users = getFromStorage(userId, 'users', {});
   return (users as Record<string, User>)[userId] || null;
 };
 
@@ -237,9 +251,9 @@ export const getOrCreateUser = async (userId: string, name: string | null, email
     let user = await getUser(userId);
     if (!user) {
         user = getDefaultUserData(userId, name, email);
-        const users = getFromStorage('users', {});
+        const users = getFromStorage(userId, 'users', {});
         (users as Record<string, User>)[userId] = user;
-        saveToStorage('users', users);
+        saveToStorage(userId, 'users', users);
         
         // Initialize default data for new user
         saveUserData(userId, 'pantry', defaultPantry);
@@ -258,7 +272,7 @@ export const updateUserProfile = async (
   userId: string,
   profileUpdates: Partial<Pick<User, 'name' | 'email'> & { profile: Partial<UserProfile> }>
 ): Promise<User> => {
-  const users = getFromStorage('users', {});
+  const users = getFromStorage(userId, 'users', {});
   const user = (users as Record<string, User>)[userId];
   if (!user) throw new Error('User not found');
   
@@ -268,7 +282,7 @@ export const updateUserProfile = async (
     user.profile = { ...user.profile, ...profileUpdates.profile };
   }
 
-  saveToStorage('users', users);
+  saveToStorage(userId, 'users', users);
   return user;
 };
 
@@ -640,16 +654,17 @@ export const resetUserData = (userId: string): void => {
   saveUserData(userId, 'shoppingCart', defaultShoppingCart);
   saveUserData(userId, 'friends', initialFriends['user123']);
   
-  localStorage.removeItem(`city-grid-${userId}`);
-  localStorage.removeItem(`game-start-date-${userId}`);
-  localStorage.removeItem(`last-revenue-update-${userId}`);
+  const storage = getStorage(userId);
+  storage.removeItem(`city-grid-${userId}`);
+  storage.removeItem(`game-start-date-${userId}`);
+  storage.removeItem(`last-revenue-update-${userId}`);
   
   // Re-create user with default data but keep ID
-  const users = getFromStorage('users', {});
+  const users = getFromStorage(userId, 'users', {});
   const existingUser = (users as Record<string, User>)[userId];
   if(existingUser) {
     const newUser = getDefaultUserData(userId, existingUser.name, existingUser.email);
     (users as Record<string, User>)[userId] = newUser;
-    saveToStorage('users', users);
+    saveToStorage(userId, 'users', users);
   }
 };
