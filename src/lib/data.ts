@@ -22,7 +22,7 @@ const today = new Date();
 
 // --- Helper functions for storage ---
 
-const getFromStorage = <T>(userId: string, key: string, defaultValue: T): T => {
+const getFromStorage = <T>(key: string, defaultValue: T): T => {
   if (typeof window === 'undefined') return defaultValue;
   const storage = window.localStorage;
   const storedValue = storage.getItem(key);
@@ -37,7 +37,7 @@ const getFromStorage = <T>(userId: string, key: string, defaultValue: T): T => {
   return defaultValue;
 };
 
-const saveToStorage = <T>(userId: string, key: string, value: T) => {
+const saveToStorage = <T>(key: string, value: T) => {
   if (typeof window === 'undefined') return;
   const storage = window.localStorage;
   storage.setItem(key, JSON.stringify(value));
@@ -218,30 +218,33 @@ const initialFriends: Record<string, Friend[]> = {
 // --- Data Access Functions ---
 
 const getUserData = <T>(userId: string, key: string, defaultValue: T): T => {
-    const allData = getFromStorage(userId, key, {});
-    return (allData as Record<string, T>)[userId] || defaultValue;
+    const allData = getFromStorage('allUserData', {});
+    return (allData as Record<string, Record<string, T>>)[userId]?.[key] || defaultValue;
 }
 
 const saveUserData = <T>(userId: string, key: string, data: T) => {
-    const allData = getFromStorage(userId, key, {});
-    (allData as Record<string, T>)[userId] = data;
-    saveToStorage(userId, key, allData);
+    const allData = getFromStorage('allUserData', {});
+    if (!(allData as Record<string, Record<string, T>>)[userId]) {
+        (allData as Record<string, Record<string, T>>)[userId] = {};
+    }
+    (allData as Record<string, Record<string, T>>)[userId][key] = data;
+    saveToStorage('allUserData', allData);
 }
 
 // User Data
 export const getUser = async (userId: string): Promise<User | null> => {
-  const users = getFromStorage(userId, 'users', {});
+  const users = getFromStorage('users', {});
   return (users as Record<string, User>)[userId] || null;
 };
 
-export const getOrCreateUser = async (userId: string, name: string | null, email: string | null): Promise<User> => {
-    let user = await getUser(userId);
+export const getOrCreateUser = (userId: string, name: string | null, email: string | null): User => {
+    const users = getFromStorage('users', {} as Record<string, User>);
+    let user = users[userId];
     if (!user) {
         user = getDefaultUserData(userId, name, email);
-        const users = getFromStorage(userId, 'users', {});
-        (users as Record<string, User>)[userId] = user;
-        saveToStorage(userId, 'users', users);
-        
+        users[userId] = user;
+        saveToStorage('users', users);
+
         // Initialize default data for new user
         saveUserData(userId, 'pantry', defaultPantry);
         saveUserData(userId, 'foodLogs', defaultFoodLogs);
@@ -250,7 +253,7 @@ export const getOrCreateUser = async (userId: string, name: string | null, email
         saveUserData(userId, 'goals', defaultGoals);
         saveUserData(userId, 'awards', defaultAwards);
         saveUserData(userId, 'shoppingCart', defaultShoppingCart);
-        saveUserData(userId, 'friends', initialFriends['user123']); // Give them mock friends
+        saveUserData(userId, 'friends', initialFriends['user123']);
     }
     return user;
 }
@@ -259,7 +262,7 @@ export const updateUserProfile = async (
   userId: string,
   profileUpdates: Partial<Pick<User, 'name' | 'email'> & { profile: Partial<UserProfile> }>
 ): Promise<User> => {
-  const users = getFromStorage(userId, 'users', {});
+  const users = getFromStorage('users', {});
   const user = (users as Record<string, User>)[userId];
   if (!user) throw new Error('User not found');
   
@@ -269,7 +272,7 @@ export const updateUserProfile = async (
     user.profile = { ...user.profile, ...profileUpdates.profile };
   }
 
-  saveToStorage(userId, 'users', users);
+  saveToStorage('users', users);
   return user;
 };
 
@@ -632,26 +635,22 @@ export const moveItemToPantry = async (userId: string, item: ShoppingCartItem): 
 
 // Reset all data
 export const resetUserData = (userId: string): void => {
-  saveUserData(userId, 'pantry', defaultPantry);
-  saveUserData(userId, 'foodLogs', defaultFoodLogs);
-  saveUserData(userId, 'activityLogs', defaultActivityLogs);
-  saveUserData(userId, 'recipes', defaultRecipes);
-  saveUserData(userId, 'goals', defaultGoals);
-  saveUserData(userId, 'awards', defaultAwards);
-  saveUserData(userId, 'shoppingCart', defaultShoppingCart);
-  saveUserData(userId, 'friends', initialFriends['user123']);
-  
-  const storage = window.localStorage;
-  storage.removeItem(`city-grid-${userId}`);
-  storage.removeItem(`game-start-date-${userId}`);
-  storage.removeItem(`last-revenue-update-${userId}`);
-  
-  // Re-create user with default data but keep ID
-  const users = getFromStorage(userId, 'users', {});
-  const existingUser = (users as Record<string, User>)[userId];
-  if(existingUser) {
-    const newUser = getDefaultUserData(userId, existingUser.name, existingUser.email);
-    (users as Record<string, User>)[userId] = newUser;
-    saveToStorage(userId, 'users', users);
+  const allUserData = getFromStorage('allUserData', {});
+  if ((allUserData as Record<string, any>)[userId]) {
+    delete (allUserData as Record<string, any>)[userId];
+    saveToStorage('allUserData', allUserData);
   }
+
+  const users = getFromStorage('users', {});
+  const user = (users as Record<string, User>)[userId];
+
+  if(user) {
+    const newUser = getDefaultUserData(user.id, user.name, user.email);
+    (users as Record<string, User>)[userId] = newUser;
+    saveToStorage('users', users);
+  }
+  
+  localStorage.removeItem(`city-grid-${userId}`);
+  localStorage.removeItem(`game-start-date-${userId}`);
+  localStorage.removeItem(`last-revenue-update-${userId}`);
 };
