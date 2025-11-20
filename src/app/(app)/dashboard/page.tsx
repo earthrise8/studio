@@ -867,7 +867,7 @@ export default function DashboardPage() {
                         </div>
                     ) : cityGrid ? (
                         <TooltipProvider>
-                            <div className="font-mono text-center text-3xl leading-none border-t border-l border-border/50 select-none">
+                            <div className="font-code text-center text-3xl leading-none border-t border-l border-border/50 select-none">
                             {cityGrid.map((row, y) => (
                                 <div key={y} className="flex">
                                     {row.map((cell, x) => {
@@ -1379,3 +1379,4 @@ export default function DashboardPage() {
     
 
     
+
