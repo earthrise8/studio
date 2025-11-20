@@ -155,7 +155,8 @@ export default function AuthProvider({
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     await updateProfile(userCredential.user, { displayName: data.name });
     await fetchUserAndMigrateData(userCredential.user);
-    // onAuthStateChanged will handle setting the user
+    router.push('/dashboard');
+    window.location.reload();
     return userCredential.user;
   };
 
@@ -163,7 +164,8 @@ export default function AuthProvider({
     setLoading(true);
     const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
     await fetchUserAndMigrateData(userCredential.user);
-    // onAuthStateChanged will handle setting the user
+    router.push('/dashboard');
+    window.location.reload();
     return userCredential.user;
   }
 
