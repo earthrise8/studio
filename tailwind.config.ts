@@ -17,8 +17,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['"Press Start 2P"', 'sans-serif'],
-        headline: ['"VT323"', 'monospace'],
+        body: ['"Josefin Sans"', 'sans-serif'],
+        headline: ['"Orbitron"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
