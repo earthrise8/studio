@@ -8,7 +8,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut, signInWithRedirect, getRedirectResult, User as AuthUser } from 'firebase/auth';
 import type { User } from '@/lib/types';
-import { getOrCreateUser } from '@/lib/data';
+import { getOrCreateUser, updateUserProfile } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
@@ -50,32 +50,32 @@ const fetchUser = async (firebaseUser: AuthUser): Promise<User> => {
             // Here, we simulate it by checking local storage for anon data.
             const anonUser = await getOrCreateUser(anonId, 'Guest', 'anonymous@example.com');
             
-            // A simple merge: if the real user's data is default, use the anon data.
-            // This is a basic example. A real app might have a more complex merge strategy.
             let needsUpdate = false;
-            if(appUser.profile.totalPoints === 0 && anonUser.profile.totalPoints > 0) {
-                appUser.profile.totalPoints = anonUser.profile.totalPoints;
+            const profileUpdates: Partial<User['profile']> = {};
+
+            if (appUser.profile.totalPoints === 0 && anonUser.profile.totalPoints && anonUser.profile.totalPoints > 0) {
+                profileUpdates.totalPoints = anonUser.profile.totalPoints;
                 needsUpdate = true;
             }
-             if(appUser.profile.money === 1000 && anonUser.profile.money > 1000) {
-                appUser.profile.money = anonUser.profile.money;
+            if (appUser.profile.money === 1000 && anonUser.profile.money && anonUser.profile.money > 1000) {
+                profileUpdates.money = anonUser.profile.money;
                 needsUpdate = true;
             }
-            if(!appUser.profile.cityGrid && anonUser.profile.cityGrid) {
-                appUser.profile.cityGrid = anonUser.profile.cityGrid;
+            if (!appUser.profile.cityGrid && anonUser.profile.cityGrid) {
+                profileUpdates.cityGrid = anonUser.profile.cityGrid;
                 needsUpdate = true;
             }
             
             // If we merged data, update the user in storage
             if (needsUpdate) {
-                const users = JSON.parse(localStorage.getItem('users') || '{}');
-                users[appUser.id] = appUser;
-                localStorage.setItem('users', JSON.stringify(users));
+                await updateUserProfile(appUser.id, { profile: profileUpdates });
+                // Clean up anonymous data after migration
+                localStorage.removeItem('anonymousUserId');
+                // In a real app, you would also delete the anon user's data from storage.
             }
-
-            // Clean up anonymous data after migration
-            localStorage.removeItem('anonymousUserId');
-            // In a real app, you would also delete the anon user's data from storage.
+             // Get the fresh user object after potential update
+            const finalUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
+            return finalUser;
         }
     }
     
@@ -91,41 +91,43 @@ export default function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const appUser = await fetchUser(firebaseUser);
-        setUser(appUser);
-      } else {
-        const anonUser = createAnonymousUser();
-        setUser(anonUser);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
   
-  // Handle redirect result from Google Sign-In
+  // Handle redirect result from Google Sign-In on initial load
   useEffect(() => {
     const handleRedirect = async () => {
       try {
+        setLoading(true);
         const result = await getRedirectResult(auth);
         if (result) {
-          setLoading(true);
+          // A user has just signed in via redirect. Fetch/create their data.
           const appUser = await fetchUser(result.user);
           setUser(appUser);
           setLoading(false);
           router.push('/dashboard');
+        } else {
+           // No redirect result, proceed with normal auth state check
+            const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+              if (firebaseUser) {
+                const appUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
+                setUser(appUser);
+              } else {
+                const anonUser = createAnonymousUser();
+                setUser(anonUser);
+              }
+              setLoading(false);
+            });
+            return () => unsubscribe();
         }
       } catch (error) {
-        console.error("Error handling redirect result:", error);
+        console.error("Error handling auth state:", error);
+         // Fallback to anonymous user on error
+        setUser(createAnonymousUser());
         setLoading(false);
       }
     };
     handleRedirect();
   }, [router]);
+
 
   const refreshUser = async () => {
     if (user && !user.id.startsWith('anon_')) {

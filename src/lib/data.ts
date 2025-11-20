@@ -272,6 +272,7 @@ export const updateUserProfile = async (
     user.profile = { ...user.profile, ...profileUpdates.profile };
   }
 
+  (users as Record<string, User>)[userId] = user;
   saveToStorage('users', users);
   return user;
 };
