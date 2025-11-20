@@ -21,25 +21,8 @@ const today = new Date();
 
 // --- Helper functions for storage ---
 
-const getStorage = (userId: string): Storage => {
-    if (typeof window === 'undefined') {
-        // Return a mock storage for server-side rendering
-        const mockStorage = new Map<string, string>();
-        return {
-            getItem: (key: string) => mockStorage.get(key) || null,
-            setItem: (key: string, value: string) => mockStorage.set(key, value),
-            removeItem: (key: string) => mockStorage.delete(key),
-            clear: () => mockStorage.clear(),
-            key: (index: number) => [...mockStorage.keys()][index] || null,
-            length: mockStorage.size,
-        };
-    }
-    return userId === 'demo-user' ? window.sessionStorage : window.localStorage;
-}
-
-
 const getFromStorage = <T>(userId: string, key: string, defaultValue: T): T => {
-  const storage = getStorage(userId);
+  const storage = window.localStorage;
   const storedValue = storage.getItem(key);
   if (storedValue) {
     try {
@@ -53,7 +36,7 @@ const getFromStorage = <T>(userId: string, key: string, defaultValue: T): T => {
 };
 
 const saveToStorage = <T>(userId: string, key: string, value: T) => {
-  const storage = getStorage(userId);
+  const storage = window.localStorage;
   storage.setItem(key, JSON.stringify(value));
 };
 
@@ -654,7 +637,7 @@ export const resetUserData = (userId: string): void => {
   saveUserData(userId, 'shoppingCart', defaultShoppingCart);
   saveUserData(userId, 'friends', initialFriends['user123']);
   
-  const storage = getStorage(userId);
+  const storage = window.localStorage;
   storage.removeItem(`city-grid-${userId}`);
   storage.removeItem(`game-start-date-${userId}`);
   storage.removeItem(`last-revenue-update-${userId}`);

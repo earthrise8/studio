@@ -7,12 +7,24 @@ import Logo from '@/components/logo';
 import { useAuth } from '@/lib/auth-provider';
 import { useRouter } from 'next/navigation';
 import { Loader2, LogIn } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function LandingPage() {
   const { user, loading, signIn } = useAuth();
   const router = useRouter();
 
-  if (loading) {
+  // This effect will run when the user state changes.
+  useEffect(() => {
+    // If we are done loading and have a user, go to the dashboard.
+    // This handles both signed-in users and anonymous users automatically.
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
+
+  // Show a loading state while we determine the auth status
+  if (loading || user) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -20,17 +32,7 @@ export default function LandingPage() {
     )
   }
 
-  // If a real user is already logged in, redirect them.
-  if (user && user.id !== 'demo-user') {
-    router.push('/dashboard');
-    return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-    );
-  }
-
-
+  // Only show the landing page if we're done loading and there is no user.
   return (
     <div className="flex min-h-screen flex-col">
       <header className="container z-40 bg-background">
@@ -57,7 +59,7 @@ export default function LandingPage() {
           </div>
           <div className="flex w-full items-center justify-center space-x-4 py-8 md:py-12">
             <Button asChild size="lg">
-                <Link href="/dashboard?demo=true">Try a Demo</Link>
+                <Link href="/dashboard">Get Started</Link>
             </Button>
           </div>
         </div>

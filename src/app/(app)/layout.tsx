@@ -41,46 +41,48 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ProgressRing } from '@/components/ui/progress-ring';
 
-function DemoModeWarning() {
-    const { user, signIn } = useAuth();
-    if (!user || user.id !== 'demo-user') return null;
+function AuthSensitiveControls() {
+    const { user, signIn, signOut } = useAuth();
+    if (!user) return null; // Should not happen with anonymous user
+
+    const isAnonymous = user.id.startsWith('anon_');
+
+    if (isAnonymous) {
+        return (
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={signIn} asChild tooltip="Login">
+                    <a>
+                        <LogIn />
+                        <span>Login to Save</span>
+                    </a>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        );
+    }
 
     return (
-        <div className="bg-yellow-500/20 border-b border-yellow-600/30 text-yellow-900 dark:text-yellow-200 text-center p-2 text-sm">
-            <div className="container mx-auto flex items-center justify-center gap-4">
-                <AlertTriangle className="h-5 w-5" />
-                <span>You are in Demo Mode. Your data will not be saved.</span>
-                <Button size="sm" variant="ghost" className="underline" onClick={signIn}>
-                    Sign In to save your progress
-                </Button>
-            </div>
-        </div>
-    )
+         <SidebarMenuItem>
+            <SidebarMenuButton onClick={signOut} asChild tooltip="Logout">
+                <a>
+                    <LogOut />
+                    <span>Logout</span>
+                </a>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
+    );
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
 
-  if (loading) {
+  if (loading || !user) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
   }
-
-  if (!user) {
-    // This case should be handled by AuthProvider, but as a fallback:
-    return (
-       <div className="flex h-screen w-full items-center justify-center">
-            <p>Redirecting...</p>
-        </div>
-    )
-  }
-
-  const isDemo = user?.id === 'demo-user';
   
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -93,9 +95,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/awards', label: 'Awards', icon: Trophy },
     { href: '/wiki', label: 'Wiki', icon: Library },
   ];
-
-  const getHref = (path: string) => isDemo ? `${path}?demo=true` : path;
-
 
   const pageContent = (
     <>
@@ -113,12 +112,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
-                    href={getHref(item.href)}
+                    href={item.href}
                     isActive={pathname.startsWith(item.href)}
                     asChild
                     tooltip={item.label}
                   >
-                    <a href={getHref(item.href)}>
+                    <a href={item.href}>
                       <item.icon />
                       <span>{item.label}</span>
                     </a>
@@ -131,21 +130,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton href={getHref("/settings")} isActive={pathname === '/settings'} asChild tooltip="Settings">
-                         <Link href={getHref("/settings")}>
+                    <SidebarMenuButton href={"/settings"} isActive={pathname === '/settings'} asChild tooltip="Settings">
+                         <Link href={"/settings"}>
                             <Settings />
                             <span>Settings</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Logout" onClick={signOut}>
-                         <a>
-                            <LogOut />
-                            <span>Logout</span>
-                        </a>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
+                <AuthSensitiveControls />
             </SidebarMenu>
             <SidebarSeparator />
             <div className="space-y-2 p-2 text-left group-data-[collapsible=icon]:hidden">
@@ -187,7 +179,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <DemoModeWarning />
         {children}
         </SidebarInset>
     </>

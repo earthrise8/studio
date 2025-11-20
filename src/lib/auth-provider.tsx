@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut, signInWithRedirect } from 'firebase/auth';
@@ -21,19 +21,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const demoUser: User = {
-    id: 'demo-user',
-    email: 'demo@example.com',
-    name: 'Demo User',
-    profile: {
-        dailyCalorieGoal: 2000,
-        healthGoal: 'Try out Fitropolis',
-        totalPoints: 50,
-        money: 1000,
-        level: 1,
-        cityName: 'Demo City',
-        avatarUrl: `https://i.pravatar.cc/150?u=demo`,
-    },
+const createAnonymousUser = (): User => {
+    let anonId = localStorage.getItem('anonymousUserId');
+    if (!anonId) {
+        anonId = `anon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        localStorage.setItem('anonymousUserId', anonId);
+    }
+    return {
+        id: anonId,
+        email: 'anonymous@example.com',
+        name: 'Guest',
+        profile: {
+            dailyCalorieGoal: 2000,
+            healthGoal: 'Get started with Fitropolis',
+            totalPoints: 0,
+            money: 1000,
+            level: 0,
+            cityName: 'My Fitropolis',
+            avatarUrl: `https://i.pravatar.cc/150?u=anonymous`,
+        },
+    };
 };
 
 export default function AuthProvider({
@@ -44,60 +51,25 @@ export default function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const isDemoMode = searchParams.get('demo') === 'true';
-
-    // If we're entering demo mode, set the user immediately and finish.
-    if (isDemoMode && user?.id !== 'demo-user') {
-      setUser(demoUser);
-      setLoading(false);
-      // We explicitly return here to avoid the auth state listener logic below.
-      return;
-    }
-
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      // If we're in a demo session, don't process Google auth state changes.
-      if (user?.id === 'demo-user') {
-        setLoading(false);
-        return;
-      }
-
       if (firebaseUser) {
         const appUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
         setUser(appUser);
       } else {
-        setUser(null);
+        // If not logged in, set up an anonymous user
+        const anonUser = createAnonymousUser();
+        setUser(anonUser);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  // We only want this to run on mount or when the demo param changes, not when user state changes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (loading) return;
-
-    const isAppRoute = /^\/(dashboard|pantry|shopping-cart|logs|recipes|advisor|friends|awards|wiki|settings)/.test(pathname);
-    
-    // If there's no user on a protected route, redirect to home.
-    if (!user && isAppRoute) {
-      router.push('/');
-    }
-    
-    // If a real user is logged in, redirect from home to dashboard.
-    if (user && user.id !== 'demo-user' && pathname === '/') {
-      router.push('/dashboard');
-    }
-
-  }, [user, loading, pathname, router]);
+  }, []);
 
   const refreshUser = async () => {
-    if (user?.id === 'demo-user') return; // No refreshing for demo user
+    if (user && user.id.startsWith('anon_')) return; // No refreshing for anonymous user
 
     const firebaseUser = auth.currentUser;
     if (firebaseUser) {
@@ -109,28 +81,28 @@ export default function AuthProvider({
   };
 
   const signIn = async () => {
-    // If in demo mode, clear the demo user before signing in.
-    if (user?.id === 'demo-user') {
-      setUser(null);
-    }
     setLoading(true);
+    // When signing in, we want to clear any anonymous user ID
+    // so a new one isn't picked up on reload.
+    localStorage.removeItem('anonymousUserId');
     await signInWithRedirect(auth, googleProvider);
   }
 
   const signOut = async () => {
-    if (user?.id === 'demo-user') {
-      setUser(null);
-      router.push('/');
-    } else {
-      await firebaseSignOut(auth);
-      setUser(null);
-      router.push('/');
-    }
+    await firebaseSignOut(auth);
+    // After signing out, create a new anonymous session.
+    const anonUser = createAnonymousUser();
+    setUser(anonUser);
+    router.push('/');
   }
 
   return (
     <AuthContext.Provider value={{ user, loading, refreshUser, setUser, signIn, signOut }}>
-      {children}
+        {loading ? (
+             <div className="flex h-screen w-full items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        ) : children}
     </AuthContext.Provider>
   );
 }
