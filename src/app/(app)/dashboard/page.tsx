@@ -217,6 +217,15 @@ export default function DashboardPage() {
     if (!user) return;
 
     if (!forceRefresh) {
+        const savedGrid = user.profile.cityGrid;
+        if(savedGrid) {
+            setCityGrid(savedGrid);
+            setPermanentRoads(findPermanentRoads(savedGrid));
+            setPermanentRiverEnds(findPermanentRiverEnds(savedGrid));
+            setCityLoading(false);
+            return;
+        }
+
         const cachedGrid = getCachedGrid();
         if (cachedGrid) {
             setCityGrid(cachedGrid);
@@ -233,7 +242,9 @@ export default function DashboardPage() {
       setCityGrid(result.grid);
       setPermanentRoads(findPermanentRoads(result.grid));
       setPermanentRiverEnds(findPermanentRiverEnds(result.grid));
-      saveGridToCache(result.grid);
+      saveGridToCache(result.grid); // Still cache for quick loads before profile syncs
+      await updateUserProfile(user.id, { profile: { cityGrid: result.grid } });
+
     } catch (error) {
       console.error(error);
       toast({
@@ -313,7 +324,7 @@ export default function DashboardPage() {
           moneyToCollect = daysPassed * Math.floor(cityInfo.netRevenue);
 
           // Farmland decay logic
-          const currentGrid = getCachedGrid();
+          const currentGrid = cityGrid; // Use the state grid
           if (currentGrid) {
             gridToUpdate = JSON.parse(JSON.stringify(currentGrid));
             // Apply decay for each day that passed
@@ -339,7 +350,7 @@ export default function DashboardPage() {
 
             if (decayedCount > 0) {
               setCityGrid(gridToUpdate);
-              saveGridToCache(gridToUpdate!);
+              updateUserProfile(user.id, { profile: { cityGrid: gridToUpdate! } });
               toast({
                   variant: 'destructive',
                   title: 'Farmland Withered',
@@ -370,7 +381,7 @@ export default function DashboardPage() {
         localStorage.setItem(lastUpdateKey, now.toString());
       }
     }
-  }, [user, cityInfo, setUser, toast, getCachedGrid, saveGridToCache]);
+  }, [user, cityInfo, setUser, toast, cityGrid]);
 
   useEffect(() => {
     if (user) {
@@ -608,13 +619,13 @@ export default function DashboardPage() {
       profile: {
         ...user.profile,
         money: newTotalMoney,
+        cityGrid: newGrid,
       }
     };
     setUser(updatedUser);
 
     try {
-      await updateUserProfile(user.id, { profile: { money: newTotalMoney } });
-      saveGridToCache(newGrid);
+      await updateUserProfile(user.id, { profile: { money: newTotalMoney, cityGrid: newGrid } });
       
       toast({
           title: 'City Updated!',
@@ -1379,4 +1390,5 @@ export default function DashboardPage() {
     
 
     
+
 

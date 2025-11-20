@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type {
@@ -22,6 +23,7 @@ const today = new Date();
 // --- Helper functions for storage ---
 
 const getFromStorage = <T>(userId: string, key: string, defaultValue: T): T => {
+  if (typeof window === 'undefined') return defaultValue;
   const storage = window.localStorage;
   const storedValue = storage.getItem(key);
   if (storedValue) {
@@ -36,6 +38,7 @@ const getFromStorage = <T>(userId: string, key: string, defaultValue: T): T => {
 };
 
 const saveToStorage = <T>(userId: string, key: string, value: T) => {
+  if (typeof window === 'undefined') return;
   const storage = window.localStorage;
   storage.setItem(key, JSON.stringify(value));
 };
@@ -63,6 +66,7 @@ const getDefaultUserData = (userId: string, name: string | null, email: string |
     money: 1000,
     level: 0,
     cityName: `${name?.split(' ')[0] || 'My'}'s Fitropolis`,
+    cityGrid: undefined,
   },
 });
 

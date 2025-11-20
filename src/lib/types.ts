@@ -19,6 +19,7 @@ export type UserProfile = {
   money?: number;
   level?: number;
   cityName?: string;
+  cityGrid?: string[][];
 };
 
 export type Post = {
