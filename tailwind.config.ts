@@ -19,7 +19,7 @@ export default {
       fontFamily: {
         body: ['"Josefin Sans"', 'sans-serif'],
         headline: ['"Orbitron"', 'sans-serif'],
-        code: ['monospace'],
+        code: ['"Space Mono"', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',
