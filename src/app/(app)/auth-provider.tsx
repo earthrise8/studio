@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -39,7 +38,7 @@ const createAnonymousUser = (): User => {
     return defaultUser as User;
 };
 
-const fetchUser = async (firebaseUser: AuthUser): Promise<User> => {
+const fetchUserAndMigrateData = async (firebaseUser: AuthUser): Promise<User> => {
     const appUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
 
     // Merge data from anonymous session if it exists
@@ -53,11 +52,11 @@ const fetchUser = async (firebaseUser: AuthUser): Promise<User> => {
             let needsUpdate = false;
             const profileUpdates: Partial<User['profile']> = {};
 
-            if (appUser.profile.totalPoints === 0 && anonUser.profile.totalPoints && anonUser.profile.totalPoints > 0) {
+            if ((appUser.profile.totalPoints || 0) <= (anonUser.profile.totalPoints || 0) && (anonUser.profile.totalPoints || 0) > 0) {
                 profileUpdates.totalPoints = anonUser.profile.totalPoints;
                 needsUpdate = true;
             }
-            if (appUser.profile.money === 1000 && anonUser.profile.money && anonUser.profile.money > 1000) {
+            if ((appUser.profile.money || 0) <= (anonUser.profile.money || 0) && (anonUser.profile.money || 0) > 1000) {
                 profileUpdates.money = anonUser.profile.money;
                 needsUpdate = true;
             }
@@ -66,12 +65,15 @@ const fetchUser = async (firebaseUser: AuthUser): Promise<User> => {
                 needsUpdate = true;
             }
             
-            // If we merged data, update the user in storage
             if (needsUpdate) {
                 await updateUserProfile(appUser.id, { profile: profileUpdates });
+                
                 // Clean up anonymous data after migration
+                localStorage.removeItem(`city-grid-${anonId}`);
+                localStorage.removeItem(`game-start-date-${anonId}`);
+                localStorage.removeItem(`last-revenue-update-${anonId}`);
                 localStorage.removeItem('anonymousUserId');
-                // In a real app, you would also delete the anon user's data from storage.
+                 // In a real app, you would also delete the anon user's data from storage.
             }
              // Get the fresh user object after potential update
             const finalUser = await getOrCreateUser(firebaseUser.uid, firebaseUser.displayName, firebaseUser.email);
@@ -100,9 +102,8 @@ export default function AuthProvider({
         const result = await getRedirectResult(auth);
         if (result) {
           // A user has just signed in via redirect. Fetch/create their data.
-          const appUser = await fetchUser(result.user);
+          const appUser = await fetchUserAndMigrateData(result.user);
           setUser(appUser);
-          setLoading(false);
           router.push('/dashboard');
         } else {
            // No redirect result, proceed with normal auth state check
@@ -114,7 +115,6 @@ export default function AuthProvider({
                 const anonUser = createAnonymousUser();
                 setUser(anonUser);
               }
-              setLoading(false);
             });
             return () => unsubscribe();
         }
@@ -122,6 +122,7 @@ export default function AuthProvider({
         console.error("Error handling auth state:", error);
          // Fallback to anonymous user on error
         setUser(createAnonymousUser());
+      } finally {
         setLoading(false);
       }
     };
@@ -129,7 +130,7 @@ export default function AuthProvider({
   }, [router]);
 
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     if (user && !user.id.startsWith('anon_')) {
         const firebaseUser = auth.currentUser;
         if (firebaseUser) {
@@ -143,7 +144,7 @@ export default function AuthProvider({
         const anonUser = await getOrCreateUser(user.id, 'Guest', 'anonymous@example.com');
         setUser(anonUser);
     }
-  };
+  }, [user]);
 
   const signIn = async () => {
     setLoading(true);

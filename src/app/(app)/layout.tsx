@@ -140,7 +140,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <AuthSensitiveControls />
             </SidebarMenu>
             <SidebarSeparator />
-            <div className="space-y-2 p-2 text-left group-data-[collapsible=icon]:hidden">
+            <div key={user.id} className="space-y-2 p-2 text-left group-data-[collapsible=icon]:hidden">
               <div className="flex items-center gap-3">
                   <Avatar>
                   <AvatarImage

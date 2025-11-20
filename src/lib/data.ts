@@ -219,7 +219,7 @@ const initialFriends: Record<string, Friend[]> = {
 
 const getUserData = <T>(userId: string, key: string, defaultValue: T): T => {
     const allData = getFromStorage('allUserData', {});
-    return (allData as Record<string, Record<string, T>>)[userId]?.[key] || defaultValue;
+    return (allData as Record<string, Record<string, T>>)[userId]?.[key] ?? defaultValue;
 }
 
 const saveUserData = <T>(userId: string, key: string, data: T) => {
@@ -254,6 +254,19 @@ export const getOrCreateUser = (userId: string, name: string | null, email: stri
         saveUserData(userId, 'awards', defaultAwards);
         saveUserData(userId, 'shoppingCart', defaultShoppingCart);
         saveUserData(userId, 'friends', initialFriends['user123']);
+    } else {
+        // Ensure avatarUrl is updated if it's missing or using a default for a real user
+        if (name && !userId.startsWith('anon_') && (!user.profile.avatarUrl || user.profile.avatarUrl.includes('i.pravatar.cc'))) {
+            user.profile.avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+        }
+        if (name && user.name !== name) {
+            user.name = name;
+        }
+         if (email && user.email !== email) {
+            user.email = email;
+        }
+        users[userId] = user;
+        saveToStorage('users', users);
     }
     return user;
 }
