@@ -7,24 +7,24 @@ import Logo from '@/components/logo';
 import { useAuth } from '@/lib/auth-provider';
 import { useRouter } from 'next/navigation';
 import { Loader2, LogIn } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { LoginDialog } from '@/components/login-dialog';
 
 export default function LandingPage() {
-  const { user, loading, signIn } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   // This effect will run when the user state changes.
   useEffect(() => {
-    // If we are done loading and have a user, go to the dashboard.
-    // This handles both signed-in users and anonymous users automatically.
-    if (!loading && user) {
+    // If we are done loading and have a user that isn't anonymous, go to the dashboard.
+    if (!loading && user && !user.id.startsWith('anon_')) {
       router.push('/dashboard');
     }
   }, [user, loading, router]);
 
 
   // Show a loading state while we determine the auth status
-  if (loading || user) {
+  if (loading || (user && !user.id.startsWith('anon_'))) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -32,17 +32,19 @@ export default function LandingPage() {
     )
   }
 
-  // Only show the landing page if we're done loading and there is no user.
+  // Only show the landing page if we're done loading and there is an anonymous user.
   return (
     <div className="flex min-h-screen flex-col">
       <header className="container z-40 bg-background">
         <div className="flex h-20 items-center justify-between py-6">
           <Logo />
           <nav className="flex items-center gap-4">
-              <Button onClick={signIn}>
-                <LogIn className="mr-2 h-4 w-4" />
-                Login with Google
-              </Button>
+              <LoginDialog>
+                <Button>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login / Sign Up
+                </Button>
+              </LoginDialog>
           </nav>
         </div>
       </header>

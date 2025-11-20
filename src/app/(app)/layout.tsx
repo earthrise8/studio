@@ -40,22 +40,25 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ProgressRing } from '@/components/ui/progress-ring';
+import { LoginDialog } from '@/components/login-dialog';
 
 function AuthSensitiveControls() {
-    const { user, signIn, signOut } = useAuth();
-    if (!user) return null; // Should not happen with anonymous user
+    const { user, signOut } = useAuth();
+    if (!user) return null;
 
     const isAnonymous = user.id.startsWith('anon_');
 
     if (isAnonymous) {
         return (
             <SidebarMenuItem>
-                <SidebarMenuButton onClick={signIn} asChild tooltip="Login">
-                    <a>
-                        <LogIn />
-                        <span>Login to Save</span>
-                    </a>
-                </SidebarMenuButton>
+                <LoginDialog>
+                    <SidebarMenuButton asChild tooltip="Login">
+                        <a>
+                            <LogIn />
+                            <span>Login to Save</span>
+                        </a>
+                    </SidebarMenuButton>
+                </LoginDialog>
             </SidebarMenuItem>
         );
     }
