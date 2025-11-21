@@ -75,8 +75,8 @@ const defaultPantry: PantryItem[] = [
   { id: 'p2', name: 'Milk', quantity: 1, unit: 'l', category: 'Dairy', purchaseDate: subDays(today, 1).toISOString(), expirationDate: addDays(today, 6).toISOString() },
   { id: 'p3', name: 'Avocado', quantity: 3, unit: 'units', category: 'Produce', purchaseDate: subDays(today, 3).toISOString(), expirationDate: addDays(today, 2).toISOString() },
 ];
-const defaultFoodLogs: FoodLog[] = [{ id: 'fl1', date: formatISO(today, { representation: 'date' }), name: 'Oatmeal with Berries', calories: 350, protein: 10, carbs: 60, fat: 8 }];
-const defaultActivityLogs: ActivityLog[] = [{ id: 'al1', date: formatISO(today, { representation: 'date' }), type: 'Running', name: 'Morning Run', duration: 30, caloriesBurned: 300 }];
+const defaultFoodLogs: FoodLog[] = [{ id: 'fl1', date: formatISO(today, { representation: 'date' }), name: 'Oatmeal with Berries', calories: 350, protein: 10, carbs: 60, fat: 8, sugar: 15, fiber: 8 }];
+const defaultActivityLogs: ActivityLog[] = [{ id: 'al1', date: formatISO(today, { representation: 'date' }), type: 'Run', name: 'Morning Run', duration: 30, caloriesBurned: 300 }];
 const defaultRecipes: Recipe[] = [
   { id: 'r1', name: 'Classic Chicken Soup', description: 'A comforting and easy-to-make chicken soup.', ingredients: '- 1 lb chicken\n- 8 cups broth\n- 2 carrots\n- 2 celery stalks\n- 1 onion\n- noodles', instructions: '1. Cook chicken.\n2. Sauté vegetables.\n3. Add broth and chicken.\n4. Simmer.\n5. Add noodles and cook until tender.', prepTime: '15 min', cookTime: '45 min', totalTime: '1 hour', servings: 4, emoji: '🍲', calories: 350, protein: 30, carbs: 25, fat: 10, isFavorite: true },
 ];

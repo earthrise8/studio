@@ -29,9 +29,11 @@ import {
   addFoodLog,
   addActivityLog,
   getRecipes,
+  getRecentFoodLogs,
+  getRecentActivityLogs,
 } from '@/lib/data';
 import type { ActivityLog, FoodLog, Recipe } from '@/lib/types';
-import { format, formatISO } from 'date-fns';
+import { format, formatISO, subDays } from 'date-fns';
 import {
   Calendar as CalendarIcon,
   PlusCircle,
@@ -39,8 +41,12 @@ import {
   Edit,
   Loader2,
   BookHeart,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  Apple,
 } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Popover,
   PopoverContent,
@@ -84,6 +90,9 @@ import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+
 
 const foodLogSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
@@ -91,6 +100,8 @@ const foodLogSchema = z.object({
   protein: z.coerce.number().min(0),
   carbs: z.coerce.number().min(0),
   fat: z.coerce.number().min(0),
+  sugar: z.coerce.number().min(0).optional(),
+  fiber: z.coerce.number().min(0).optional(),
 });
 
 const activityLogSchema = z.object({
@@ -126,6 +137,8 @@ function AddFoodLogDialog({
       protein: 0,
       carbs: 0,
       fat: 0,
+      sugar: 0,
+      fiber: 0,
     },
   });
   
@@ -177,7 +190,7 @@ function AddFoodLogDialog({
           Log Food
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Log Food for {format(date, 'PPP')}</DialogTitle>
         </DialogHeader>
@@ -188,7 +201,7 @@ function AddFoodLogDialog({
           </TabsList>
           <TabsContent value="custom">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto pr-2">
                 <FormField
                   control={form.control}
                   name="name"
@@ -215,7 +228,7 @@ function AddFoodLogDialog({
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="protein"
@@ -255,8 +268,34 @@ function AddFoodLogDialog({
                       </FormItem>
                     )}
                   />
+                   <FormField
+                    control={form.control}
+                    name="sugar"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sugar (g)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="fiber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fiber (g)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                <DialogFooter>
+                <DialogFooter className='pt-4'>
                   <Button type="submit" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Log Food Item
@@ -448,12 +487,15 @@ function EditLogDialog({
   const formSchema = type === 'food' ? foodLogSchema : activityLogSchema;
   const defaultValues = useMemo(() => {
     if (type === 'food') {
+      const foodItem = item as FoodLog;
       return {
-        name: item.name,
-        calories: (item as FoodLog).calories,
-        protein: (item as FoodLog).protein,
-        carbs: (item as FoodLog).carbs,
-        fat: (item as FoodLog).fat,
+        name: foodItem.name,
+        calories: foodItem.calories,
+        protein: foodItem.protein,
+        carbs: foodItem.carbs,
+        fat: foodItem.fat,
+        sugar: foodItem.sugar || 0,
+        fiber: foodItem.fiber || 0,
       };
     } else {
       return {
@@ -501,12 +543,12 @@ function EditLogDialog({
           <Edit className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Edit {item.name}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
              {type === 'activity' && (
               <>
                  <FormField
@@ -547,22 +589,20 @@ function EditLogDialog({
               </>
             )}
             {type === 'food' && (
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-            {type === 'food' && (
               <>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="calories"
@@ -576,7 +616,7 @@ function EditLogDialog({
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="protein"
@@ -609,6 +649,32 @@ function EditLogDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Fat (g)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="sugar"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sugar (g)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="fiber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fiber (g)</FormLabel>
                         <FormControl>
                           <Input type="number" {...field} />
                         </FormControl>
@@ -649,7 +715,7 @@ function EditLogDialog({
                 />
               </>
             )}
-            <DialogFooter>
+            <DialogFooter className='pt-4'>
               <Button type="submit" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
@@ -660,6 +726,122 @@ function EditLogDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function WeeklySummary() {
+  const { user } = useAuth();
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const [foodLogs, activityLogs] = await Promise.all([
+      getRecentFoodLogs(user.id, 7),
+      getRecentActivityLogs(user.id, 7),
+    ]);
+
+    const summary: Record<string, any> = {};
+    for (let i = 0; i < 7; i++) {
+      const date = subDays(new Date(), i);
+      const dateStr = formatISO(date, { representation: 'date' });
+      summary[dateStr] = {
+        date: dateStr,
+        caloriesIn: 0,
+        caloriesOut: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        sugar: 0,
+        fiber: 0,
+        foods: [],
+        activities: [],
+      };
+    }
+
+    foodLogs.forEach(log => {
+      if (summary[log.date]) {
+        summary[log.date].caloriesIn += log.calories;
+        summary[log.date].protein += log.protein;
+        summary[log.date].carbs += log.carbs;
+        summary[log.date].fat += log.fat;
+        summary[log.date].sugar += log.sugar || 0;
+        summary[log.date].fiber += log.fiber || 0;
+        summary[log.date].foods.push(log.name);
+      }
+    });
+
+    activityLogs.forEach(log => {
+      if (summary[log.date]) {
+        summary[log.date].caloriesOut += log.caloriesBurned;
+        summary[log.date].activities.push(log.name);
+      }
+    });
+    
+    setData(Object.values(summary).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (loading) {
+    return <Skeleton className="h-64 w-full" />;
+  }
+
+  const chartConfig = {
+    caloriesIn: { label: 'Calories In', color: 'hsl(var(--chart-1))' },
+    caloriesOut: { label: 'Calories Out', color: 'hsl(var(--chart-2))' },
+  } satisfies z.infer<typeof foodLogSchema> & z.infer<typeof activityLogSchema>;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Weekly Summary</CardTitle>
+        <CardDescription>Your stats for the last 7 days.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="w-full whitespace-nowrap rounded-md">
+            <div className="flex w-max space-x-4 pb-4">
+                {data.map((day) => (
+                <Card key={day.date} className="min-w-[320px] flex-shrink-0">
+                    <CardHeader>
+                    <CardTitle className="text-lg">{format(new Date(day.date), 'EEE, MMM d')}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <ChartContainer config={chartConfig} className="h-40 w-full">
+                            <BarChart accessibilityLayer data={[day]} margin={{top: 20}}>
+                                <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={() => ''} />
+                                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                                <Legend />
+                                <Bar dataKey="caloriesIn" fill="var(--color-caloriesIn)" radius={4} name="Calories In" />
+                                <Bar dataKey="caloriesOut" fill="var(--color-caloriesOut)" radius={4} name="Calories Out" />
+                            </BarChart>
+                        </ChartContainer>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <div className="flex justify-between"><span>Protein</span><span className="font-medium">{day.protein.toFixed(0)}g</span></div>
+                            <div className="flex justify-between"><span>Carbs</span><span className="font-medium">{day.carbs.toFixed(0)}g</span></div>
+                            <div className="flex justify-between"><span>Fat</span><span className="font-medium">{day.fat.toFixed(0)}g</span></div>
+                            <div className="flex justify-between"><span>Sugar</span><span className="font-medium">{day.sugar.toFixed(0)}g</span></div>
+                            <div className="flex justify-between"><span>Fiber</span><span className="font-medium">{day.fiber.toFixed(0)}g</span></div>
+                        </div>
+                         <div>
+                            <h4 className="font-semibold text-sm mb-1">Foods Eaten</h4>
+                            <p className="text-xs text-muted-foreground truncate">{day.foods.join(', ') || 'None'}</p>
+                         </div>
+                         <div>
+                            <h4 className="font-semibold text-sm mb-1">Activities</h4>
+                            <p className="text-xs text-muted-foreground truncate">{day.activities.join(', ') || 'None'}</p>
+                         </div>
+                    </CardContent>
+                </Card>
+                ))}
+            </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  )
 }
 
 export default function LogsPage() {
@@ -919,6 +1101,9 @@ export default function LogsPage() {
           </PopoverContent>
         </Popover>
       </div>
+
+      <WeeklySummary />
+
       <Tabs defaultValue={initialTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="food">Food Log</TabsTrigger>

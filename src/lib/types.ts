@@ -65,6 +65,8 @@ export type FoodLog = {
   protein: number;
   carbs: number;
   fat: number;
+  sugar?: number;
+  fiber?: number;
 };
 
 export type ActivityLog = {
@@ -95,7 +97,7 @@ export type Recipe = {
 };
 
 export type Goal = {
-  id: string;
+  id:string;
   description: string;
   progress: number;
   target: number;
