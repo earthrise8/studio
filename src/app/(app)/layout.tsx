@@ -31,6 +31,7 @@ import {
   LogOut,
   LogIn,
   AlertTriangle,
+  PanelLeft,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-provider';
 import { usePathname, useRouter } from 'next/navigation';
@@ -44,7 +45,7 @@ import { LoginDialog } from '@/components/login-dialog';
 
 function AuthSensitiveControls() {
     const { user, signOut } = useAuth();
-    if (!user) return null;
+    if (!user || !user.id) return null;
 
     const isAnonymous = user.id.startsWith('anon_');
 
@@ -147,7 +148,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-3">
                   <Avatar>
                   <AvatarImage
-                      src={user.profile.avatarUrl ?? undefined}
+                      src={user?.profile?.avatarUrl ?? undefined}
                       alt={user.name ?? 'User'}
                   />
                   <AvatarFallback>
@@ -182,6 +183,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
+            <SidebarTrigger asChild>
+                <Button size="icon" variant="outline">
+                    <PanelLeft />
+                    <span className="sr-only">Toggle Menu</span>
+                </Button>
+            </SidebarTrigger>
+            <div className="flex items-center gap-2">
+                <Logo />
+            </div>
+        </header>
         {children}
         </SidebarInset>
     </>
