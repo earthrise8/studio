@@ -91,7 +91,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
@@ -178,7 +178,9 @@ function AddFoodLogDialog({
         calories: recipe.calories || 0,
         protein: recipe.protein || 0,
         carbs: recipe.carbs || 0,
-        fat: recipe.fat || 0
+        fat: recipe.fat || 0,
+        sugar: 0,
+        fiber: 0,
     };
     await onSubmit(recipeLog);
   }
@@ -779,7 +781,7 @@ function WeeklySummary() {
       }
     });
     
-    setData(Object.values(summary).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setData(Object.values(summary).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
     setLoading(false);
   }, [user]);
 
@@ -1120,5 +1122,3 @@ export default function LogsPage() {
     </main>
   );
 }
-
-    
