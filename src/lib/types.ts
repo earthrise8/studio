@@ -70,6 +70,7 @@ export type FoodLog = {
 export type ActivityLog = {
   id: string;
   date: string; // ISO 8601 date string
+  type: string;
   name: string;
   duration: number; // in minutes
   caloriesBurned: number;
@@ -116,5 +117,8 @@ export type ShoppingCartItem = {
   id: string;
   name: string;
   quantity: number;
-  dateAdded: string; // ISO 86
+  price: number;
+  store: Store;
+  healthRating: number;
+  dateAdded: string; // ISO 8601 date string
 };
