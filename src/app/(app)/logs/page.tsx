@@ -33,7 +33,7 @@ import {
   getRecentActivityLogs,
 } from '@/lib/data';
 import type { ActivityLog, FoodLog, Recipe } from '@/lib/types';
-import { format, formatISO, subDays } from 'date-fns';
+import { format, formatISO, subDays, addDays } from 'date-fns';
 import {
   Calendar as CalendarIcon,
   PlusCircle,
@@ -381,7 +381,7 @@ function AddActivityLogDialog({
         });
       } finally {
         setLoading(false);
-      }
+        }
     }
   
     return (
@@ -731,22 +731,35 @@ function EditLogDialog({
   );
 }
 
+const isToday = (date: Date) => {
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+         date.getMonth() === today.getMonth() &&
+         date.getFullYear() === today.getFullYear();
+};
+
+
 function WeeklySummary() {
   const { user } = useAuth();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
+    
+    const endDate = currentDate;
+    const startDate = subDays(endDate, 2);
+
     const [foodLogs, activityLogs] = await Promise.all([
-      getRecentFoodLogs(user.id, 7),
-      getRecentActivityLogs(user.id, 7),
+      getRecentFoodLogs(user.id, 30), // Fetch a larger chunk to allow navigation
+      getRecentActivityLogs(user.id, 30),
     ]);
 
     const summary: Record<string, any> = {};
-    for (let i = 0; i < 7; i++) {
-      const date = subDays(new Date(), i);
+    for (let i = 0; i < 3; i++) {
+      const date = subDays(endDate, i);
       const dateStr = formatISO(date, { representation: 'date' });
       summary[dateStr] = {
         date: dateStr,
@@ -763,34 +776,52 @@ function WeeklySummary() {
     }
 
     foodLogs.forEach(log => {
-      if (summary[log.date]) {
-        summary[log.date].caloriesIn += log.calories;
-        summary[log.date].protein += log.protein;
-        summary[log.date].carbs += log.carbs;
-        summary[log.date].fat += log.fat;
-        summary[log.date].sugar += log.sugar || 0;
-        summary[log.date].fiber += log.fiber || 0;
-        summary[log.date].foods.push(log.name);
+      const logDate = new Date(log.date);
+      if (logDate >= startDate && logDate <= endDate) {
+        if (summary[log.date]) {
+            summary[log.date].caloriesIn += log.calories;
+            summary[log.date].protein += log.protein;
+            summary[log.date].carbs += log.carbs;
+            summary[log.date].fat += log.fat;
+            summary[log.date].sugar += log.sugar || 0;
+            summary[log.date].fiber += log.fiber || 0;
+            summary[log.date].foods.push(log.name);
+        }
       }
     });
 
     activityLogs.forEach(log => {
-      if (summary[log.date]) {
-        summary[log.date].caloriesOut += log.caloriesBurned;
-        summary[log.date].activities.push(log.name);
+       const logDate = new Date(log.date);
+       if (logDate >= startDate && logDate <= endDate) {
+        if (summary[log.date]) {
+            summary[log.date].caloriesOut += log.caloriesBurned;
+            summary[log.date].activities.push(log.name);
+        }
       }
     });
     
-    setData(Object.values(summary).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+    setData(Object.values(summary).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     setLoading(false);
-  }, [user]);
+  }, [user, currentDate]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   if (loading) {
-    return <Skeleton className="h-64 w-full" />;
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-4 w-1/3" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   const chartConfig = {
@@ -798,50 +829,68 @@ function WeeklySummary() {
     caloriesOut: { label: 'Calories Out', color: 'hsl(var(--chart-2))' },
   } satisfies z.infer<typeof foodLogSchema> & z.infer<typeof activityLogSchema>;
 
+  const handlePrevious = () => {
+    setCurrentDate(subDays(currentDate, 3));
+  };
+
+  const handleNext = () => {
+    setCurrentDate(addDays(currentDate, 3));
+  };
+  
+  const isNextDisabled = data.length > 0 && isToday(new Date(data[0].date));
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Weekly Summary</CardTitle>
-        <CardDescription>Your stats for the last 7 days.</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>3-Day Summary</CardTitle>
+          <CardDescription>Your stats for the last 3 days.</CardDescription>
+        </div>
+        <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={handlePrevious}>
+                <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={handleNext} disabled={isNextDisabled}>
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="w-full whitespace-nowrap rounded-md">
-            <div className="flex w-max space-x-4 pb-4">
-                {data.map((day) => (
-                <Card key={day.date} className="min-w-[320px] flex-shrink-0">
-                    <CardHeader>
-                    <CardTitle className="text-lg">{format(new Date(day.date), 'EEE, MMM d')}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <ChartContainer config={chartConfig} className="h-40 w-full">
-                            <BarChart accessibilityLayer data={[day]} margin={{top: 20}}>
-                                <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={() => ''} />
-                                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                                <Legend />
-                                <Bar dataKey="caloriesIn" fill="var(--color-caloriesIn)" radius={4} name="Calories In" />
-                                <Bar dataKey="caloriesOut" fill="var(--color-caloriesOut)" radius={4} name="Calories Out" />
-                            </BarChart>
-                        </ChartContainer>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                            <div className="flex justify-between"><span>Protein</span><span className="font-medium">{day.protein.toFixed(0)}g</span></div>
-                            <div className="flex justify-between"><span>Carbs</span><span className="font-medium">{day.carbs.toFixed(0)}g</span></div>
-                            <div className="flex justify-between"><span>Fat</span><span className="font-medium">{day.fat.toFixed(0)}g</span></div>
-                            <div className="flex justify-between"><span>Sugar</span><span className="font-medium">{day.sugar.toFixed(0)}g</span></div>
-                            <div className="flex justify-between"><span>Fiber</span><span className="font-medium">{day.fiber.toFixed(0)}g</span></div>
-                        </div>
-                         <div>
-                            <h4 className="font-semibold text-sm mb-1">Foods Eaten</h4>
-                            <p className="text-xs text-muted-foreground truncate">{day.foods.join(', ') || 'None'}</p>
-                         </div>
-                         <div>
-                            <h4 className="font-semibold text-sm mb-1">Activities</h4>
-                            <p className="text-xs text-muted-foreground truncate">{day.activities.join(', ') || 'None'}</p>
-                         </div>
-                    </CardContent>
-                </Card>
-                ))}
-            </div>
-        </ScrollArea>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {data.map((day) => (
+            <Card key={day.date} className="w-full">
+                <CardHeader>
+                <CardTitle className="text-lg">{format(new Date(day.date), 'EEE, MMM d')}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <ChartContainer config={chartConfig} className="h-40 w-full">
+                        <BarChart accessibilityLayer data={[day]} margin={{top: 20}}>
+                            <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={() => ''} />
+                            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                            <Legend />
+                            <Bar dataKey="caloriesIn" fill="var(--color-caloriesIn)" radius={4} name="Calories In" />
+                            <Bar dataKey="caloriesOut" fill="var(--color-caloriesOut)" radius={4} name="Calories Out" />
+                        </BarChart>
+                    </ChartContainer>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div className="flex justify-between"><span>Protein</span><span className="font-medium">{day.protein.toFixed(0)}g</span></div>
+                        <div className="flex justify-between"><span>Carbs</span><span className="font-medium">{day.carbs.toFixed(0)}g</span></div>
+                        <div className="flex justify-between"><span>Fat</span><span className="font-medium">{day.fat.toFixed(0)}g</span></div>
+                        <div className="flex justify-between"><span>Sugar</span><span className="font-medium">{day.sugar.toFixed(0)}g</span></div>
+                        <div className="flex justify-between"><span>Fiber</span><span className="font-medium">{day.fiber.toFixed(0)}g</span></div>
+                    </div>
+                      <div>
+                        <h4 className="font-semibold text-sm mb-1">Foods Eaten</h4>
+                        <p className="text-xs text-muted-foreground truncate">{day.foods.join(', ') || 'None'}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-sm mb-1">Activities</h4>
+                        <p className="text-xs text-muted-foreground truncate">{day.activities.join(', ') || 'None'}</p>
+                      </div>
+                </CardContent>
+            </Card>
+            ))}
+        </div>
       </CardContent>
     </Card>
   )
@@ -1122,3 +1171,5 @@ export default function LogsPage() {
     </main>
   );
 }
+
+    
