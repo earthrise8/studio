@@ -1,5 +1,4 @@
 
-
 'use client';
 import { Button } from '@/components/ui/button';
 import {
@@ -68,6 +67,7 @@ import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getBuildingSet, allBuildings, buildingDataMap, getCityInfo, TILES } from '@/lib/city-data';
 import { Progress } from '@/components/ui/progress';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: number) => void }) {
@@ -109,6 +109,7 @@ function GoalProgress({ goal, onUpdate }: { goal: Goal, onUpdate: (amount: numbe
 export default function DashboardPage() {
   const { user, refreshUser, setUser } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [loading, setLoading] = useState(true);
   const [cityGrid, setCityGrid] = useState<string[][] | null>(null);
@@ -119,7 +120,7 @@ export default function DashboardPage() {
   const [tileView, setTileView] = useState<'grid' | 'list'>('grid');
   const [tileSearchTerm, setTileSearchTerm] = useState('');
   const [inGameDay, setInGameDay] = useState(1);
-  const [isCityVisible, setIsCityVisible] = useState(true);
+  const [isCityVisible, setIsCityVisible] = useState(!isMobile);
 
   // Drag selection state
   const [isDragging, setIsDragging] = useState(false);
@@ -139,6 +140,10 @@ export default function DashboardPage() {
     goals: Goal[],
     friends: Friend[],
   } | null>(null);
+
+  useEffect(() => {
+    setIsCityVisible(!isMobile);
+  }, [isMobile]);
 
   const getCachedGrid = useCallback(() => {
     if (typeof window === 'undefined' || !user) return null;
@@ -802,7 +807,7 @@ export default function DashboardPage() {
       </h2>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
             <div>
                 <CardTitle className="font-headline flex items-center gap-2">
                     <Building />
@@ -830,36 +835,36 @@ export default function DashboardPage() {
             <CardContent className="space-y-4">
             <Card>
                 <CardContent className='pt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 text-center'>
-                <div>
-                    <CardTitle className='text-lg font-headline flex items-center justify-center gap-2'><Building className='h-5 w-5' /> City Size</CardTitle>
-                    <p className='text-md font-bold text-primary'>{cityInfo.name}</p>
+                <div className='flex flex-col items-center justify-center'>
+                    <CardTitle className='text-sm md:text-lg font-headline flex items-center justify-center gap-2'><Building className='h-5 w-5' /> City Size</CardTitle>
+                    <p className='text-sm md:text-md font-bold text-primary'>{cityInfo.name}</p>
                 </div>
-                <div>
-                    <CardTitle className='text-lg font-headline flex items-center justify-center gap-2'><Globe className='h-5 w-5' /> Population</CardTitle>
-                    <p className='text-md font-bold text-primary'>{cityInfo.population.toLocaleString()}</p>
+                <div className='flex flex-col items-center justify-center'>
+                    <CardTitle className='text-sm md:text-lg font-headline flex items-center justify-center gap-2'><Globe className='h-5 w-5' /> Population</CardTitle>
+                    <p className='text-sm md:text-md font-bold text-primary'>{cityInfo.population.toLocaleString()}</p>
                 </div>
-                <div>
-                    <CardTitle className='text-lg font-headline flex items-center justify-center gap-2'><CalendarDays className='h-5 w-5' /> In-Game Time</CardTitle>
-                    <p className='text-md font-bold text-primary'>Day {inGameDay}</p>
+                <div className='flex flex-col items-center justify-center'>
+                    <CardTitle className='text-sm md:text-lg font-headline flex items-center justify-center gap-2'><CalendarDays className='h-5 w-5' /> In-Game Time</CardTitle>
+                    <p className='text-sm md:text-md font-bold text-primary'>Day {inGameDay}</p>
                 </div>
-                <div className="flex flex-col justify-center">
-                    <div className="flex items-center justify-center gap-2 text-lg font-headline"><Leaf className='h-5 w-5' /> Eco Score</div>
-                    <p className='text-md font-bold'>{cityInfo.ecoScore}</p>
+                <div className="flex flex-col justify-center items-center">
+                    <div className="flex items-center justify-center gap-2 text-sm md:text-lg font-headline"><Leaf className='h-5 w-5' /> Eco Score</div>
+                    <p className='text-sm md:text-md font-bold'>{cityInfo.ecoScore}</p>
                 </div>
-                <div className="flex flex-col justify-center">
-                    <div className="flex items-center justify-center gap-2 text-lg font-headline"><DollarSign className='h-5 w-5' /> Revenue</div>
-                    <p className='text-md font-bold'>${Math.floor(cityInfo.netRevenue).toLocaleString()}/day</p>
+                <div className="flex flex-col justify-center items-center">
+                    <div className="flex items-center justify-center gap-2 text-sm md:text-lg font-headline"><DollarSign className='h-5 w-5' /> Revenue</div>
+                    <p className='text-sm md:text-md font-bold'>${Math.floor(cityInfo.netRevenue).toLocaleString()}/day</p>
                 </div>
-                <div className="flex flex-col justify-center">
-                    <div className="flex items-center justify-center gap-2 text-lg font-headline"><DollarSign className='h-5 w-5' /> Money</div>
-                    <p className="text-md font-bold">${(user.profile.money || 0).toLocaleString()}</p>
+                <div className="flex flex-col justify-center items-center">
+                    <div className="flex items-center justify-center gap-2 text-sm md:text-lg font-headline"><DollarSign className='h-5 w-5' /> Money</div>
+                    <p className="text-sm md:text-md font-bold">${(user.profile.money || 0).toLocaleString()}</p>
                 </div>
-                <div className="flex flex-col justify-center">
-                    <div className="flex items-center justify-center gap-2 text-lg font-headline"><Trophy className='h-5 w-5' /> Next Upgrade</div>
+                <div className="flex flex-col justify-center items-center">
+                    <div className="flex items-center justify-center gap-2 text-sm md:text-lg font-headline"><Trophy className='h-5 w-5' /> Next Upgrade</div>
                     {cityInfo.nextUpgrade ? (
-                        <p className="text-md font-bold">{pointsToUpgrade > 0 ? `${pointsToUpgrade.toLocaleString()} pts` : 'Ready!'}</p>
+                        <p className="text-sm md:text-md font-bold">{pointsToUpgrade > 0 ? `${pointsToUpgrade.toLocaleString()} pts` : 'Ready!'}</p>
                     ) : (
-                        <p className="text-md font-bold text-primary">Max Level</p>
+                        <p className="text-sm md:text-md font-bold text-primary">Max Level</p>
                     )}
                 </div>
                 </CardContent>
@@ -867,7 +872,7 @@ export default function DashboardPage() {
 
             <div className="grid gap-4 lg:grid-cols-3">
                 <div 
-                className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto"
+                className="lg:col-span-2 w-full rounded-lg border bg-muted flex items-center justify-center p-2 md:p-4 overflow-x-auto"
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseLeaveGrid}
                 >
@@ -878,7 +883,7 @@ export default function DashboardPage() {
                         </div>
                     ) : cityGrid ? (
                         <TooltipProvider>
-                            <div className="font-code text-center text-3xl leading-none border-t border-l border-border/50 select-none">
+                            <div className="font-code text-center text-xl md:text-3xl leading-none border-t border-l border-border/50 select-none">
                             {cityGrid.map((row, y) => (
                                 <div key={y} className="flex">
                                     {row.map((cell, x) => {
@@ -902,7 +907,7 @@ export default function DashboardPage() {
                                                 onMouseDown={(e) => handleMouseDown(e, y, x)}
                                                 onMouseEnter={() => handleMouseEnterTile(y,x)}
                                                 className={cn(
-                                                    'relative flex items-center justify-center h-10 w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', 
+                                                    'relative flex items-center justify-center h-8 w-8 md:h-10 md:w-10 border-b border-r border-border/20 hover:bg-primary/20 rounded-sm transition-colors', 
                                                     isSelected && 'bg-primary/30 ring-2 ring-primary',
                                                     isHoveredCensus && 'bg-blue-500/30 ring-2 ring-blue-400',
                                                     highlight?.type === 'positive' && 'ring-2 ring-blue-500 bg-blue-500/20',
@@ -911,6 +916,7 @@ export default function DashboardPage() {
                                                 )}
                                                 >
                                                 <span className={cn(
+                                                    'text-base md:text-xl',
                                                     highlight?.type === 'area-positive' && 'outline outline-2 outline-blue-500 outline-offset-[-2px] rounded-sm',
                                                     highlight?.type === 'area-negative' && 'outline outline-2 outline-red-500 outline-offset-[-2px] rounded-sm'
                                                 )}>{cell}</span>
@@ -1387,8 +1393,6 @@ export default function DashboardPage() {
     </main>
   );
 
-    
+}
 
     
-
-
