@@ -739,7 +739,7 @@ const isToday = (date: Date) => {
 };
 
 
-function WeeklySummary() {
+function WeeklySummary({ refreshKey }: { refreshKey: number }) {
   const { user } = useAuth();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -777,27 +777,26 @@ function WeeklySummary() {
 
     foodLogs.forEach(log => {
       const logDate = new Date(log.date);
-      if (logDate >= startDate && logDate <= endDate) {
-        if (summary[log.date]) {
-            summary[log.date].caloriesIn += log.calories;
-            summary[log.date].protein += log.protein;
-            summary[log.date].carbs += log.carbs;
-            summary[log.date].fat += log.fat;
-            summary[log.date].sugar += log.sugar || 0;
-            summary[log.date].fiber += log.fiber || 0;
-            summary[log.date].foods.push(log.name);
-        }
+       // Adjust for timezone differences by comparing date parts
+      const logDateStr = formatISO(logDate, { representation: 'date' });
+      if (summary[logDateStr]) {
+          summary[logDateStr].caloriesIn += log.calories;
+          summary[logDateStr].protein += log.protein;
+          summary[logDateStr].carbs += log.carbs;
+          summary[logDateStr].fat += log.fat;
+          summary[logDateStr].sugar += log.sugar || 0;
+          summary[logDateStr].fiber += log.fiber || 0;
+          summary[logDateStr].foods.push(log.name);
       }
     });
 
     activityLogs.forEach(log => {
        const logDate = new Date(log.date);
-       if (logDate >= startDate && logDate <= endDate) {
-        if (summary[log.date]) {
-            summary[log.date].caloriesOut += log.caloriesBurned;
-            summary[log.date].activities.push(log.name);
-        }
-      }
+       const logDateStr = formatISO(logDate, { representation: 'date' });
+       if (summary[logDateStr]) {
+           summary[logDateStr].caloriesOut += log.caloriesBurned;
+           summary[logDateStr].activities.push(log.name);
+       }
     });
     
     setData(Object.values(summary).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -806,7 +805,7 @@ function WeeklySummary() {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, refreshKey]);
 
   if (loading) {
     return (
@@ -907,6 +906,7 @@ export default function LogsPage() {
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [activityFilter, setActivityFilter] = useState('All');
+  const [summaryRefreshKey, setSummaryRefreshKey] = useState(0);
 
   const fetchLogs = (userId: string, date: Date) => {
     setLoading(true);
@@ -920,6 +920,8 @@ export default function LogsPage() {
       setLoading(false);
     });
   };
+  
+  const refreshSummary = () => setSummaryRefreshKey(prev => prev + 1);
 
   useEffect(() => {
     setDate(new Date());
@@ -933,10 +935,12 @@ export default function LogsPage() {
   
   const handleFoodLog = (newLog: FoodLog) => {
     setFoodLogs(current => [...current, newLog]);
+    refreshSummary();
   }
 
   const handleActivityLog = (newLog: ActivityLog) => {
     setActivityLogs(current => [...current, newLog]);
+    refreshSummary();
   }
 
   const handleItemUpdate = (updatedItem: FoodLog | ActivityLog, type: 'food' | 'activity') => {
@@ -949,6 +953,7 @@ export default function LogsPage() {
         current.map((item) => (item.id === updatedItem.id ? (updatedItem as ActivityLog) : item))
       );
     }
+    refreshSummary();
   };
 
   const handleItemDelete = async (itemId: string, type: 'food' | 'activity') => {
@@ -962,6 +967,7 @@ export default function LogsPage() {
         toast({ title: 'Activity log entry deleted.' });
       }
       fetchLogs(user.id, date);
+      refreshSummary();
     } catch (e) {
       toast({
         variant: 'destructive',
@@ -1154,7 +1160,7 @@ export default function LogsPage() {
         </Popover>
       </div>
 
-      <WeeklySummary />
+      <WeeklySummary key={summaryRefreshKey} />
 
       <Tabs defaultValue={initialTab} className="space-y-4">
         <TabsList>
@@ -1171,5 +1177,3 @@ export default function LogsPage() {
     </main>
   );
 }
-
-    
