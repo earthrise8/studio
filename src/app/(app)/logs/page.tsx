@@ -791,14 +791,15 @@ export default function LogsPage() {
                 {type === 'activity' && (
                     <div className="flex items-center gap-2 flex-wrap">
                       {activityTypes.map(filterType => (
-                        <Button
-                            key={filterType}
-                            variant={activityFilter === filterType ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setActivityFilter(filterType)}
-                        >
-                            {filterType}
-                        </Button>
+                        <div key={filterType}>
+                          <Button
+                              variant={activityFilter === filterType ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setActivityFilter(filterType)}
+                          >
+                              {filterType}
+                          </Button>
+                        </div>
                       ))}
                     </div>
                 )}
