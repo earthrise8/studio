@@ -739,18 +739,16 @@ const isToday = (date: Date) => {
 };
 
 
-function WeeklySummary({ refreshKey }: { refreshKey: number }) {
+function WeeklySummary({ refreshKey, currentDate, onDateChange }: { refreshKey: number, currentDate: Date, onDateChange: (date: Date) => void }) {
   const { user } = useAuth();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentDate, setCurrentDate] = useState(new Date());
 
   const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     
     const endDate = currentDate;
-    const startDate = subDays(endDate, 2);
 
     const [foodLogs, activityLogs] = await Promise.all([
       getRecentFoodLogs(user.id, 30), // Fetch a larger chunk to allow navigation
@@ -776,8 +774,9 @@ function WeeklySummary({ refreshKey }: { refreshKey: number }) {
     }
 
     foodLogs.forEach(log => {
-      const logDate = new Date(log.date);
-       // Adjust for timezone differences by comparing date parts
+      // Create a date object from string, but ignore timezone by getting parts
+      const [year, month, day] = log.date.split('-').map(Number);
+      const logDate = new Date(year, month - 1, day);
       const logDateStr = formatISO(logDate, { representation: 'date' });
       if (summary[logDateStr]) {
           summary[logDateStr].caloriesIn += log.calories;
@@ -791,7 +790,8 @@ function WeeklySummary({ refreshKey }: { refreshKey: number }) {
     });
 
     activityLogs.forEach(log => {
-       const logDate = new Date(log.date);
+       const [year, month, day] = log.date.split('-').map(Number);
+       const logDate = new Date(year, month - 1, day);
        const logDateStr = formatISO(logDate, { representation: 'date' });
        if (summary[logDateStr]) {
            summary[logDateStr].caloriesOut += log.caloriesBurned;
@@ -829,21 +829,21 @@ function WeeklySummary({ refreshKey }: { refreshKey: number }) {
   } satisfies z.infer<typeof foodLogSchema> & z.infer<typeof activityLogSchema>;
 
   const handlePrevious = () => {
-    setCurrentDate(subDays(currentDate, 3));
+    onDateChange(subDays(currentDate, 3));
   };
 
   const handleNext = () => {
-    setCurrentDate(addDays(currentDate, 3));
+    onDateChange(addDays(currentDate, 3));
   };
   
   const isNextDisabled = data.length > 0 && isToday(new Date(data[data.length -1].date));
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between">
         <div>
           <CardTitle>3-Day Summary</CardTitle>
-          <CardDescription>Your stats for the last 3 days.</CardDescription>
+          <CardDescription>Your stats for the selected period.</CardDescription>
         </div>
         <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={handlePrevious}>
@@ -901,16 +901,16 @@ export default function LogsPage() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') || 'food';
 
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date>(new Date());
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [activityFilter, setActivityFilter] = useState('All');
   const [summaryRefreshKey, setSummaryRefreshKey] = useState(0);
 
-  const fetchLogs = (userId: string, date: Date) => {
+  const fetchLogs = useCallback((userId: string, fetchDate: Date) => {
     setLoading(true);
-    const dateStr = formatISO(date, { representation: 'date' });
+    const dateStr = formatISO(fetchDate, { representation: 'date' });
     Promise.all([
       getFoodLogs(userId, dateStr),
       getActivityLogs(userId, dateStr),
@@ -919,15 +919,15 @@ export default function LogsPage() {
       setActivityLogs(activityData);
       setLoading(false);
     });
-  };
+  }, []);
   
   const refreshSummary = () => setSummaryRefreshKey(prev => prev + 1);
 
   useEffect(() => {
-    if (user && date) {
+    if (user) {
       fetchLogs(user.id, date);
     }
-  }, [user, date]);
+  }, [user, date, fetchLogs]);
   
   const handleFoodLog = (newLog: FoodLog) => {
     setFoodLogs(current => [...current, newLog]);
@@ -953,7 +953,7 @@ export default function LogsPage() {
   };
 
   const handleItemDelete = async (itemId: string, type: 'food' | 'activity') => {
-    if (!user || !date) return;
+    if (!user) return;
     try {
       if (type === 'food') {
         await deleteFoodLog(user.id, itemId);
@@ -1017,10 +1017,10 @@ export default function LogsPage() {
                       ))}
                     </div>
                 )}
-                {type === 'food' && user && date && (
+                {type === 'food' && user && (
                 <AddFoodLogDialog date={date} userId={user.id} onLog={handleFoodLog} />
                 )}
-                {type === 'activity' && user && date && (
+                {type === 'activity' && user && (
                     <AddActivityLogDialog date={date} userId={user.id} onLog={handleActivityLog} />
                 )}
             </div>
@@ -1156,7 +1156,7 @@ export default function LogsPage() {
         </Popover>
       </div>
 
-      <WeeklySummary key={summaryRefreshKey} />
+      {date && <WeeklySummary key={summaryRefreshKey} currentDate={date} onDateChange={setDate} />}
 
       <Tabs defaultValue={initialTab} className="space-y-4">
         <TabsList>
@@ -1173,5 +1173,3 @@ export default function LogsPage() {
     </main>
   );
 }
-
-    
