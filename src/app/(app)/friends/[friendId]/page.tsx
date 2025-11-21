@@ -10,11 +10,37 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { getCityInfo, buildingDataMap } from '@/lib/city-data';
+import { getCityInfo, buildingDataMap, allBuildings } from '@/lib/city-data';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+
+const generateDefaultGrid = (): string[][] => {
+    const grid: string[][] = Array.from({ length: 20 }, () => Array(20).fill(''));
+    const availableEmojis = allBuildings
+      .map((b) => b.emoji)
+      .filter(
+        (emoji) =>
+          emoji !== ' ' &&
+          emoji !== '⛰️'
+      );
+  
+    for (let y = 0; y < 20; y++) {
+      for (let x = 0; x < 20; x++) {
+        // Create some structure
+        if (x === 10) { // Vertical road
+          grid[y][x] = '⬛';
+        } else if (y === 10) { // Horizontal road
+          grid[y][x] = '⬛';
+        }
+        else {
+          grid[y][x] = availableEmojis[Math.floor(Math.random() * availableEmojis.length)];
+        }
+      }
+    }
+    return grid;
+  };
 
 export default function FriendProfilePage() {
   const params = useParams();
@@ -32,11 +58,19 @@ export default function FriendProfilePage() {
     }
   }, [user, friendId]);
   
+  const friendCityGrid = useMemo(() => {
+    if (friend?.profile.cityGrid && friend.profile.cityGrid.length > 0 && friend.profile.cityGrid.flat().some(c => c !== ' ')) {
+      return friend.profile.cityGrid;
+    }
+    return generateDefaultGrid();
+  }, [friend?.profile.cityGrid]);
+
   const { cityInfo } = useMemo(() => {
-    if (!friend?.profile.cityGrid) return { cityInfo: null };
-    const { cityInfo: info } = getCityInfo(friend.profile.totalPoints, friend.profile.cityGrid);
+    if (!friend) return { cityInfo: null };
+    const gridToUse = friend.profile.cityGrid && friend.profile.cityGrid.length > 0 ? friend.profile.cityGrid : friendCityGrid;
+    const { cityInfo: info } = getCityInfo(friend.profile.totalPoints, gridToUse);
     return { cityInfo: info };
-  }, [friend]);
+  }, [friend, friendCityGrid]);
 
 
   if (loading || !user) {
@@ -120,35 +154,31 @@ export default function FriendProfilePage() {
           </CardHeader>
           <CardContent className="flex items-center justify-center p-4">
              <div className="rounded-lg border bg-muted flex items-center justify-center p-4 overflow-x-auto">
-                {friend.profile.cityGrid && friend.profile.cityGrid.length > 0 ? (
-                    <TooltipProvider>
-                        <div className="font-mono text-center text-lg leading-none select-none">
-                            {friend.profile.cityGrid.map((row, y) => (
-                                <div key={y} className="flex">
-                                    {row.map((cell, x) => {
-                                        const building = buildingDataMap.get(cell);
-                                        return (
-                                             <Tooltip key={x}>
-                                                <TooltipTrigger asChild>
-                                                    <div className={cn('flex items-center justify-center h-8 w-8')}>
-                                                        <span>{cell}</span>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                {building && (
-                                                    <TooltipContent>
-                                                        <p className="font-semibold">{building.name}</p>
-                                                    </TooltipContent>
-                                                )}
-                                            </Tooltip>
-                                        )
-                                    })}
-                                </div>
-                            ))}
-                        </div>
-                    </TooltipProvider>
-                ) : (
-                    <p className="text-muted-foreground">This friend hasn't started building their city yet.</p>
-                )}
+                <TooltipProvider>
+                    <div className="font-mono text-center text-lg leading-none select-none">
+                        {friendCityGrid.map((row, y) => (
+                            <div key={y} className="flex">
+                                {row.map((cell, x) => {
+                                    const building = buildingDataMap.get(cell);
+                                    return (
+                                         <Tooltip key={x}>
+                                            <TooltipTrigger asChild>
+                                                <div className={cn('flex items-center justify-center h-8 w-8')}>
+                                                    <span>{cell}</span>
+                                                </div>
+                                            </TooltipTrigger>
+                                            {building && (
+                                                <TooltipContent>
+                                                    <p className="font-semibold">{building.name}</p>
+                                                </TooltipContent>
+                                            )}
+                                        </Tooltip>
+                                    )
+                                })}
+                            </div>
+                        ))}
+                    </div>
+                </TooltipProvider>
              </div>
           </CardContent>
         </Card>
