@@ -95,16 +95,13 @@ const foodLogSchema = z.object({
 
 const activityLogSchema = z.object({
   type: z.string().min(1, 'Activity type is required'),
-  name: z.string().optional(), // Optional, only used if type is 'Other'
+  name: z.string().min(1, 'A name for your activity is required.'),
   duration: z.coerce.number().min(1, 'Duration must be at least 1 minute.'),
   caloriesBurned: z.coerce.number().min(0),
-}).refine(data => data.type !== 'Other' || (data.type === 'Other' && data.name && data.name.trim() !== ''), {
-  message: 'Custom activity name is required when "Other" is selected.',
-  path: ['name'],
 });
 
 
-const COMMON_ACTIVITIES = ['Running', 'Walking', 'Weight Training'];
+const COMMON_ACTIVITIES = ['Run', 'Walk', 'Swim', 'Bike', 'HIIT', 'Weight Training', 'Sport'];
 
 function AddFoodLogDialog({
   date,
@@ -315,24 +312,18 @@ function AddActivityLogDialog({
     const form = useForm({
       resolver: zodResolver(activityLogSchema),
       defaultValues: {
-        type: '',
+        type: 'Run',
         name: '',
         duration: 30,
         caloriesBurned: 0,
       },
     });
 
-    const watchedType = form.watch('type');
-  
     async function onSubmit(values: z.infer<typeof activityLogSchema>) {
       setLoading(true);
       try {
-        const name = values.type === 'Other' ? values.name! : values.type;
         const newLogData = {
-          type: values.type,
-          name,
-          duration: values.duration,
-          caloriesBurned: values.caloriesBurned,
+          ...values,
           date: formatISO(date, { representation: 'date' }),
         };
         const newLog = await addActivityLog(userId, newLogData);
@@ -365,6 +356,19 @@ function AddActivityLogDialog({
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+               <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Activity Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g., Morning Run, Leg Day" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="type"
@@ -374,36 +378,19 @@ function AddActivityLogDialog({
                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select an activity" />
+                            <SelectValue placeholder="Select an activity type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {COMMON_ACTIVITIES.map(activity => (
+                          {[...COMMON_ACTIVITIES, 'Other'].map(activity => (
                             <SelectItem key={activity} value={activity}>{activity}</SelectItem>
                           ))}
-                          <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              {watchedType === 'Other' && (
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custom Activity Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="e.g., Rock Climbing" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
 
               <FormField
                 control={form.control}
@@ -458,8 +445,6 @@ function EditLogDialog({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const isCustomActivity = type === 'activity' && !COMMON_ACTIVITIES.includes((item as ActivityLog).type);
-
   const formSchema = type === 'food' ? foodLogSchema : activityLogSchema;
   const defaultValues = useMemo(() => {
     if (type === 'food') {
@@ -472,21 +457,19 @@ function EditLogDialog({
       };
     } else {
       return {
-        type: isCustomActivity ? 'Other' : (item as ActivityLog).type,
-        name: isCustomActivity ? item.name : '',
+        type: (item as ActivityLog).type,
+        name: item.name,
         duration: (item as ActivityLog).duration,
         caloriesBurned: (item as ActivityLog).caloriesBurned,
       };
     }
-  }, [item, type, isCustomActivity]);
+  }, [item, type]);
 
   const form = useForm({
     resolver: zodResolver(formSchema as any), // Using `any` due to conditional schema
     defaultValues: defaultValues,
   });
   
-  const watchedType = form.watch('type');
-
   async function onSubmit(values: any) {
     if (!user) return;
     setLoading(true);
@@ -495,9 +478,7 @@ function EditLogDialog({
       if (type === 'food') {
         updatedItem = await updateFoodLog(user.id, item.id, values);
       } else {
-        const name = values.type === 'Other' ? values.name! : values.type;
-        const updateData = { ...values, name };
-        updatedItem = await updateActivityLog(user.id, item.id, updateData);
+        updatedItem = await updateActivityLog(user.id, item.id, values);
       }
       onUpdate(updatedItem);
       toast({ title: 'Log Updated' });
@@ -530,6 +511,19 @@ function EditLogDialog({
               <>
                  <FormField
                   control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Activity Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g., Morning Run, Leg Day" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="type"
                   render={({ field }) => (
                     <FormItem>
@@ -537,35 +531,19 @@ function EditLogDialog({
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select an activity" />
+                              <SelectValue placeholder="Select an activity type" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {COMMON_ACTIVITIES.map(activity => (
+                            {[...COMMON_ACTIVITIES, 'Other'].map(activity => (
                               <SelectItem key={activity} value={activity}>{activity}</SelectItem>
                             ))}
-                            <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                {watchedType === 'Other' && (
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Custom Activity Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="e.g., Rock Climbing" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
               </>
             )}
             {type === 'food' && (
@@ -831,7 +809,7 @@ export default function LogsPage() {
             {loading ? (
               <TableRow>
                 <TableCell
-                  colSpan={type === 'food' ? 6 : 4}
+                  colSpan={type === 'food' ? 6 : 5}
                   className="h-24 text-center"
                 >
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
