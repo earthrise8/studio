@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import { getFriendById } from '@/lib/data';
 import type { Friend, Award } from '@/lib/types';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Loader2, ArrowLeft, Trophy, Building, Users, DollarSign, BarChart, Leaf } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,14 +16,15 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
-export default function FriendProfilePage({ params }: { params: { friendId: string } }) {
-  const { friendId } = params;
+export default function FriendProfilePage() {
+  const params = useParams();
+  const friendId = params.friendId as string;
   const { user } = useAuth();
   const [friend, setFriend] = useState<Friend | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (user && friendId) {
       getFriendById(user.id, friendId).then(friendData => {
         setFriend(friendData);
         setLoading(false);
