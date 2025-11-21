@@ -90,7 +90,7 @@ import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -799,7 +799,7 @@ function WeeklySummary({ refreshKey }: { refreshKey: number }) {
        }
     });
     
-    setData(Object.values(summary).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setData(Object.values(summary).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
     setLoading(false);
   }, [user, currentDate]);
 
@@ -836,7 +836,7 @@ function WeeklySummary({ refreshKey }: { refreshKey: number }) {
     setCurrentDate(addDays(currentDate, 3));
   };
   
-  const isNextDisabled = data.length > 0 && isToday(new Date(data[0].date));
+  const isNextDisabled = data.length > 0 && isToday(new Date(data[data.length -1].date));
 
   return (
     <Card>
@@ -901,7 +901,7 @@ export default function LogsPage() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') || 'food';
 
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -922,10 +922,6 @@ export default function LogsPage() {
   };
   
   const refreshSummary = () => setSummaryRefreshKey(prev => prev + 1);
-
-  useEffect(() => {
-    setDate(new Date());
-  }, []);
 
   useEffect(() => {
     if (user && date) {
@@ -1177,3 +1173,5 @@ export default function LogsPage() {
     </main>
   );
 }
+
+    
